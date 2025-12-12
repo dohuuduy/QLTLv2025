@@ -130,7 +130,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
             <PieChartIcon size={20} className="text-purple-500"/> Trạng thái tài liệu
           </h3>
           <div className="flex-1 w-full min-h-0 min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" debounce={100}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -170,7 +170,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
             <BarChart3 size={20} className="text-blue-500"/> Tài liệu theo bộ phận
           </h3>
           <div className="flex-1 w-full min-h-0 min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" debounce={100}>
               <BarChart 
                 data={barData} 
                 layout="vertical" 
@@ -217,7 +217,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
              <TrendingUp size={20} className="text-green-500" /> Năng suất nhân sự (Top 5)
           </h3>
           <div className="flex-1 w-full min-h-0 min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" debounce={100}>
               <BarChart 
                 data={topAuthors} 
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
