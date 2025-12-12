@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MENU_ITEMS, APP_NAME, INITIAL_MASTER_DATA, MOCK_NOTIFICATIONS } from './constants';
-import { Menu, Bell, Search, LogOut, X, ChevronRight, User, Check, Info, AlertTriangle, CheckCircle, Database } from 'lucide-react';
+import { Menu, Bell, Search, LogOut, X, ChevronRight, User, Check, Info, AlertTriangle, CheckCircle, Database, Sparkles } from 'lucide-react';
 import { Dashboard } from './modules/dashboard/Dashboard';
 import { TaiLieuList } from './modules/tai_lieu/TaiLieuList';
 import { MasterDataLayout } from './modules/master_data/MasterDataLayout';
@@ -17,6 +17,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false); // Trạng thái kết nối DB
+  const [isAiEnabled, setIsAiEnabled] = useState(false); // Trạng thái AI
   
   // Notification State
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
@@ -42,6 +43,11 @@ const App: React.FC = () => {
   // --- INIT DATA FROM SUPABASE ---
   useEffect(() => {
     const initData = async () => {
+      // 0. Check AI Key
+      // @ts-ignore
+      const apiKey = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) || (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_KEY);
+      setIsAiEnabled(!!apiKey);
+
       // 1. Tải Master Data (Danh mục, User)
       const dbMasterData = await fetchMasterDataFromDB();
       if (dbMasterData) {
@@ -251,9 +257,15 @@ const App: React.FC = () => {
           
           {/* Connection Status Indicator */}
           {isSidebarOpen && (
-             <div className="mt-3 flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-                {isConnected ? 'Supabase Connected' : 'Connecting...'}
+             <div className="mt-3 flex flex-col gap-1">
+               <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500">
+                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                  {isConnected ? 'Supabase Connected' : 'DB: Offline/Mock'}
+               </div>
+               <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500">
+                  <div className={`w-2 h-2 rounded-full ${isAiEnabled ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
+                  {isAiEnabled ? 'Gemini AI Ready' : 'AI: No Key'}
+               </div>
              </div>
           )}
 
@@ -304,6 +316,14 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
+             {/* AI Status Banner (Mobile/Desktop) */}
+             {!isAiEnabled && (
+                <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-500 rounded-full text-xs border border-amber-100 dark:border-amber-800/30">
+                   <Sparkles size={12} className="opacity-50" />
+                   <span>AI chưa kích hoạt</span>
+                </div>
+             )}
+
              <div className="hidden lg:flex items-center bg-gray-100 dark:bg-slate-800 rounded-full px-3 py-1.5 border border-gray-200 dark:border-slate-700 focus-within:ring-2 ring-primary/20 transition-all w-64">
                 <Search size={16} className="text-gray-400" />
                 <input 
