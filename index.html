@@ -5,48 +5,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ISO DocManager Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              border: "hsl(var(--border))",
-              input: "hsl(var(--input))",
-              ring: "hsl(var(--ring))",
-              background: "hsl(var(--background))",
-              foreground: "hsl(var(--foreground))",
-              primary: {
-                DEFAULT: "#0f172a",
-                foreground: "#f8fafc",
-              },
-              secondary: {
-                DEFAULT: "#f1f5f9",
-                foreground: "#0f172a",
-              },
-              destructive: {
-                DEFAULT: "#ef4444",
-                foreground: "#f8fafc",
-              },
-              muted: {
-                DEFAULT: "#f1f5f9",
-                foreground: "#64748b",
-              },
-              accent: {
-                DEFAULT: "#f1f5f9",
-                foreground: "#0f172a",
-              },
-            },
-            borderRadius: {
-              lg: "0.5rem",
-              md: "calc(0.5rem - 2px)",
-              sm: "calc(0.5rem - 4px)",
-            },
-          },
-        },
-      }
-    </script>
     <script>
       // Kiểm tra và áp dụng Dark Mode theo hệ điều hành
       if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -60,53 +18,28 @@
         }
       });
     </script>
-    <style>
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #f1f5f9; 
-      }
-      .dark ::-webkit-scrollbar-track {
-        background: #1e293b;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1; 
-        border-radius: 4px;
-      }
-      .dark ::-webkit-scrollbar-thumb {
-        background: #475569;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8; 
-      }
-      body {
-        font-family: system-ui, -apple-system, sans-serif;
-      }
-    </style>
   <script type="importmap">
 {
   "imports": {
-    "xlsx": "https://esm.sh/xlsx@^0.18.5",
-    "react/": "https://esm.sh/react@^19.2.1/",
-    "react": "https://esm.sh/react@^19.2.1",
-    "date-fns": "https://esm.sh/date-fns@^4.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.1/",
     "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.559.0",
+    "vite": "https://esm.sh/vite@^7.2.7",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
+    "react-dom": "https://esm.sh/react-dom@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "recharts": "https://esm.sh/recharts@^3.5.1",
-    "jspdf": "https://esm.sh/jspdf@^3.0.4",
-    "jspdf-autotable": "https://esm.sh/jspdf-autotable@^5.0.2",
-    "react-dom": "https://esm.sh/react-dom@^19.2.1",
-    "lunar-javascript": "https://esm.sh/lunar-javascript@1.6.13",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7"
+    "xlsx": "https://esm.sh/xlsx@^0.18.5",
+    "date-fns": "https://esm.sh/date-fns@^4.1.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.87.1",
+    "lunar-javascript": "https://esm.sh/lunar-javascript@^1.7.7"
   }
 }
 </script>
 </head>
   <body class="bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-gray-100 transition-colors duration-300">
     <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
