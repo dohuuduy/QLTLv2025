@@ -18,7 +18,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
       // Khắc phục lỗi width(-1) của Recharts
       const timer = setTimeout(() => {
         setIsMounted(true);
-      }, 200);
+      }, 300);
 
       const loadData = async () => {
           const docs = await fetchDocumentsFromDB();
@@ -135,7 +135,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           <div className="flex-1 w-full min-h-0 min-w-0 relative">
             <div className="absolute inset-0">
               {isMounted ? (
-                <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                   <PieChart>
                     <Pie
                       data={pieData}
@@ -186,7 +186,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           <div className="flex-1 w-full min-h-0 min-w-0 relative">
             <div className="absolute inset-0">
               {isMounted ? (
-                <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                   <BarChart 
                     data={barData} 
                     layout="vertical" 
@@ -244,7 +244,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           <div className="flex-1 w-full min-h-0 min-w-0 relative">
             <div className="absolute inset-0">
               {isMounted ? (
-                <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                   <BarChart 
                     data={topAuthors} 
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
