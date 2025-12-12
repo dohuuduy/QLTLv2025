@@ -6,7 +6,6 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { TaiLieuForm } from './TaiLieuForm';
-import { WorkflowStepper } from '../../components/WorkflowStepper';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
 import { AIChatBox } from '../../components/AIChatBox';
 import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File } from 'lucide-react';
@@ -291,12 +290,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                            <div className="flex items-center gap-2"><Clock size={16} /> Phiên bản: <span className="font-bold text-gray-900 dark:text-gray-200">{selectedDoc.phien_ban}</span></div>
                            <div className="flex items-center gap-2"><FileText size={16} /> Loại: <span className="font-bold text-gray-900 dark:text-gray-200">{selectedDoc.loai_tai_lieu}</span></div>
                            <div className="flex items-center gap-2"><Filter size={16} /> Bộ phận: <span className="font-bold text-gray-900 dark:text-gray-200">{selectedDoc.bo_phan_soan_thao}</span></div>
-                        </div>
-
-                        {/* Workflow Status (Only in Detail View) */}
-                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
-                           <h3 className="text-sm font-bold text-gray-500 uppercase mb-4">Tiến độ xử lý</h3>
-                           <WorkflowStepper document={selectedDoc} />
                         </div>
 
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
