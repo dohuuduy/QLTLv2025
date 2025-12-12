@@ -10,6 +10,12 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) => {
+  // Local state cho Dashboard để nó tự fetch nếu cần, hoặc nhận props (nhưng để đơn giản ta fetch lại hoặc dùng context sau)
+  // Ở đây để tối ưu ta dùng fetch trực tiếp nếu App.tsx chưa truyền xuống, nhưng App.tsx đã fetch.
+  // Tuy nhiên Dashboard component hiện tại không nhận props `documents`. 
+  // Để nhanh chóng, ta sẽ fetch lại từ biến local cache của service hoặc fetch mới.
+  // Tốt nhất là fetch mới để đảm bảo realtime khi dashboard mount.
+  
   const [data, setData] = useState<TaiLieu[]>([]);
 
   useEffect(() => {
@@ -123,8 +129,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <PieChartIcon size={20} className="text-purple-500"/> Trạng thái tài liệu
           </h3>
-          {/* QUAN TRỌNG: Cần có min-h để ResponsiveContainer hoạt động */}
-          <div className="flex-1 w-full min-h-[300px]">
+          <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -164,7 +169,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <BarChart3 size={20} className="text-blue-500"/> Tài liệu theo bộ phận
           </h3>
-          <div className="flex-1 w-full min-h-[300px]">
+          <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={barData} 
@@ -211,7 +216,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
              <TrendingUp size={20} className="text-green-500" /> Năng suất nhân sự (Top 5)
           </h3>
-          <div className="flex-1 w-full min-h-[300px]">
+          <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={topAuthors} 
