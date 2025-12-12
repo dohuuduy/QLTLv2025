@@ -8,7 +8,7 @@ const mapCategoryToItem = (record: any): DanhMucItem => ({
   id: record.id,
   ten: record.name,
   active: record.active,
-  thu_tu: record.order || 0, // Map column "order" from DB
+  thu_tu: record.order || 0, 
   ma_viet_tat: record.code_prefix,
   ...(record.settings || {})
 });
@@ -31,26 +31,18 @@ const mapProfileToUser = (record: any, depts: DanhMucItem[]): NhanSu => {
 export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> => {
   try {
     // 1. Tải Categories
-    // LƯU Ý: Không dùng .order('order') của SQL để tránh lỗi từ khóa reserved.
-    // Sẽ sort bằng JS bên dưới.
     const { data: categoriesData, error: catError } = await supabase
       .from('categories')
       .select('*');
 
-    if (catError) {
-        console.error("Supabase Categories Error:", JSON.stringify(catError, null, 2));
-        throw catError;
-    }
+    if (catError) throw catError;
 
     // 2. Tải Profiles
     const { data: profilesData, error: profError } = await supabase
       .from('profiles')
       .select('*');
 
-    if (profError) {
-        console.error("Supabase Profiles Error:", JSON.stringify(profError, null, 2));
-        throw profError;
-    }
+    if (profError) throw profError;
 
     const categories = categoriesData || [];
     const profiles = profilesData || [];
@@ -72,10 +64,9 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
     // 4. Map Profiles -> NhanSu
     const nhanSu = profiles.map((p: any) => mapProfileToUser(p, boPhan));
 
-    // Nếu DB chưa có dữ liệu quan trọng, trả về null để App dùng Mock Data
-    if (loaiTaiLieu.length === 0 && boPhan.length === 0 && nhanSu.length === 0) {
-        console.log("DB trống, sử dụng Mock Data.");
-        return null;
+    // Nếu DB trống hoặc load không ra gì
+    if (categories.length === 0 && profiles.length === 0) {
+        return null; 
     }
 
     return {
@@ -89,9 +80,14 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
       loaiDanhGia: loaiDanhGia.length ? loaiDanhGia : INITIAL_MASTER_DATA.loaiDanhGia,
     };
 
-  } catch (error) {
-    // Log lỗi chi tiết
-    console.error("Lỗi khi tải Master Data từ Supabase (Chi tiết):", error);
-    return null; // Fallback về Mock Data
+  } catch (error: any) {
+    // Chỉ log warning nếu lỗi là do Invalid Key (người dùng chưa cấu hình)
+    if (error?.message?.includes('Invalid API key') || error?.code === 'PGRST301') {
+        console.warn("⚠️ Đang sử dụng Mock Data (Chưa có API Key hoặc Key sai).");
+    } else {
+        // Log chi tiết các lỗi khác (SQL sai, Mạng...) để debug
+        console.error("Lỗi Supabase (Chi tiết):", JSON.stringify(error, null, 2));
+    }
+    return null; // Trả về null để App fallback về Mock Data
   }
 };
