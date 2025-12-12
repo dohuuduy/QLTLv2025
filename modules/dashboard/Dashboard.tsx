@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrangThaiTaiLieu, TaiLieu } from '../../types';
 import { ArrowRight, BarChart3, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
@@ -15,55 +15,51 @@ interface ChartContainerProps {
   className?: string;
 }
 
-// FIX: Chỉ render children khi parent div thực sự có kích thước > 0
+// FIX: ChartContainer theo dõi kích thước thật và chỉ render con khi có size > 0
 const ChartContainer = ({ children, height = 300, className = "" }: ChartContainerProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [isReady, setIsReady] = useState(false);
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
-    // Sử dụng useLayoutEffect để kiểm tra kích thước trước khi paint nếu có thể
-    useLayoutEffect(() => {
-        if (!containerRef.current) return;
+    useEffect(() => {
+        const element = containerRef.current;
+        if (!element) return;
 
-        // Hàm kiểm tra kích thước
-        const checkSize = () => {
-            if (containerRef.current) {
-                const { offsetWidth, offsetHeight } = containerRef.current;
-                // Chỉ set Ready khi kích thước > 0
-                if (offsetWidth > 0 && offsetHeight > 0) {
-                    setIsReady(true);
-                }
+        const observer = new ResizeObserver((entries) => {
+            if (!entries[0]) return;
+            const { width, height } = entries[0].contentRect;
+            // Chỉ update state nếu kích thước thay đổi đáng kể và hợp lệ
+            if (width > 0 && height > 0) {
+                 // Dùng requestAnimationFrame để tránh lỗi ResizeObserver loop limit exceeded
+                 window.requestAnimationFrame(() => {
+                     setDimensions({ width, height });
+                 });
             }
-        };
-
-        // Kiểm tra ngay lập tức
-        checkSize();
-
-        // Lắng nghe thay đổi kích thước
-        const observer = new ResizeObserver(() => {
-            // Dùng requestAnimationFrame để tránh lỗi "ResizeObserver loop limit exceeded"
-            window.requestAnimationFrame(() => {
-                checkSize();
-            });
         });
 
-        observer.observe(containerRef.current);
+        observer.observe(element);
 
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+        };
     }, []);
+
+    // Kiểm tra style height nếu là string (ví dụ "100%") hoặc number
+    const styleHeight = typeof height === 'number' ? `${height}px` : height;
 
     return (
         <div 
             ref={containerRef} 
-            style={{ width: '100%', height: height }} 
-            className={`relative min-w-0 min-h-0 ${className}`} // min-w-0 quan trọng cho Flexbox/Grid
+            className={`w-full relative min-w-0 min-h-0 overflow-hidden ${className}`}
+            style={{ height: styleHeight }}
         >
-            {isReady ? (
+            {/* Chỉ render Children (Chart) khi đã có kích thước thực tế */}
+            {dimensions.width > 0 && dimensions.height > 0 ? (
                 children
             ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-slate-800/50 rounded text-gray-400 text-xs">
                     <div className="flex flex-col items-center gap-2">
                         <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span>Đang tải biểu đồ...</span>
+                        <span>Đang khởi tạo biểu đồ...</span>
                     </div>
                 </div>
             )}
@@ -187,7 +183,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           </h3>
           <div className="flex-1 w-full min-h-0 min-w-0">
              <ChartContainer height="100%">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <PieChart>
                     <Pie
                       data={pieData}
@@ -228,7 +224,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           </h3>
           <div className="flex-1 w-full min-h-0 min-w-0">
             <ChartContainer height="100%">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <BarChart 
                     data={barData} 
                     layout="vertical" 
@@ -275,7 +271,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           </h3>
           <div className="flex-1 w-full min-h-0 min-w-0">
              <ChartContainer height="100%">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <BarChart 
                     data={topAuthors} 
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
