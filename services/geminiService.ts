@@ -1,35 +1,37 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Hàm lấy API Key an toàn cho cả môi trường Vite (import.meta.env) và Node (process.env)
-// Điều này ngăn chặn lỗi "process is not defined" gây màn hình trắng
+// Helper lấy API Key từ biến môi trường
 const getApiKey = () => {
   try {
-    // Ưu tiên check Vite env trước
+    // 1. Vite (Vercel)
     // @ts-ignore
-    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
       // @ts-ignore
-      return import.meta.env.VITE_API_KEY;
+      const key = import.meta.env.VITE_API_KEY || import.meta.env.API_KEY;
+      if (key) return key;
     }
-    // Fallback sang process.env (nếu có polyfill)
+    // 2. Process (Node)
     // @ts-ignore
     if (typeof process !== 'undefined' && process.env) {
       // @ts-ignore
-      return process.env.API_KEY || process.env.REACT_APP_API_KEY;
+      return process.env.API_KEY || process.env.REACT_APP_API_KEY || process.env.VITE_API_KEY;
     }
-  } catch (e) {
-    console.warn("Không thể đọc biến môi trường, sử dụng key rỗng.");
-  }
+  } catch (e) {}
   return '';
 };
 
 const apiKey = getApiKey();
 let ai: GoogleGenAI | null = null;
 
-if (apiKey) {
-  ai = new GoogleGenAI({ apiKey: apiKey });
+if (apiKey && apiKey !== 'placeholder-key') {
+  try {
+    ai = new GoogleGenAI({ apiKey: apiKey });
+  } catch (e) {
+    console.error("Lỗi khởi tạo Gemini AI:", e);
+  }
 } else {
-  console.warn("⚠️ Chưa cấu hình API Key Gemini. Các tính năng AI sẽ không hoạt động.");
+  console.warn("⚠️ Chưa cấu hình VITE_API_KEY. Các tính năng AI sẽ không hoạt động.");
 }
 
 export const analyzeDocumentTitle = async (title: string): Promise<string> => {
@@ -48,10 +50,9 @@ export const analyzeDocumentTitle = async (title: string): Promise<string> => {
 };
 
 export const chatWithDocument = async (docContext: string, userQuestion: string): Promise<string> => {
-  if (!ai) return "Chưa cấu hình API Key Gemini.";
+  if (!ai) return "Chưa cấu hình API Key Gemini (VITE_API_KEY).";
 
   try {
-    // Xây dựng prompt kèm ngữ cảnh tài liệu
     const prompt = `
       Bạn là trợ lý quản lý tài liệu ISO cá nhân thông minh.
       Dưới đây là thông tin về tài liệu đang được xem xét:
@@ -61,7 +62,7 @@ export const chatWithDocument = async (docContext: string, userQuestion: string)
       
       Người dùng hỏi: "${userQuestion}"
       
-      Hãy trả lời ngắn gọn, súc tích, đi thẳng vào vấn đề dựa trên ngữ cảnh trên. Nếu thông tin không có trong ngữ cảnh, hãy trả lời dựa trên kiến thức chung về ISO hoặc gợi ý hợp lý.
+      Hãy trả lời ngắn gọn, súc tích, đi thẳng vào vấn đề dựa trên ngữ cảnh trên.
     `;
 
     const response = await ai.models.generateContent({
@@ -72,6 +73,6 @@ export const chatWithDocument = async (docContext: string, userQuestion: string)
     return response.text || "Xin lỗi, tôi không thể trả lời câu hỏi này.";
   } catch (error) {
     console.error("Gemini Chat Error:", error);
-    return "Đã xảy ra lỗi kết nối với AI.";
+    return "Đã xảy ra lỗi kết nối với AI. Vui lòng kiểm tra API Key.";
   }
 };

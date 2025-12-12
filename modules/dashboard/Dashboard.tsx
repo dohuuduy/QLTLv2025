@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrangThaiTaiLieu, TaiLieu } from '../../types';
 import { ArrowRight, BarChart3, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
@@ -9,24 +8,73 @@ interface DashboardProps {
   onNavigateToDocuments: (filters: { trang_thai?: string; bo_phan?: string }) => void;
 }
 
+// Define props interface with optional children to avoid TS errors in some environments
+interface ChartContainerProps {
+  children?: React.ReactNode;
+  height?: number | string;
+}
+
+// Component Wrapper để đảm bảo chỉ render Chart khi container có kích thước
+const ChartContainer = ({ children, height = 300 }: ChartContainerProps) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [shouldRender, setShouldRender] = useState(false);
+
+    useEffect(() => {
+        // Kiểm tra kích thước ngay lập tức
+        if (containerRef.current) {
+            const { offsetWidth, offsetHeight } = containerRef.current;
+            if (offsetWidth > 0 && offsetHeight > 0) {
+                setShouldRender(true);
+                return;
+            }
+        }
+        
+        // Fallback: Sử dụng ResizeObserver để lắng nghe thay đổi kích thước
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+                    setShouldRender(true);
+                    observer.disconnect(); // Chỉ cần biết khi nào nó hiện lên là đủ
+                }
+            }
+        });
+
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+
+        // Fallback cuối cùng: Timer an toàn
+        const timer = setTimeout(() => setShouldRender(true), 500);
+
+        return () => {
+            observer.disconnect();
+            clearTimeout(timer);
+        };
+    }, []);
+
+    return (
+        <div ref={containerRef} style={{ width: '100%', height: height }} className="relative">
+            {shouldRender ? children : (
+                <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span>Đang tải biểu đồ...</span>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) => {
   const [data, setData] = useState<TaiLieu[]>([]);
-  const [isMounted, setIsMounted] = useState(false); // State để kiểm soát việc render biểu đồ
 
   useEffect(() => {
-      // Delay render biểu đồ để DOM tính toán xong kích thước container
-      // Khắc phục lỗi width(-1) của Recharts
-      const timer = setTimeout(() => {
-        setIsMounted(true);
-      }, 300);
-
       const loadData = async () => {
           const docs = await fetchDocumentsFromDB();
           if (docs) setData(docs);
       };
       loadData();
-
-      return () => clearTimeout(timer);
   }, []);
 
   // 1. Dữ liệu Trạng thái (Status Pie)
@@ -87,7 +135,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
-      {/* 4 Cards Thống Kê Nhanh (Clickable) */}
+      {/* 4 Cards Thống Kê Nhanh */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className={cardClass} onClick={() => onNavigateToDocuments({})}>
           <h3 className={titleClass}>Tổng tài liệu</h3>
@@ -128,22 +176,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Pie Chart Card */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow border border-gray-100 dark:border-slate-800 flex flex-col h-[400px] lg:h-[450px]">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow border border-gray-100 dark:border-slate-800 flex flex-col h-[400px]">
           <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <PieChartIcon size={20} className="text-purple-500"/> Trạng thái tài liệu
           </h3>
-          <div className="flex-1 w-full min-h-0 min-w-0 relative">
-            <div className="absolute inset-0">
-              {isMounted ? (
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+          <div className="flex-1 w-full min-h-0 min-w-0">
+             <ChartContainer height="100%">
+                <ResponsiveContainer width="99%" height="100%">
                   <PieChart>
                     <Pie
                       data={pieData}
                       cx="50%"
                       cy="50%"
-                      labelLine={true}
-                      label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
-                      outerRadius="75%"
+                      labelLine={false}
+                      label={({ percent }) => percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''}
+                      outerRadius="80%"
                       dataKey="value"
                       onClick={(entry) => onNavigateToDocuments({ trang_thai: entry.name })}
                       className="cursor-pointer outline-none focus:outline-none"
@@ -162,31 +209,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
                       verticalAlign="bottom" 
                       align="center"
                       formatter={(value, entry: any) => <span className="text-gray-600 dark:text-gray-400 ml-1">{entry.payload.displayName}</span>}
-                      wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Đang tải biểu đồ...</span>
-                  </div>
-                </div>
-              )}
-            </div>
+             </ChartContainer>
           </div>
         </div>
 
         {/* Bar Chart Card */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow border border-gray-100 dark:border-slate-800 flex flex-col h-[400px] lg:h-[450px]">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow border border-gray-100 dark:border-slate-800 flex flex-col h-[400px]">
           <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <BarChart3 size={20} className="text-blue-500"/> Tài liệu theo bộ phận
           </h3>
-          <div className="flex-1 w-full min-h-0 min-w-0 relative">
-            <div className="absolute inset-0">
-              {isMounted ? (
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+          <div className="flex-1 w-full min-h-0 min-w-0">
+            <ChartContainer height="100%">
+                <ResponsiveContainer width="99%" height="100%">
                   <BarChart 
                     data={barData} 
                     layout="vertical" 
@@ -204,47 +241,36 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
                     <YAxis 
                       dataKey="name" 
                       type="category" 
-                      width={110} 
+                      width={100} 
                       tick={{fontSize: 11, fill: '#94a3b8'}} 
                       stroke="#94a3b8" 
-                      interval={0}
                     />
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
                       cursor={{fill: 'rgba(59, 130, 246, 0.1)'}}
                     />
-                    <Legend wrapperStyle={{ fontSize: '12px' }}/>
                     <Bar 
                         dataKey="documents" 
                         name="Số lượng" 
                         fill="#3b82f6" 
                         radius={[0, 4, 4, 0]} 
-                        barSize={20} 
+                        barSize={24} 
                         className="hover:fill-blue-400 transition-colors"
                     />
                   </BarChart>
                 </ResponsiveContainer>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Đang tải biểu đồ...</span>
-                  </div>
-                </div>
-              )}
-            </div>
+            </ChartContainer>
           </div>
         </div>
 
         {/* Top Authors */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow border border-gray-100 dark:border-slate-800 flex flex-col h-[400px] lg:h-[450px] lg:col-span-2">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow border border-gray-100 dark:border-slate-800 flex flex-col h-[400px] lg:col-span-2">
           <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
              <TrendingUp size={20} className="text-green-500" /> Năng suất nhân sự (Top 5)
           </h3>
-          <div className="flex-1 w-full min-h-0 min-w-0 relative">
-            <div className="absolute inset-0">
-              {isMounted ? (
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+          <div className="flex-1 w-full min-h-0 min-w-0">
+             <ChartContainer height="100%">
+                <ResponsiveContainer width="99%" height="100%">
                   <BarChart 
                     data={topAuthors} 
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -266,15 +292,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
                      />
                   </BarChart>
                 </ResponsiveContainer>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Đang tải biểu đồ...</span>
-                  </div>
-                </div>
-              )}
-            </div>
+             </ChartContainer>
           </div>
         </div>
 

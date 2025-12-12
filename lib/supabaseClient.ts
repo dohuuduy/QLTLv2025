@@ -1,11 +1,11 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Hàm lấy biến môi trường thông minh (Hỗ trợ Vercel/Vite/CRA)
-const getEnv = (key: string) => {
-  let val = undefined;
+// Helper: Lấy biến môi trường an toàn (Hỗ trợ cả Vite và Node/Process)
+const getEnvVar = (key: string): string => {
+  let val = '';
 
-  // 1. Thử import.meta.env (Vite standard) - Ưu tiên trên Vercel
+  // 1. Ưu tiên: import.meta.env (Vite - Chuẩn cho Vercel deployments dùng Vite)
   try {
     // @ts-ignore
     if (typeof import.meta !== 'undefined' && import.meta.env) {
@@ -14,7 +14,7 @@ const getEnv = (key: string) => {
     }
   } catch (e) {}
 
-  // 2. Thử process.env (Node/CRA fallback)
+  // 2. Fallback: process.env (Node.js/CRA)
   if (!val) {
     try {
         // @ts-ignore
@@ -28,37 +28,33 @@ const getEnv = (key: string) => {
   return val || '';
 };
 
-// Lấy credentials từ biến môi trường
-const SUPABASE_URL = getEnv('SUPABASE_URL');
-const SUPABASE_ANON_KEY = getEnv('SUPABASE_ANON_KEY');
+const SUPABASE_URL = getEnvVar('SUPABASE_URL');
+const SUPABASE_ANON_KEY = getEnvVar('SUPABASE_ANON_KEY');
 
-// Kiểm tra và cảnh báo nếu thiếu
+// Log cảnh báo nếu thiếu key (chỉ log ở dev hoặc console người dùng)
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.warn('⚠️ [Supabase] Thiếu biến môi trường. Vui lòng cấu hình VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY trên Vercel.');
+  console.warn('⚠️ [Supabase] Thiếu biến môi trường! Vui lòng cấu hình VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY trong Settings > Environment Variables trên Vercel.');
 }
 
-// Khởi tạo client. 
-// Nếu thiếu key, dùng placeholder để tránh crash app ngay lập tức (dù request sẽ lỗi).
-// Điều này giúp App vẫn render được UI và chạy ở chế độ Mock Data thay vì màn hình trắng.
+// Khởi tạo client
+// Sử dụng fallback giá trị rỗng để tránh crash app ngay lập tức, nhưng các request mạng sẽ thất bại nếu không có key đúng.
 export const supabase = createClient(
   SUPABASE_URL || 'https://placeholder.supabase.co', 
   SUPABASE_ANON_KEY || 'placeholder-key'
 );
 
-// Hàm tiện ích để kiểm tra kết nối
 export const checkConnection = async () => {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       console.warn('ℹ️ Chưa cấu hình Supabase ENV. Hệ thống sẽ sử dụng Mock Data.');
       return false;
   }
-
   try {
     const { count, error } = await supabase.from('danh_muc').select('*', { count: 'exact', head: true });
     if (error) throw error;
-    console.log(`✅ Kết nối Supabase thành công! Số lượng danh mục: ${count}`);
+    console.log(`✅ Kết nối Supabase thành công!`);
     return true;
   } catch (err: any) {
-    console.warn('ℹ️ Không thể kết nối DB (Sẽ dùng Mock Data):', err.message);
+    console.warn('ℹ️ Lỗi kết nối Supabase (Sẽ dùng Mock Data):', err.message);
     return false;
   }
 };
