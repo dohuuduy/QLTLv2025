@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { X, Save, Info, Calendar, UserCheck, FileType, Check, Paperclip, Trash2, Plus, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, GitBranch, Clock, AlertCircle, Lock, Unlock, Hash } from 'lucide-react';
+import { X, Save, Info, Calendar, UserCheck, FileType, Check, Paperclip, Trash2, Plus, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, GitBranch, Clock, AlertCircle, Lock, Unlock, Hash, ExternalLink } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { MOCK_TAI_LIEU } from '../../constants'; 
 
@@ -191,13 +191,18 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     onSave(formData);
   };
 
-  const renderFileIcon = (type: string) => {
+  const getFileTypeConfig = (type: string) => {
     switch(type) {
-      case 'pdf': return <FileType className="text-red-500" size={24} />;
-      case 'doc': return <FileText className="text-blue-500" size={24} />;
-      case 'excel': return <FileSpreadsheet className="text-green-500" size={24} />;
-      case 'link': return <LinkIcon className="text-gray-500" size={24} />;
-      default: return <File className="text-gray-500" size={24} />;
+      case 'pdf': 
+        return { icon: <FileType size={20} />, color: 'text-red-600', bg: 'bg-red-100 dark:bg-red-900/20' };
+      case 'doc': 
+        return { icon: <FileText size={20} />, color: 'text-blue-600', bg: 'bg-blue-100 dark:bg-blue-900/20' };
+      case 'excel': 
+        return { icon: <FileSpreadsheet size={20} />, color: 'text-green-600', bg: 'bg-green-100 dark:bg-green-900/20' };
+      case 'link': 
+        return { icon: <LinkIcon size={20} />, color: 'text-gray-600', bg: 'bg-gray-100 dark:bg-slate-800' };
+      default: 
+        return { icon: <File size={20} />, color: 'text-gray-600', bg: 'bg-gray-100 dark:bg-slate-800' };
     }
   };
 
@@ -583,27 +588,54 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                </div>
              </div>
 
-             {/* Danh sách file đã thêm */}
+             {/* Danh sách file đã thêm (Updated Style) */}
              {formData.dinh_kem && formData.dinh_kem.length > 0 && (
-               <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                 {formData.dinh_kem.map(file => (
-                   <div key={file.id} className="flex items-center gap-3 p-3 bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 hover:shadow-sm transition-shadow">
-                      <div className="p-2 bg-gray-100 dark:bg-slate-800 rounded-lg shrink-0">
-                        {renderFileIcon(file.loai)}
-                      </div>
-                      <div className="flex-1 overflow-hidden">
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate" title={file.ten_file}>
-                          {file.ten_file}
-                        </p>
-                        <a href={file.url} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline truncate block">
-                          {file.url}
-                        </a>
-                      </div>
-                      <button type="button" onClick={() => removeFile(file.id)} className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                        <Trash2 size={16} />
-                      </button>
-                   </div>
-                 ))}
+               <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700 grid grid-cols-1 gap-3">
+                 {formData.dinh_kem.map(file => {
+                   const config = getFileTypeConfig(file.loai);
+                   return (
+                     <div key={file.id} className="group relative flex items-center gap-3 p-3 bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200">
+                        {/* Icon Box */}
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${config.bg} ${config.color}`}>
+                          {config.icon}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                             <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate" title={file.ten_file}>
+                               {file.ten_file}
+                             </p>
+                             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-500 uppercase">{file.loai}</span>
+                          </div>
+                          <a href={file.url} target="_blank" rel="noreferrer" className="text-xs text-gray-400 hover:text-blue-500 truncate block mt-0.5 flex items-center gap-1">
+                            <LinkIcon size={10} /> {file.url}
+                          </a>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                           <a 
+                             href={file.url} 
+                             target="_blank" 
+                             rel="noreferrer"
+                             className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                             title="Mở liên kết"
+                           >
+                             <ExternalLink size={18} />
+                           </a>
+                           <button 
+                             type="button" 
+                             onClick={() => removeFile(file.id)} 
+                             className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                             title="Xóa file"
+                           >
+                             <Trash2 size={18} />
+                           </button>
+                        </div>
+                     </div>
+                   );
+                 })}
                </div>
              )}
           </div>
