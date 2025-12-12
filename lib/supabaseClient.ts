@@ -25,22 +25,33 @@ const getEnv = (key: string) => {
     } catch(e) {}
   }
 
-  return val;
+  return val || '';
 };
 
-// 1. URL Project
-const FALLBACK_URL = 'https://vbqdrvezzualrabydvif.supabase.co';
+// Lấy credentials từ biến môi trường
+const SUPABASE_URL = getEnv('SUPABASE_URL');
+const SUPABASE_ANON_KEY = getEnv('SUPABASE_ANON_KEY');
 
-// 2. ANON KEY
-const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZicWRydmV6enVhbHJhYnlkdmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1Mjk2OTcsImV4cCI6MjA4MTEwNTY5N30.HHSA1zmEgFUIBf6xL7VFLyx9IBL11AcCHGX6W_FgYl4'; 
+// Kiểm tra và cảnh báo nếu thiếu
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.warn('⚠️ [Supabase] Thiếu biến môi trường. Vui lòng cấu hình VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY trên Vercel.');
+}
 
-const SUPABASE_URL = getEnv('SUPABASE_URL') || FALLBACK_URL;
-const SUPABASE_ANON_KEY = getEnv('SUPABASE_ANON_KEY') || FALLBACK_KEY;
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Khởi tạo client. 
+// Nếu thiếu key, dùng placeholder để tránh crash app ngay lập tức (dù request sẽ lỗi).
+// Điều này giúp App vẫn render được UI và chạy ở chế độ Mock Data thay vì màn hình trắng.
+export const supabase = createClient(
+  SUPABASE_URL || 'https://placeholder.supabase.co', 
+  SUPABASE_ANON_KEY || 'placeholder-key'
+);
 
 // Hàm tiện ích để kiểm tra kết nối
 export const checkConnection = async () => {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      console.warn('ℹ️ Chưa cấu hình Supabase ENV. Hệ thống sẽ sử dụng Mock Data.');
+      return false;
+  }
+
   try {
     const { count, error } = await supabase.from('danh_muc').select('*', { count: 'exact', head: true });
     if (error) throw error;
