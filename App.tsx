@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { MENU_ITEMS, APP_NAME, INITIAL_MASTER_DATA, MOCK_NOTIFICATIONS, MOCK_TAI_LIEU, MOCK_HO_SO, MOCK_KE_HOACH_AUDIT } from './constants';
+import { MENU_ITEMS, APP_NAME, INITIAL_MASTER_DATA, MOCK_NOTIFICATIONS } from './constants';
 import { Menu, Bell, Search, LogOut, X, ChevronRight, User, Check, Info, AlertTriangle, CheckCircle, Database } from 'lucide-react';
 import { Dashboard } from './modules/dashboard/Dashboard';
 import { TaiLieuList } from './modules/tai_lieu/TaiLieuList';
@@ -22,14 +22,19 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Centralized Data State
-  const [masterData, setMasterData] = useState<MasterDataState>(INITIAL_MASTER_DATA);
-  const [documents, setDocuments] = useState<TaiLieu[]>(MOCK_TAI_LIEU); 
-  const [records, setRecords] = useState<HoSo[]>(MOCK_HO_SO);         
-  const [auditPlans, setAuditPlans] = useState<KeHoachDanhGia[]>(MOCK_KE_HOACH_AUDIT); 
+  // Centralized Data State - INIT WITH EMPTY ARRAYS TO FORCE DB FETCH
+  const [masterData, setMasterData] = useState<MasterDataState>({
+      ...INITIAL_MASTER_DATA,
+      loaiTaiLieu: [], boPhan: [], linhVuc: [], tieuChuan: [], nhanSu: [], toChucDanhGia: [], auditors: [], loaiDanhGia: []
+  });
+  const [documents, setDocuments] = useState<TaiLieu[]>([]); 
+  const [records, setRecords] = useState<HoSo[]>([]);         
+  const [auditPlans, setAuditPlans] = useState<KeHoachDanhGia[]>([]); 
 
-  // SIMULATE LOGGED IN USER
-  const [currentUser, setCurrentUser] = useState<NhanSu>(INITIAL_MASTER_DATA.nhanSu[1]);
+  // Init user tạm thời để không crash, sau đó sẽ update khi load xong DB
+  const [currentUser, setCurrentUser] = useState<NhanSu>({
+      id: 'guest', ho_ten: 'Khách', email: '', chuc_vu: '', phong_ban: '', roles: []
+  });
 
   // Dashboard Navigation State
   const [dashboardFilters, setDashboardFilters] = useState<{ trang_thai?: string; bo_phan?: string }>({});
@@ -44,37 +49,28 @@ const App: React.FC = () => {
         setMasterData(dbMasterData);
         setIsConnected(true);
         
-        // Setup User mặc định từ DB
+        // Setup User mặc định từ DB (Ưu tiên Admin)
         if (dbMasterData.nhanSu.length > 0) {
            const admin = dbMasterData.nhanSu.find(u => u.roles.includes('QUAN_TRI'));
            setCurrentUser(admin || dbMasterData.nhanSu[0]);
         }
       } else {
-        console.log("ℹ️ [Local] Dùng Master Data mẫu.");
+        console.log("ℹ️ [Warning] Không tải được Master Data. Kiểm tra kết nối Supabase.");
+        // Fallback nhẹ nếu DB chưa có gì để App không trắng trơn
+        setMasterData(INITIAL_MASTER_DATA);
+        if(INITIAL_MASTER_DATA.nhanSu.length > 0) setCurrentUser(INITIAL_MASTER_DATA.nhanSu[0]);
       }
 
-      // 2. Tải Dữ liệu nghiệp vụ (Nếu kết nối thành công)
-      // Lưu ý: Nếu bảng chưa có, hàm sẽ trả về null và App giữ nguyên Mock Data
+      // 2. Tải Dữ liệu nghiệp vụ
       const [dbDocs, dbRecords, dbPlans] = await Promise.all([
          fetchDocumentsFromDB(),
          fetchRecordsFromDB(),
          fetchAuditPlansFromDB()
       ]);
 
-      if (dbDocs && dbDocs.length > 0) {
-         console.log(`✅ [Supabase] Tải ${dbDocs.length} tài liệu.`);
-         setDocuments(dbDocs);
-      }
-      
-      if (dbRecords && dbRecords.length > 0) {
-         console.log(`✅ [Supabase] Tải ${dbRecords.length} hồ sơ.`);
-         setRecords(dbRecords);
-      }
-
-      if (dbPlans && dbPlans.length > 0) {
-         console.log(`✅ [Supabase] Tải ${dbPlans.length} kế hoạch audit.`);
-         setAuditPlans(dbPlans);
-      }
+      if (dbDocs) setDocuments(dbDocs);
+      if (dbRecords) setRecords(dbRecords);
+      if (dbPlans) setAuditPlans(dbPlans);
     };
 
     initData();
@@ -243,12 +239,12 @@ const App: React.FC = () => {
         <div className="p-4 border-t border-slate-800">
           <div className="flex items-center gap-3">
              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center font-bold text-white text-xs">
-                {currentUser.ho_ten.charAt(0)}
+                {currentUser.ho_ten ? currentUser.ho_ten.charAt(0) : '?'}
              </div>
              {isSidebarOpen && (
                <div className="overflow-hidden">
-                 <p className="text-sm font-medium truncate">{currentUser.ho_ten}</p>
-                 <p className="text-xs text-slate-400 truncate">{currentUser.chuc_vu}</p>
+                 <p className="text-sm font-medium truncate">{currentUser.ho_ten || 'Đang tải...'}</p>
+                 <p className="text-xs text-slate-400 truncate">{currentUser.chuc_vu || '...'}</p>
                </div>
              )}
           </div>
@@ -257,12 +253,12 @@ const App: React.FC = () => {
           {isSidebarOpen && (
              <div className="mt-3 flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500">
                 <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-                {isConnected ? 'Supabase Connected' : 'Local Mode'}
+                {isConnected ? 'Supabase Connected' : 'Connecting...'}
              </div>
           )}
 
-          {/* USER SWITCHER FOR DEMO */}
-          {isSidebarOpen && (
+          {/* USER SWITCHER FOR DEMO (Only show if users loaded) */}
+          {isSidebarOpen && masterData.nhanSu.length > 0 && (
             <div className="mt-2 pt-2 border-t border-slate-700/50">
               <select 
                 className="w-full bg-slate-800 text-xs text-slate-300 rounded p-1 border border-slate-700"
