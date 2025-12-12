@@ -1,36 +1,61 @@
 
 import React, { useState, useEffect } from 'react';
 import { MENU_ITEMS, APP_NAME, INITIAL_MASTER_DATA, MOCK_NOTIFICATIONS, MOCK_TAI_LIEU, MOCK_HO_SO, MOCK_KE_HOACH_AUDIT } from './constants';
-import { Menu, Bell, Search, LogOut, X, ChevronRight, User, Check, Info, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Menu, Bell, Search, LogOut, X, ChevronRight, User, Check, Info, AlertTriangle, CheckCircle, Database } from 'lucide-react';
 import { Dashboard } from './modules/dashboard/Dashboard';
 import { TaiLieuList } from './modules/tai_lieu/TaiLieuList';
 import { MasterDataLayout } from './modules/master_data/MasterDataLayout';
 import { ApprovalsPage } from './modules/approvals/ApprovalsPage';
 import { HoSoList } from './modules/ho_so/HoSoList';
 import { AuditSchedulePage } from './modules/audit/AuditSchedulePage'; 
-import { SettingsPage } from './modules/settings/SettingsPage'; // NEW IMPORT
+import { SettingsPage } from './modules/settings/SettingsPage'; 
 import { MasterDataState, NhanSu, AppNotification, TaiLieu, HoSo, KeHoachDanhGia, BackupData } from './types';
+import { fetchMasterDataFromDB } from './services/supabaseService'; // NEW IMPORT
 
 const App: React.FC = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isConnected, setIsConnected] = useState(false); // Trạng thái kết nối DB
   
   // Notification State
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Centralized Data State (Lifting State Up)
+  // Centralized Data State
   const [masterData, setMasterData] = useState<MasterDataState>(INITIAL_MASTER_DATA);
-  const [documents, setDocuments] = useState<TaiLieu[]>(MOCK_TAI_LIEU); // Shared Documents
-  const [records, setRecords] = useState<HoSo[]>(MOCK_HO_SO);         // Shared Records
-  const [auditPlans, setAuditPlans] = useState<KeHoachDanhGia[]>(MOCK_KE_HOACH_AUDIT); // Shared Audit Plans
+  const [documents, setDocuments] = useState<TaiLieu[]>(MOCK_TAI_LIEU); 
+  const [records, setRecords] = useState<HoSo[]>(MOCK_HO_SO);         
+  const [auditPlans, setAuditPlans] = useState<KeHoachDanhGia[]>(MOCK_KE_HOACH_AUDIT); 
 
-  // SIMULATE LOGGED IN USER (Default to Admin: NS002)
+  // SIMULATE LOGGED IN USER
   const [currentUser, setCurrentUser] = useState<NhanSu>(INITIAL_MASTER_DATA.nhanSu[1]);
 
   // Dashboard Navigation State
   const [dashboardFilters, setDashboardFilters] = useState<{ trang_thai?: string; bo_phan?: string }>({});
+
+  // --- INIT DATA FROM SUPABASE ---
+  useEffect(() => {
+    const initData = async () => {
+      // Thử tải Master Data từ DB
+      const dbMasterData = await fetchMasterDataFromDB();
+      if (dbMasterData) {
+        console.log("Đã tải dữ liệu từ Supabase thành công!");
+        setMasterData(dbMasterData);
+        setIsConnected(true);
+        
+        // Nếu có user trong DB, set user đầu tiên làm current
+        if (dbMasterData.nhanSu.length > 0) {
+           // Tìm admin nếu có
+           const admin = dbMasterData.nhanSu.find(u => u.roles.includes('QUAN_TRI'));
+           setCurrentUser(admin || dbMasterData.nhanSu[0]);
+        }
+      } else {
+        console.log("Dùng dữ liệu mẫu (Mock Data).");
+      }
+    };
+    initData();
+  }, []);
 
   // Handle click outside notification dropdown
   useEffect(() => {
@@ -54,13 +79,11 @@ const App: React.FC = () => {
     setShowNotifications(false);
   };
 
-  // Handler for Interactive Dashboard
   const handleDashboardFilter = (filters: { trang_thai?: string; bo_phan?: string }) => {
     setDashboardFilters(filters);
     setActiveTab('documents');
   };
 
-  // Handler for Restore Data
   const handleRestoreSystem = (data: BackupData) => {
      if (data.masterData) setMasterData(data.masterData);
      if (data.documents) setDocuments(data.documents);
@@ -131,7 +154,7 @@ const App: React.FC = () => {
         );
       case 'master-data':
         return <MasterDataLayout data={masterData} onUpdate={setMasterData} />;
-      case 'settings': // NEW CASE
+      case 'settings':
         return (
           <SettingsPage 
             masterData={masterData}
@@ -150,7 +173,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Helper for notification icon
   const getNotiIcon = (type: string) => {
     switch(type) {
       case 'success': return <CheckCircle size={16} className="text-green-500" />;
@@ -163,7 +185,7 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-slate-950 text-foreground overflow-hidden transition-colors duration-300">
       
-      {/* Sidebar Desktop - UPDATED Z-INDEX TO 50 */}
+      {/* Sidebar Desktop */}
       <aside 
         className={`${isSidebarOpen ? 'w-64' : 'w-20'} hidden md:flex flex-col bg-slate-900 dark:bg-slate-900 text-slate-100 transition-all duration-300 shadow-xl z-50 border-r border-slate-800`}
       >
@@ -207,10 +229,18 @@ const App: React.FC = () => {
                </div>
              )}
           </div>
+          
+          {/* Connection Status Indicator */}
+          {isSidebarOpen && (
+             <div className="mt-3 flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                {isConnected ? 'Supabase Connected' : 'Local Mode'}
+             </div>
+          )}
+
           {/* USER SWITCHER FOR DEMO */}
           {isSidebarOpen && (
-            <div className="mt-3 pt-3 border-t border-slate-700/50">
-              <label className="text-[10px] text-slate-500 uppercase block mb-1">Chuyển đổi người dùng (Demo)</label>
+            <div className="mt-2 pt-2 border-t border-slate-700/50">
               <select 
                 className="w-full bg-slate-800 text-xs text-slate-300 rounded p-1 border border-slate-700"
                 value={currentUser.id}
@@ -231,7 +261,7 @@ const App: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         
-        {/* Header - UPDATED Z-INDEX TO 40 (Higher than DataTable's 30) */}
+        {/* Header */}
         <header className="h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-4 md:px-6 shadow-sm z-40 transition-colors relative">
           <div className="flex items-center gap-4 flex-1">
              <button 
@@ -265,7 +295,7 @@ const App: React.FC = () => {
              </div>
 
              <div className="flex items-center gap-2">
-                {/* Notification Bell with Dropdown */}
+                {/* Notification Bell */}
                 <div id="notification-container" className="relative">
                   <button 
                     onClick={() => setShowNotifications(!showNotifications)}
@@ -328,7 +358,7 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        {/* Mobile Sidebar (Overlay) */}
+        {/* Mobile Sidebar */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-[60] md:hidden">
              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
@@ -360,7 +390,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Main Content Scrollable */}
+        {/* Main Content */}
         <main className="flex-1 overflow-auto p-4 md:p-6 relative text-gray-800 dark:text-gray-100">
            {renderContent()}
         </main>

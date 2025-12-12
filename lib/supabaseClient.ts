@@ -1,22 +1,44 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// ĐẠI CA DUY THAY URL VÀ KEY VÀO ĐÂY NHÉ
-// Nếu có biến môi trường (process.env) thì dùng, không thì dùng string rỗng để tránh lỗi build
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://xyzcompany.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'public-anon-key';
+// Hàm lấy biến môi trường an toàn (tránh lỗi process is not defined trên browser)
+const getEnv = (key: string) => {
+  try {
+    // @ts-ignore
+    if (typeof process !== 'undefined' && process.env) return process.env[key];
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env) return import.meta.env[key];
+  } catch (e) {
+    return undefined;
+  }
+  return undefined;
+};
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// URL từ Connection String đại ca cung cấp: vbqdrvezzualrabydvif
+const FALLBACK_URL = 'https://vbqdrvezzualrabydvif.supabase.co';
+const FALLBACK_KEY = ''; // Để trống để bắt buộc user phải nhập nếu không có env
+
+const SUPABASE_URL = getEnv('SUPABASE_URL') || FALLBACK_URL;
+const SUPABASE_ANON_KEY = getEnv('SUPABASE_ANON_KEY') || FALLBACK_KEY;
+
+if (!SUPABASE_ANON_KEY) {
+  console.warn('⚠️ Cảnh báo: Chưa có SUPABASE_ANON_KEY. Vui lòng thêm vào file .env hoặc nhập trực tiếp.');
+}
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY || 'missing-key');
 
 // Hàm tiện ích để kiểm tra kết nối
 export const checkConnection = async () => {
   try {
-    const { data, error } = await supabase.from('documents').select('count', { count: 'exact', head: true });
-    if (error) throw error;
-    console.log('Supabase Connected! Document count:', data);
+    const { data, error } = await supabase.from('categories').select('count', { count: 'exact', head: true });
+    if (error) {
+        console.error('Supabase Error Detail:', JSON.stringify(error, null, 2));
+        throw error;
+    }
+    console.log('✅ Kết nối Supabase thành công!');
     return true;
   } catch (err) {
-    console.error('Supabase Connection Failed:', err);
+    console.error('❌ Kết nối Supabase thất bại:', err);
     return false;
   }
 };
