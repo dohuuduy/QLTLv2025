@@ -4,7 +4,7 @@ import { DataTable } from '../../components/DataTable';
 import { TaiLieu, ColumnDefinition, TrangThaiTaiLieu, MasterDataState, NhanSu, DinhKem, HoSo } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { format, differenceInDays } from 'date-fns';
-import { Sparkles, Plus, Pencil, Trash2, X, Calendar, User, FileText, CheckCircle, Filter, Paperclip, Lock, FileType, FileSpreadsheet, Link as LinkIcon, ExternalLink, FileUp, AlertTriangle, ArrowRight, GitCommit, History, RefreshCw, GitBranch, List, ChevronRight, ChevronDown, FolderOpen, Archive, FileBox } from 'lucide-react';
+import { Sparkles, Plus, Pencil, Trash2, X, Calendar, User, FileText, CheckCircle, Filter, Paperclip, Lock, FileType, FileSpreadsheet, Link as LinkIcon, ExternalLink, FileUp, AlertTriangle, ArrowRight, GitCommit, History, RefreshCw, GitBranch, List, ChevronRight, ChevronDown, FolderOpen, Archive, FileBox, Send } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { TaiLieuForm } from './TaiLieuForm';
 import { Modal } from '../../components/ui/Modal';
@@ -74,6 +74,51 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({ masterData, currentUse
       } catch (error) {
         alert("Lỗi khi xóa tài liệu. Vui lòng thử lại!");
       }
+    }
+  };
+
+  // --- Logic Gửi Duyệt (New) ---
+  const handleSendRequest = async () => {
+    if (!selectedDoc) return;
+    
+    // Validate người xem xét/phê duyệt
+    if (!selectedDoc.nguoi_xem_xet && !selectedDoc.nguoi_phe_duyet) {
+        alert("Tài liệu chưa có người xem xét hoặc phê duyệt. Vui lòng chỉnh sửa và chỉ định nhân sự chịu trách nhiệm trước khi gửi.");
+        return;
+    }
+
+    if (!window.confirm(`Xác nhận gửi duyệt tài liệu "${selectedDoc.ma_tai_lieu}"?`)) return;
+
+    setIsLoading(true);
+    const now = new Date().toISOString();
+    
+    const updatedDoc: TaiLieu = {
+        ...selectedDoc,
+        trang_thai: TrangThaiTaiLieu.CHO_DUYET, // Chuyển sang chờ duyệt
+        ngay_cap_nhat_cuoi: now,
+        lich_su: [
+            ...(selectedDoc.lich_su || []),
+            {
+                id: `H${Date.now()}`,
+                nguoi_thuc_hien: currentUser.ho_ten,
+                hanh_dong: 'GUI_DUYET',
+                thoi_gian: now,
+                ghi_chu: 'Gửi yêu cầu phê duyệt',
+                trang_thai_cu: selectedDoc.trang_thai,
+                trang_thai_moi: TrangThaiTaiLieu.CHO_DUYET
+            }
+        ]
+    };
+
+    try {
+        await upsertDocument(updatedDoc);
+        onUpdate(data.map(d => d.id === selectedDoc.id ? updatedDoc : d));
+        setSelectedDoc(updatedDoc); // Cập nhật UI modal hiện tại
+        alert("Đã gửi duyệt thành công! Tài liệu đã chuyển sang trạng thái 'Chờ duyệt'.");
+    } catch (e) {
+        alert("Lỗi khi gửi duyệt. Vui lòng thử lại.");
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -410,7 +455,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({ masterData, currentUse
         </div>
       )}
 
-      {/* Detail View (Only view, logic same as before) */}
+      {/* Detail View */}
       {viewMode === 'detail' && selectedDoc && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={() => setViewMode('list')} />
@@ -489,8 +534,17 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({ masterData, currentUse
             </div>
 
              <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 sticky bottom-0 grid grid-cols-2 gap-3">
-               <Button className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200 dark:bg-amber-900/30 dark:text-amber-500 dark:border-amber-800" onClick={handleVersionUpClick} leftIcon={<FileUp size={16} />}>Nâng phiên bản</Button>
-               <Button variant="secondary" onClick={() => setViewMode('form')}><Pencil size={16} className="mr-2" /> Sửa thông tin</Button>
+               {(selectedDoc.trang_thai === TrangThaiTaiLieu.SOAN_THAO) ? (
+                   <>
+                     <Button variant="secondary" onClick={() => setViewMode('form')}><Pencil size={16} className="mr-2" /> Sửa</Button>
+                     <Button onClick={handleSendRequest} className="bg-blue-600 hover:bg-blue-700 text-white" isLoading={isLoading} leftIcon={<Send size={16} />}>Gửi duyệt</Button>
+                   </>
+               ) : (
+                   <>
+                     <Button className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200 dark:bg-amber-900/30 dark:text-amber-500 dark:border-amber-800" onClick={handleVersionUpClick} leftIcon={<FileUp size={16} />}>Nâng phiên bản</Button>
+                     <Button variant="secondary" onClick={() => setViewMode('form')}><Pencil size={16} className="mr-2" /> Sửa thông tin</Button>
+                   </>
+               )}
             </div>
           </div>
         </div>

@@ -20,7 +20,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
   const [visibilityState, setVisibilityState] = useState<Record<string, boolean>>(() => {
     const initialVis: Record<string, boolean> = {};
     columns.forEach(col => {
-      initialVis[String(col.key)] = col.visible;
+      initialVis[String(col.key as any)] = col.visible;
     });
     return initialVis;
   });
@@ -168,11 +168,11 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
   };
 
   // Helper để lấy danh sách cột đang hiển thị trên bảng
-  const visibleColumns = columns.filter(col => visibilityState[String(col.key)] !== false);
+  const visibleColumns = columns.filter(col => visibilityState[String(col.key as any)] !== false);
 
   // Helper lấy danh sách cột được chọn để xuất
   const getExportColumns = () => {
-    return columns.filter(col => exportColumnState[String(col.key)] !== false);
+    return columns.filter(col => exportColumnState[String(col.key as any)] !== false);
   };
 
   // Export Logic
@@ -185,8 +185,8 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
 
       exportCols.forEach(col => {
         // Lấy giá trị raw thay vì render component
-        // Use an intermediate variable to avoid TS error: Type 'string' is not assignable to type 'T[keyof T]'
-        const rawValue = item[col.key];
+        // Use casting to any to avoid TS error: Type 'string' is not assignable to type 'T[keyof T]'
+        const rawValue = (item as any)[col.key];
         let val: any = rawValue;
         
         // Xử lý một số trường hợp đặc biệt nếu cần (ví dụ object)
@@ -264,7 +264,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
               <tr>
                 <td class="center">${index + 1}</td>
                 ${exportCols.map(col => {
-                  let val = item[col.key];
+                  let val = (item as any)[col.key];
                    if (Array.isArray(val)) val = val.join(', ');
                    if (val === undefined || val === null) val = '';
                    return `<td>${String(val)}</td>`;
@@ -359,11 +359,11 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                       </div>
                       <div className="space-y-1">
                         {columns.map(col => (
-                          <label key={String(col.key)} className="flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer text-sm text-gray-700 dark:text-gray-200 rounded">
+                          <label key={String(col.key as any)} className="flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer text-sm text-gray-700 dark:text-gray-200 rounded">
                             <input 
                               type="checkbox" 
-                              checked={visibilityState[String(col.key)] !== false}
-                              onChange={() => toggleColumn(String(col.key))}
+                              checked={visibilityState[String(col.key as any)] !== false}
+                              onChange={() => toggleColumn(String(col.key as any))}
                               className="rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-primary focus:ring-primary"
                             />
                             {col.header}
@@ -404,7 +404,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
               {/* Data Columns */}
               {visibleColumns.map((col, index) => (
                 <th 
-                  key={String(col.key)} 
+                  key={String(col.key as any)} 
                   scope="col" 
                   className={`px-6 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 whitespace-nowrap transition-colors border-b dark:border-slate-700 ${getStickyClass(index, visibleColumns.length, true)}`}
                   onClick={() => handleSort(col.key)}
@@ -435,10 +435,10 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                   {/* Data Cells */}
                   {visibleColumns.map((col, colIndex) => (
                     <td 
-                      key={String(col.key)} 
+                      key={String(col.key as any)} 
                       className={`px-6 py-4 truncate max-w-xs text-gray-800 dark:text-gray-300 border-b dark:border-slate-800 ${getStickyClass(colIndex, visibleColumns.length, false)}`}
                     >
-                      {col.render ? col.render(item[col.key], item) : String(item[col.key] ?? '')}
+                      {col.render ? col.render((item as any)[col.key], item) : String((item as any)[col.key] ?? '')}
                     </td>
                   ))}
                 </tr>
@@ -515,7 +515,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                  <button 
                    onClick={() => {
                      const allKeys: Record<string, boolean> = {};
-                     columns.forEach(c => allKeys[String(c.key)] = true);
+                     columns.forEach(c => allKeys[String(c.key as any)] = true);
                      setExportColumnState(allKeys);
                    }}
                    className="text-xs text-blue-600 hover:underline"
@@ -526,25 +526,25 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
               <div className="grid grid-cols-2 gap-2">
                 {columns.map(col => (
                   <label 
-                    key={String(col.key)} 
+                    key={String(col.key as any)} 
                     className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-all ${
-                      exportColumnState[String(col.key)] !== false 
+                      exportColumnState[String(col.key as any)] !== false 
                         ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' 
                         : 'bg-gray-50 border-gray-200 dark:bg-slate-800 dark:border-slate-700'
                     }`}
                   >
                     <div className={`w-4 h-4 flex items-center justify-center rounded border ${
-                       exportColumnState[String(col.key)] !== false 
+                       exportColumnState[String(col.key as any)] !== false 
                        ? 'bg-blue-600 border-blue-600 text-white' 
                        : 'bg-white border-gray-400'
                     }`}>
-                       {exportColumnState[String(col.key)] !== false && <CheckSquare size={12} />}
+                       {exportColumnState[String(col.key as any)] !== false && <CheckSquare size={12} />}
                     </div>
                     <input 
                       type="checkbox" 
                       className="hidden"
-                      checked={exportColumnState[String(col.key)] !== false}
-                      onChange={() => toggleExportColumn(String(col.key))}
+                      checked={exportColumnState[String(col.key as any)] !== false}
+                      onChange={() => toggleExportColumn(String(col.key as any))}
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-200 truncate select-none">{col.header}</span>
                   </label>
