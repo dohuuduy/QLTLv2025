@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Download, Printer, Settings2, CheckSquare, Square } from 'lucide-react';
@@ -297,7 +298,11 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
   const getStickyClass = (index: number, total: number, isHeader: boolean) => {
     // Cố định cột cuối cùng (Thường là action)
     if (index === total - 1) {
-      return `sticky right-0 z-20 ${isHeader ? 'bg-gray-50 dark:bg-slate-800' : 'bg-white dark:bg-slate-900 group-hover:bg-gray-50 dark:group-hover:bg-slate-800'} shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]`;
+      return `sticky right-0 z-20 ${
+        isHeader 
+          ? 'bg-gray-50 dark:bg-slate-800' 
+          : 'bg-white dark:bg-slate-900 group-hover:bg-gray-50 dark:group-hover:bg-slate-800'
+      } shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.05)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)]`;
     }
     return "";
   };
@@ -396,7 +401,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
               {/* STT COLUMN - Sticky Left */}
               <th 
                 scope="col" 
-                className="sticky left-0 z-20 bg-gray-50 dark:bg-slate-800 border-b dark:border-slate-700 px-4 py-3 text-center w-12 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
+                className="sticky left-0 z-20 bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 py-3 text-center w-12 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)]"
               >
                 STT
               </th>
@@ -406,7 +411,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                 <th 
                   key={String(col.key as any)} 
                   scope="col" 
-                  className={`px-6 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 whitespace-nowrap transition-colors border-b dark:border-slate-700 ${getStickyClass(index, visibleColumns.length, true)}`}
+                  className={`px-6 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 whitespace-nowrap transition-colors border-b border-gray-200 dark:border-slate-700 ${getStickyClass(index, visibleColumns.length, true)}`}
                   onClick={() => handleSort(col.key)}
                 >
                   <div className="flex items-center gap-1">
@@ -428,7 +433,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                   className="group bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
                 >
                   {/* STT CELL */}
-                  <td className="sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-gray-50 dark:group-hover:bg-slate-800 border-b dark:border-slate-800 px-4 py-4 text-center font-mono text-xs text-gray-500 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                  <td className="sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-gray-50 dark:group-hover:bg-slate-800 border-b border-gray-100 dark:border-slate-800 px-4 py-4 text-center font-mono text-xs text-gray-500 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)]">
                     {(currentPage - 1) * pageSize + index + 1}
                   </td>
 
@@ -436,7 +441,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                   {visibleColumns.map((col, colIndex) => (
                     <td 
                       key={String(col.key as any)} 
-                      className={`px-6 py-4 truncate max-w-xs text-gray-800 dark:text-gray-300 border-b dark:border-slate-800 ${getStickyClass(colIndex, visibleColumns.length, false)}`}
+                      className={`px-6 py-4 truncate max-w-xs text-gray-800 dark:text-gray-300 border-b border-gray-100 dark:border-slate-800 ${getStickyClass(colIndex, visibleColumns.length, false)}`}
                     >
                       {col.render ? col.render((item as any)[col.key], item) : String((item as any)[col.key] ?? '')}
                     </td>
