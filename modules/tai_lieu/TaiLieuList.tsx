@@ -243,7 +243,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
       {/* Detail/Form Area */}
       {(viewMode === 'form' || viewMode === 'detail') && (
-        <div className={`${viewMode !== 'list' ? 'w-full lg:w-2/3' : 'hidden'} flex flex-col bg-gray-50 dark:bg-slate-950 h-full overflow-hidden absolute lg:relative z-20 top-0 left-0`}>
+        <div className="w-full lg:w-2/3 flex flex-col bg-gray-50 dark:bg-slate-950 h-full overflow-hidden absolute lg:relative z-20 top-0 left-0">
            {/* Mobile Header to go back */}
            <div className="lg:hidden p-4 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={() => setViewMode('list')}>Quay lại</Button>

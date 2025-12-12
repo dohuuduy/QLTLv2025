@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { endOfMonth, endOfWeek, eachDayOfInterval, format, isSameDay, isSameMonth, addMonths, isToday } from 'date-fns';
-import { ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon, Clock, Layers } from 'lucide-react';
 import { KeHoachDanhGia, PhienDanhGia } from '../../types';
 // @ts-ignore
 import { Solar } from 'lunar-javascript';
@@ -125,7 +125,7 @@ export const AuditCalendar: React.FC<AuditCalendarProps> = ({ auditPlans, onEven
   
   const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
 
-  const weekDays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+  const weekDays = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
   const monthNames = [
     'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 
     'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 
@@ -212,18 +212,14 @@ export const AuditCalendar: React.FC<AuditCalendarProps> = ({ auditPlans, onEven
         </div>
         
         {/* Legend */}
-        <div className="hidden md:flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
-           <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-blue-100 border border-blue-300"></div>
-              <span>Phiên đánh giá</span>
-           </div>
-           <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-indigo-100 border border-indigo-300"></div>
+        <div className="hidden md:flex items-center gap-4 text-xs font-medium text-gray-600 dark:text-gray-400">
+           <div className="flex items-center gap-2">
+              <div className="w-2 h-4 rounded bg-purple-500"></div>
               <span>Kế hoạch tổng</span>
            </div>
-           <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-300"></div>
-              <span>Ngày Rằm / Mùng 1</span>
+           <div className="flex items-center gap-2">
+              <div className="w-2 h-4 rounded bg-sky-500"></div>
+              <span>Phiên đánh giá</span>
            </div>
         </div>
       </div>
@@ -250,66 +246,75 @@ export const AuditCalendar: React.FC<AuditCalendarProps> = ({ auditPlans, onEven
              // Determine Solar Date Class (Logic tách biệt hoàn toàn để tránh xung đột màu)
              let solarDateClass = "";
              if (isTodayDate) {
-                 solarDateClass = "text-blue-700 dark:text-blue-400 font-extrabold scale-125"; // Hôm nay: Xanh đậm, to
+                 solarDateClass = "text-blue-700 dark:text-blue-400 font-extrabold scale-125 bg-blue-100 dark:bg-blue-900/30 w-7 h-7 flex items-center justify-center rounded-full shadow-sm"; 
              } else if (isCurrentMonth) {
-                 solarDateClass = "text-gray-700 dark:text-gray-200 font-bold"; // Tháng hiện tại: Đen/Trắng
+                 solarDateClass = "text-gray-700 dark:text-gray-200 font-bold"; 
              } else {
-                 solarDateClass = "text-gray-400 dark:text-slate-600 font-bold"; // Tháng khác: Xám nhạt
+                 solarDateClass = "text-gray-400 dark:text-slate-600 font-bold"; 
              }
 
              return (
                <div 
                  key={day.toString()} 
                  className={`
-                   min-h-[100px] flex flex-col p-1 relative transition-colors
+                   min-h-[120px] flex flex-col p-1 relative transition-colors group
                    ${isCurrentMonth ? 'bg-white dark:bg-slate-900' : 'bg-gray-50 dark:bg-slate-950/50'}
                    ${isTodayDate ? 'z-10' : ''} 
                  `}
                >
                  {/* --- Date Header (Updated Layout) --- */}
-                 <div className="flex flex-col items-center justify-center pt-2 pb-1 mb-1">
-                    {/* Solar Date (Big & Bold) */}
-                    <span className={`text-xl leading-none transition-all ${solarDateClass}`}>
+                 <div className="flex items-start justify-between px-1 mt-1">
+                    {/* Solar Date */}
+                    <span className={`text-sm leading-none transition-all ${solarDateClass}`}>
                       {format(day, 'd')}
                     </span>
                     
-                    {/* Lunar Date (Small, Below) */}
+                    {/* Lunar Date (Small, Top Right) */}
                     <span className={`
-                      text-[10px] mt-0.5
-                      ${lunarInfo.isMajor ? 'text-yellow-600 dark:text-yellow-500 font-bold' : 'text-gray-400 dark:text-slate-600 italic'}
+                      text-[10px] 
+                      ${lunarInfo.isMajor ? 'text-yellow-600 dark:text-yellow-500 font-bold bg-yellow-50 dark:bg-yellow-900/30 px-1 rounded' : 'text-gray-400 dark:text-slate-600 italic'}
                     `}>
                       {lunarInfo.dayString}
                     </span>
                  </div>
 
-                 {/* Events List */}
-                 <div className="flex-1 space-y-1 overflow-y-auto custom-scrollbar relative z-10 px-0.5">
-                    {dayEvents.map((evt, idx) => (
-                      <div 
-                        key={idx}
-                        onClick={() => onEventClick && onEventClick(evt.plan, evt.session)}
-                        className={`
-                          group border rounded px-1.5 py-1 cursor-pointer transition-all shadow-sm
-                          ${evt.isPlanStart 
-                             ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 hover:border-indigo-400' 
-                             : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 hover:border-blue-400'}
-                        `}
-                      >
-                         <div className="flex items-center gap-1 mb-0.5">
-                            <span className={`text-[9px] font-bold px-1 rounded ${evt.isPlanStart ? 'text-indigo-700 bg-white' : 'text-blue-700 bg-white'}`}>
-                              {evt.isPlanStart ? 'KẾ HOẠCH' : format(new Date(evt.session!.thoi_gian_bat_dau), 'HH:mm')}
-                            </span>
-                         </div>
-                         <p className="text-[10px] font-medium text-gray-700 dark:text-gray-300 line-clamp-2 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                           {evt.isPlanStart ? evt.plan.ten_ke_hoach : evt.session!.tieu_de}
-                         </p>
-                      </div>
-                    ))}
+                 {/* Events List - Improved with distinct styles and scrolling */}
+                 <div className="flex-1 w-full space-y-1.5 overflow-y-auto custom-scrollbar relative z-10 px-1 mt-2">
+                    {dayEvents.map((evt, idx) => {
+                      const isPlan = evt.isPlanStart;
+                      return (
+                        <div 
+                          key={idx}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEventClick && onEventClick(evt.plan, evt.session);
+                          }}
+                          className={`
+                            w-full p-1.5 rounded-r-md text-[10px] cursor-pointer transition-all border-l-[3px] shadow-sm hover:shadow-md hover:brightness-95
+                            flex flex-col gap-0.5
+                            ${isPlan 
+                               ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-500 text-purple-900 dark:text-purple-100' 
+                               : 'bg-sky-50 dark:bg-sky-900/20 border-sky-500 text-sky-900 dark:text-sky-100'
+                             }
+                          `}
+                        >
+                           <div className="flex items-center gap-1.5">
+                              {isPlan ? <Layers size={10} className="shrink-0 opacity-70"/> : <Clock size={10} className="shrink-0 opacity-70"/>}
+                              <span className={`font-bold ${isPlan ? 'text-purple-700 dark:text-purple-300' : 'text-sky-700 dark:text-sky-300'}`}>
+                                {isPlan ? 'KẾ HOẠCH' : format(new Date(evt.session!.thoi_gian_bat_dau), 'HH:mm')}
+                              </span>
+                           </div>
+                           <p className="font-medium leading-tight line-clamp-2 opacity-90 pl-4">
+                             {isPlan ? evt.plan.ten_ke_hoach : evt.session!.tieu_de}
+                           </p>
+                        </div>
+                      );
+                    })}
                  </div>
                  
                  {/* Highlight Lunar Major Days Background (Rằm/Mùng 1) */}
                  {lunarInfo.isMajor && (
-                    <div className="absolute inset-0 pointer-events-none bg-yellow-50/20 dark:bg-yellow-900/10 z-0" />
+                    <div className="absolute inset-0 pointer-events-none bg-yellow-50/10 dark:bg-yellow-900/5 z-0" />
                  )}
                </div>
              );
