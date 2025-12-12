@@ -1,0 +1,378 @@
+
+import React, { useState, useMemo } from 'react';
+import { DataTable } from '../../components/DataTable';
+import { HoSo, ColumnDefinition, TrangThaiHoSo, MasterDataState, NhanSu, TaiLieu } from '../../types';
+import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
+import { format, addMonths, isPast, differenceInDays } from 'date-fns';
+import { Archive, Plus, Trash2, Clock, MapPin, ShieldAlert, FileBox, Calendar, HardDrive, Hash, AlignLeft, Link as LinkIcon } from 'lucide-react';
+
+interface HoSoListProps {
+  masterData: MasterDataState;
+  currentUser: NhanSu;
+  data: HoSo[];
+  onUpdate: (newData: HoSo[]) => void;
+  documents: TaiLieu[];
+}
+
+export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, data, onUpdate, documents }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Partial<HoSo>>({});
+
+  // Prepare Document Options from passed prop 'documents'
+  const docOptions = useMemo(() => {
+    return documents.map(d => ({
+        value: d.ma_tai_lieu,
+        label: d.ten_tai_lieu,
+        subLabel: d.ma_tai_lieu
+    }));
+  }, [documents]);
+
+  // Form handling
+  const handleAddNew = () => {
+    setEditingItem({
+      ma_ho_so: `HS-${Date.now().toString().slice(-6)}`,
+      ngay_tao: format(new Date(), 'yyyy-MM-dd'),
+      thoi_gian_luu_tru: 12, // Default 1 year
+      trang_thai: TrangThaiHoSo.LUU_TRU,
+      dang_luu_tru: 'BAN_CUNG',
+      nguoi_tao: currentUser.ho_ten,
+      phong_ban: currentUser.phong_ban
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (item: HoSo) => {
+    setEditingItem({ ...item });
+    setIsModalOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!editingItem.tieu_de || !editingItem.ngay_tao) {
+        alert("Vui lòng nhập tiêu đề và ngày lập hồ sơ!");
+        return;
+    }
+
+    // Calculate Expiry Date
+    let expiryDate = '';
+    if (editingItem.thoi_gian_luu_tru !== undefined && editingItem.thoi_gian_luu_tru > 0) {
+       const start = new Date(editingItem.ngay_tao);
+       expiryDate = format(addMonths(start, editingItem.thoi_gian_luu_tru), 'yyyy-MM-dd');
+    }
+
+    const newItem: HoSo = {
+      ...editingItem,
+      id: editingItem.id || `HS-${Date.now()}`,
+      ngay_het_han: expiryDate,
+      // Check status base on expiry
+      trang_thai: (expiryDate && isPast(new Date(expiryDate))) ? TrangThaiHoSo.CHO_HUY : (editingItem.trang_thai || TrangThaiHoSo.LUU_TRU)
+    } as HoSo;
+
+    if (editingItem.id) {
+       onUpdate(data.map(item => item.id === newItem.id ? newItem : item));
+    } else {
+       onUpdate([newItem, ...data]);
+    }
+    setIsModalOpen(false);
+  };
+
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+     e.stopPropagation();
+     if(window.confirm('Xác nhận tiêu hủy hồ sơ này khỏi danh sách?')) {
+        onUpdate(data.filter(i => i.id !== id));
+     }
+  }
+
+  // UI Helpers
+  const getStatusBadge = (item: HoSo) => {
+     // Logic check expiry realtime
+     let status = item.trang_thai;
+     if (item.ngay_het_han && status === TrangThaiHoSo.LUU_TRU) {
+        const today = new Date();
+        const expiry = new Date(item.ngay_het_han);
+        const daysLeft = differenceInDays(expiry, today);
+        
+        if (daysLeft < 0) status = TrangThaiHoSo.CHO_HUY;
+        else if (daysLeft < 30) status = TrangThaiHoSo.SAP_HET_HAN;
+     }
+
+     switch(status) {
+       case TrangThaiHoSo.LUU_TRU: 
+         return <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-bold border border-green-200 whitespace-nowrap">Đang lưu trữ</span>;
+       case TrangThaiHoSo.SAP_HET_HAN: 
+         return <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-700 text-xs font-bold border border-yellow-200 flex items-center gap-1 whitespace-nowrap"><Clock size={12}/> Sắp hết hạn</span>;
+       case TrangThaiHoSo.CHO_HUY: 
+         return <span className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-bold border border-red-200 flex items-center gap-1 whitespace-nowrap"><ShieldAlert size={12}/> Chờ tiêu hủy</span>;
+       case TrangThaiHoSo.DA_HUY: 
+         return <span className="px-2 py-1 rounded bg-gray-200 text-gray-500 text-xs font-bold border border-gray-300 decoration-slice whitespace-nowrap">Đã hủy</span>;
+       default: return null;
+     }
+  };
+
+  const columns: ColumnDefinition<HoSo>[] = useMemo(() => [
+    { key: 'ma_ho_so', header: 'Mã hồ sơ', visible: true, render: (val) => <span className="font-mono text-blue-600 dark:text-blue-400 font-bold text-xs">{val}</span> },
+    { key: 'tieu_de', header: 'Tên hồ sơ', visible: true, render: (val) => <span className="font-medium text-gray-800 dark:text-gray-200 line-clamp-1" title={val}>{val}</span> },
+    { 
+      key: 'ma_tai_lieu_lien_quan', 
+      header: 'Theo quy trình', 
+      visible: true, 
+      render: (val) => val ? (
+          <span className="text-xs bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded font-mono border border-indigo-100 dark:border-indigo-800">
+             {val}
+          </span>
+      ) : <span className="text-gray-400 text-xs">--</span> 
+    },
+    { key: 'phong_ban', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300 whitespace-nowrap">{val}</span> },
+    { 
+      key: 'ngay_tao', 
+      header: 'Ngày lập', 
+      visible: true,
+      render: (val) => val ? <span className="text-xs">{format(new Date(val), 'dd/MM/yyyy')}</span> : ''
+    },
+    { 
+      key: 'thoi_gian_luu_tru', 
+      header: 'Hạn lưu', 
+      visible: true,
+      render: (val, item) => (
+        <div className="text-xs">
+           <div className="font-medium">{val === 0 ? 'Vĩnh viễn' : `${val} tháng`}</div>
+           {item.ngay_het_han && <div className="text-[10px] text-gray-400">Đến: {format(new Date(item.ngay_het_han), 'dd/MM/yyyy')}</div>}
+        </div>
+      )
+    },
+    { 
+      key: 'vi_tri_luu_tru', 
+      header: 'Vị trí', 
+      visible: true,
+      render: (val, item) => (
+        <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400" title={val}>
+           <MapPin size={12} className="shrink-0" /> <span className="truncate max-w-[120px]">{val}</span>
+        </div>
+      )
+    },
+    { 
+      key: 'trang_thai', 
+      header: 'Trạng thái', 
+      visible: true,
+      render: (_, item) => getStatusBadge(item)
+    },
+    {
+       key: 'id',
+       header: 'Xóa',
+       visible: true,
+       render: (_, item) => (
+         <Button variant="ghost" size="icon" onClick={(e) => handleDelete(item.id, e)} className="text-gray-400 hover:text-red-500 h-8 w-8">
+            <Trash2 size={14} />
+         </Button>
+       )
+    }
+  ], [data]);
+
+  // --- Render Sections for Form ---
+  const renderFormSection = (title: string, icon: React.ReactNode, children: React.ReactNode) => (
+      <div className="space-y-3">
+          <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
+              {icon} {title}
+          </h4>
+          {children}
+      </div>
+  );
+
+  const boPhanOptions = masterData.boPhan.map(bp => ({ value: bp.ten, label: bp.ten }));
+
+  return (
+    <div className="flex flex-col h-full animate-fade-in -mx-4 md:mx-0">
+       <div className="flex-1 overflow-hidden h-full">
+          <DataTable 
+            title="Danh sách Hồ sơ lưu trữ"
+            data={data}
+            columns={columns}
+            onRowClick={handleEdit}
+            actions={
+                <Button onClick={handleAddNew} leftIcon={<Plus size={16}/>} className="h-9 text-sm shadow-sm">
+                    Lập hồ sơ
+                </Button>
+            }
+          />
+       </div>
+
+       {/* Form Modal Optimized */}
+       <Modal
+         isOpen={isModalOpen}
+         onClose={() => setIsModalOpen(false)}
+         title={editingItem.id ? 'Cập nhật hồ sơ' : 'Lập hồ sơ mới'}
+         size="lg" // Make modal wider
+         footer={
+            <>
+               <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Hủy bỏ</Button>
+               <Button onClick={handleSave}>Lưu hồ sơ</Button>
+            </>
+         }
+       >
+          <div className="space-y-6 p-2">
+             
+             {/* Section 1: Thông tin chung */}
+             {renderFormSection('Thông tin chung', <FileBox size={16} className="text-blue-500"/>, 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Tiêu đề hồ sơ <span className="text-red-500">*</span></label>
+                        <div className="relative">
+                            <AlignLeft size={16} className="absolute left-3 top-2.5 text-gray-400"/>
+                            <input 
+                            className="w-full h-10 pl-9 pr-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm"
+                            value={editingItem.tieu_de || ''}
+                            onChange={e => setEditingItem({...editingItem, tieu_de: e.target.value})}
+                            placeholder="VD: Biên bản cuộc họp xem xét lãnh đạo Q1..."
+                            autoFocus
+                            />
+                        </div>
+                    </div>
+                    
+                    {/* LIÊN KẾT TÀI LIỆU */}
+                    <div className="md:col-span-2">
+                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Hồ sơ thuộc quy trình / tài liệu</label>
+                       <div className="flex items-center gap-2">
+                          <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded border border-indigo-100 dark:border-indigo-800 text-indigo-500">
+                             <LinkIcon size={16} />
+                          </div>
+                          <div className="flex-1">
+                             <SearchableSelect
+                               options={docOptions}
+                               value={editingItem.ma_tai_lieu_lien_quan}
+                               onChange={(val) => setEditingItem({...editingItem, ma_tai_lieu_lien_quan: String(val)})}
+                               placeholder="-- Chọn quy trình liên quan --"
+                             />
+                          </div>
+                       </div>
+                       <p className="text-[10px] text-gray-400 mt-1 pl-11">Ví dụ: Chọn "QT-NS-01" nếu hồ sơ này được tạo ra từ Quy trình tuyển dụng.</p>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Mã hồ sơ</label>
+                        <div className="relative">
+                            <Hash size={16} className="absolute left-3 top-2.5 text-gray-400"/>
+                            <input 
+                                className="w-full h-10 pl-9 pr-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm font-mono"
+                                value={editingItem.ma_ho_so || ''}
+                                onChange={e => setEditingItem({...editingItem, ma_ho_so: e.target.value})}
+                                placeholder="Auto generated"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Bộ phận sở hữu</label>
+                        <SearchableSelect
+                             options={boPhanOptions}
+                             value={editingItem.phong_ban}
+                             onChange={(val) => setEditingItem({...editingItem, phong_ban: String(val)})}
+                             placeholder="-- Chọn bộ phận --"
+                        />
+                    </div>
+                </div>
+             )}
+
+             {/* Section 2: Vòng đời & Thời hạn */}
+             {renderFormSection('Vòng đời & Thời hạn', <Calendar size={16} className="text-orange-500"/>,
+                <div className="bg-orange-50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-100 dark:border-orange-800">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Ngày lập hồ sơ</label>
+                            <input 
+                                type="date"
+                                className="w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm"
+                                value={editingItem.ngay_tao || ''}
+                                onChange={e => setEditingItem({...editingItem, ngay_tao: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Thời gian lưu trữ</label>
+                            <div className="flex gap-2 mb-2">
+                                {[12, 36, 60, 120].map(m => (
+                                    <button
+                                        key={m}
+                                        onClick={() => setEditingItem({...editingItem, thoi_gian_luu_tru: m})}
+                                        className={`px-2 py-1 text-[10px] rounded border transition-colors ${
+                                            editingItem.thoi_gian_luu_tru === m 
+                                            ? 'bg-orange-200 border-orange-300 text-orange-800 dark:bg-orange-900/50 dark:border-orange-700 dark:text-orange-200' 
+                                            : 'bg-white border-gray-200 hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-300 dark:hover:bg-slate-700'
+                                        }`}
+                                    >
+                                        {m/12} Năm
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => setEditingItem({...editingItem, thoi_gian_luu_tru: 0})}
+                                    className={`px-2 py-1 text-[10px] rounded border transition-colors ${
+                                        editingItem.thoi_gian_luu_tru === 0 
+                                        ? 'bg-orange-200 border-orange-300 text-orange-800 dark:bg-orange-900/50 dark:border-orange-700 dark:text-orange-200' 
+                                        : 'bg-white border-gray-200 hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-300 dark:hover:bg-slate-700'
+                                    }`}
+                                >
+                                    Vĩnh viễn
+                                </button>
+                            </div>
+                            <div className="relative">
+                                <input 
+                                    type="number"
+                                    className="w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm"
+                                    value={editingItem.thoi_gian_luu_tru}
+                                    onChange={e => setEditingItem({...editingItem, thoi_gian_luu_tru: parseInt(e.target.value) || 0})}
+                                />
+                                <span className="absolute right-3 top-2.5 text-xs text-gray-500 font-medium">Tháng</span>
+                            </div>
+                        </div>
+                        
+                        {/* Expiry Preview */}
+                        <div className="md:col-span-2 pt-2 border-t border-orange-200 dark:border-orange-800/30 flex items-center justify-between text-sm">
+                             <span className="text-orange-700 dark:text-orange-400 font-medium">Ngày tiêu hủy dự kiến:</span>
+                             <span className="font-bold text-gray-800 dark:text-gray-100 bg-white dark:bg-slate-800 px-3 py-1 rounded border border-orange-200 dark:border-orange-800">
+                                {(editingItem.ngay_tao && editingItem.thoi_gian_luu_tru && editingItem.thoi_gian_luu_tru > 0) 
+                                    ? format(addMonths(new Date(editingItem.ngay_tao), editingItem.thoi_gian_luu_tru), 'dd/MM/yyyy') 
+                                    : (editingItem.thoi_gian_luu_tru === 0 ? 'Lưu trữ vĩnh viễn' : '---')}
+                             </span>
+                        </div>
+                    </div>
+                </div>
+             )}
+
+             {/* Section 3: Vị trí lưu trữ */}
+             {renderFormSection('Nơi lưu trữ', <HardDrive size={16} className="text-purple-500"/>,
+                <div className="grid grid-cols-1 gap-4">
+                     <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Hình thức lưu trữ</label>
+                        <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-lg w-full md:w-fit">
+                            <button 
+                                onClick={() => setEditingItem({...editingItem, dang_luu_tru: 'BAN_CUNG'})}
+                                className={`flex-1 md:flex-none px-4 py-1.5 text-sm rounded-md font-medium transition-all ${editingItem.dang_luu_tru === 'BAN_CUNG' ? 'bg-white dark:bg-slate-700 shadow text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Bản cứng (Hard copy)
+                            </button>
+                            <button 
+                                onClick={() => setEditingItem({...editingItem, dang_luu_tru: 'BAN_MEM'})}
+                                className={`flex-1 md:flex-none px-4 py-1.5 text-sm rounded-md font-medium transition-all ${editingItem.dang_luu_tru === 'BAN_MEM' ? 'bg-white dark:bg-slate-700 shadow text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Bản mềm (Soft copy)
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Chi tiết vị trí / Đường dẫn</label>
+                        <div className="relative">
+                            <MapPin size={16} className="absolute left-3 top-2.5 text-gray-400"/>
+                            <input 
+                                className="w-full h-10 pl-9 pr-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm"
+                                value={editingItem.vi_tri_luu_tru || ''}
+                                onChange={e => setEditingItem({...editingItem, vi_tri_luu_tru: e.target.value})}
+                                placeholder={editingItem.dang_luu_tru === 'BAN_CUNG' ? "VD: Kho tài liệu số 2, Tủ 05, Kệ 01..." : "VD: https://drive.google.com/..."}
+                            />
+                        </div>
+                    </div>
+                </div>
+             )}
+
+          </div>
+       </Modal>
+    </div>
+  );
+}
