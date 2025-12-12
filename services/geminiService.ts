@@ -1,15 +1,35 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Trong môi trường thực tế, API_KEY nên được lấy từ backend hoặc biến môi trường an toàn.
-// Ở đây giả định process.env.API_KEY có sẵn.
-// Nếu không có key, service sẽ trả về lỗi gracefully.
+// Hàm lấy API Key an toàn cho cả môi trường Vite (import.meta.env) và Node (process.env)
+// Điều này ngăn chặn lỗi "process is not defined" gây màn hình trắng
+const getApiKey = () => {
+  try {
+    // Ưu tiên check Vite env trước
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
+      // @ts-ignore
+      return import.meta.env.VITE_API_KEY;
+    }
+    // Fallback sang process.env (nếu có polyfill)
+    // @ts-ignore
+    if (typeof process !== 'undefined' && process.env) {
+      // @ts-ignore
+      return process.env.API_KEY || process.env.REACT_APP_API_KEY;
+    }
+  } catch (e) {
+    console.warn("Không thể đọc biến môi trường, sử dụng key rỗng.");
+  }
+  return '';
+};
 
-const apiKey = process.env.API_KEY || ''; 
+const apiKey = getApiKey();
 let ai: GoogleGenAI | null = null;
 
 if (apiKey) {
   ai = new GoogleGenAI({ apiKey: apiKey });
+} else {
+  console.warn("⚠️ Chưa cấu hình API Key Gemini. Các tính năng AI sẽ không hoạt động.");
 }
 
 export const analyzeDocumentTitle = async (title: string): Promise<string> => {
@@ -28,7 +48,7 @@ export const analyzeDocumentTitle = async (title: string): Promise<string> => {
 };
 
 export const chatWithDocument = async (docContext: string, userQuestion: string): Promise<string> => {
-  if (!ai) return "Chưa cấu hình API Key Gemini (process.env.API_KEY).";
+  if (!ai) return "Chưa cấu hình API Key Gemini.";
 
   try {
     // Xây dựng prompt kèm ngữ cảnh tài liệu

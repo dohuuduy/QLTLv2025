@@ -5,6 +5,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ISO DocManager Pro</title>
+    
+    <!-- Sử dụng Tailwind CDN để đảm bảo style hoạt động ngay cả khi build CSS thất bại -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -61,6 +63,13 @@
       });
     </script>
     <style>
+      /* Đảm bảo ứng dụng full chiều cao màn hình */
+      html, body, #root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
       /* Custom Scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
@@ -86,27 +95,28 @@
         font-family: system-ui, -apple-system, sans-serif;
       }
     </style>
-  <script type="importmap">
+    <!-- ĐÃ XÓA IMPORTMAP: Vercel sẽ tự động bundle các thư viện React, Supabase... 
+         Việc giữ importmap ở đây sẽ gây lỗi 'module specifier' trên production -->
+<script type="importmap">
 {
   "imports": {
-    "xlsx": "https://esm.sh/xlsx@^0.18.5",
-    "react/": "https://esm.sh/react@^19.2.1/",
-    "react": "https://esm.sh/react@^19.2.1",
-    "date-fns": "https://esm.sh/date-fns@^4.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.1/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
     "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.559.0",
+    "react-dom": "https://esm.sh/react-dom@^19.2.3",
+    "xlsx": "https://esm.sh/xlsx@^0.18.5",
     "recharts": "https://esm.sh/recharts@^3.5.1",
-    "jspdf": "https://esm.sh/jspdf@^3.0.4",
-    "jspdf-autotable": "https://esm.sh/jspdf-autotable@^5.0.2",
-    "react-dom": "https://esm.sh/react-dom@^19.2.1",
-    "lunar-javascript": "https://esm.sh/lunar-javascript@1.6.13",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7"
+    "date-fns": "https://esm.sh/date-fns@^4.1.0",
+    "lunar-javascript": "https://esm.sh/lunar-javascript@^1.7.7",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.87.1"
   }
 }
 </script>
 </head>
   <body class="bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-gray-100 transition-colors duration-300">
     <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
