@@ -9,7 +9,6 @@ import { Button } from '../../components/ui/Button';
 import { TaiLieuForm } from './TaiLieuForm';
 import { Modal } from '../../components/ui/Modal';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
-import { WorkflowStepper } from '../../components/WorkflowStepper';
 import { AIChatBox } from '../../components/AIChatBox';
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 
@@ -470,7 +469,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({ masterData, currentUse
             </div>
 
             <div className="p-6 space-y-8 flex-1">
-              <WorkflowStepper document={selectedDoc} />
+              
               <div>
                 <label className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1 block">Tên tài liệu</label>
                 <p className="font-semibold text-xl text-gray-900 dark:text-gray-100">{selectedDoc.ten_tai_lieu}</p>
