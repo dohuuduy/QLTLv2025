@@ -14,12 +14,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
   const [isMounted, setIsMounted] = useState(false); // State để kiểm soát việc render biểu đồ
 
   useEffect(() => {
-      setIsMounted(true); // Đánh dấu component đã mount
+      // Delay render biểu đồ để DOM tính toán xong kích thước container
+      // Khắc phục lỗi width(-1) của Recharts
+      const timer = setTimeout(() => {
+        setIsMounted(true);
+      }, 200);
+
       const loadData = async () => {
           const docs = await fetchDocumentsFromDB();
           if (docs) setData(docs);
       };
       loadData();
+
+      return () => clearTimeout(timer);
   }, []);
 
   // 1. Dữ liệu Trạng thái (Status Pie)
@@ -125,42 +132,49 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <PieChartIcon size={20} className="text-purple-500"/> Trạng thái tài liệu
           </h3>
-          <div className="flex-1 w-full min-h-0 min-w-0">
-            {isMounted ? (
-              <ResponsiveContainer width="100%" height="100%" debounce={100}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
-                    outerRadius="75%"
-                    dataKey="value"
-                    onClick={(entry) => onNavigateToDocuments({ trang_thai: entry.name })}
-                    className="cursor-pointer outline-none focus:outline-none"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} className="hover:opacity-80 transition-opacity" />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
-                    itemStyle={{ color: '#f8fafc' }}
-                    formatter={(value, name, props) => [value, props.payload.displayName]} 
-                  />
-                  <Legend 
-                    layout="horizontal" 
-                    verticalAlign="bottom" 
-                    align="center"
-                    formatter={(value, entry: any) => <span className="text-gray-600 dark:text-gray-400 ml-1">{entry.payload.displayName}</span>}
-                    wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">Đang tải biểu đồ...</div>
-            )}
+          <div className="flex-1 w-full min-h-0 min-w-0 relative">
+            <div className="absolute inset-0">
+              {isMounted ? (
+                <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                      outerRadius="75%"
+                      dataKey="value"
+                      onClick={(entry) => onNavigateToDocuments({ trang_thai: entry.name })}
+                      className="cursor-pointer outline-none focus:outline-none"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} className="hover:opacity-80 transition-opacity" />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
+                      itemStyle={{ color: '#f8fafc' }}
+                      formatter={(value, name, props) => [value, props.payload.displayName]} 
+                    />
+                    <Legend 
+                      layout="horizontal" 
+                      verticalAlign="bottom" 
+                      align="center"
+                      formatter={(value, entry: any) => <span className="text-gray-600 dark:text-gray-400 ml-1">{entry.payload.displayName}</span>}
+                      wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Đang tải biểu đồ...</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -169,49 +183,56 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <BarChart3 size={20} className="text-blue-500"/> Tài liệu theo bộ phận
           </h3>
-          <div className="flex-1 w-full min-h-0 min-w-0">
-            {isMounted ? (
-              <ResponsiveContainer width="100%" height="100%" debounce={100}>
-                <BarChart 
-                  data={barData} 
-                  layout="vertical" 
-                  margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-                  onClick={(data) => {
-                      if (data && data.activePayload && data.activePayload.length > 0) {
-                          const deptName = data.activePayload[0].payload.name;
-                          onNavigateToDocuments({ bo_phan: deptName });
-                      }
-                  }}
-                  className="cursor-pointer"
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" opacity={0.3} />
-                  <XAxis type="number" stroke="#94a3b8" />
-                  <YAxis 
-                    dataKey="name" 
-                    type="category" 
-                    width={110} 
-                    tick={{fontSize: 11, fill: '#94a3b8'}} 
-                    stroke="#94a3b8" 
-                    interval={0}
-                  />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
-                    cursor={{fill: 'rgba(59, 130, 246, 0.1)'}}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '12px' }}/>
-                  <Bar 
-                      dataKey="documents" 
-                      name="Số lượng" 
-                      fill="#3b82f6" 
-                      radius={[0, 4, 4, 0]} 
-                      barSize={20} 
-                      className="hover:fill-blue-400 transition-colors"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">Đang tải biểu đồ...</div>
-            )}
+          <div className="flex-1 w-full min-h-0 min-w-0 relative">
+            <div className="absolute inset-0">
+              {isMounted ? (
+                <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                  <BarChart 
+                    data={barData} 
+                    layout="vertical" 
+                    margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                    onClick={(data) => {
+                        if (data && data.activePayload && data.activePayload.length > 0) {
+                            const deptName = data.activePayload[0].payload.name;
+                            onNavigateToDocuments({ bo_phan: deptName });
+                        }
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" opacity={0.3} />
+                    <XAxis type="number" stroke="#94a3b8" />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      width={110} 
+                      tick={{fontSize: 11, fill: '#94a3b8'}} 
+                      stroke="#94a3b8" 
+                      interval={0}
+                    />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
+                      cursor={{fill: 'rgba(59, 130, 246, 0.1)'}}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '12px' }}/>
+                    <Bar 
+                        dataKey="documents" 
+                        name="Số lượng" 
+                        fill="#3b82f6" 
+                        radius={[0, 4, 4, 0]} 
+                        barSize={20} 
+                        className="hover:fill-blue-400 transition-colors"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                   <div className="flex flex-col items-center gap-2">
+                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Đang tải biểu đồ...</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -220,33 +241,40 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
              <TrendingUp size={20} className="text-green-500" /> Năng suất nhân sự (Top 5)
           </h3>
-          <div className="flex-1 w-full min-h-0 min-w-0">
-            {isMounted ? (
-              <ResponsiveContainer width="100%" height="100%" debounce={100}>
-                <BarChart 
-                  data={topAuthors} 
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.3} />
-                   <XAxis dataKey="name" stroke="#94a3b8" tick={{fontSize: 12}} />
-                   <YAxis stroke="#94a3b8" allowDecimals={false} />
-                   <Tooltip 
-                     contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
-                     cursor={{fill: 'rgba(34, 197, 94, 0.1)'}}
-                   />
-                   <Legend />
-                   <Bar 
-                      dataKey="documents" 
-                      name="Số lượng tài liệu soạn thảo" 
-                      fill="#10b981" 
-                      radius={[4, 4, 0, 0]} 
-                      barSize={40}
-                   />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">Đang tải biểu đồ...</div>
-            )}
+          <div className="flex-1 w-full min-h-0 min-w-0 relative">
+            <div className="absolute inset-0">
+              {isMounted ? (
+                <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                  <BarChart 
+                    data={topAuthors} 
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.3} />
+                     <XAxis dataKey="name" stroke="#94a3b8" tick={{fontSize: 12}} />
+                     <YAxis stroke="#94a3b8" allowDecimals={false} />
+                     <Tooltip 
+                       contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
+                       cursor={{fill: 'rgba(34, 197, 94, 0.1)'}}
+                     />
+                     <Legend />
+                     <Bar 
+                        dataKey="documents" 
+                        name="Số lượng tài liệu soạn thảo" 
+                        fill="#10b981" 
+                        radius={[4, 4, 0, 0]} 
+                        barSize={40}
+                     />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                   <div className="flex flex-col items-center gap-2">
+                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Đang tải biểu đồ...</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
