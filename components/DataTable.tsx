@@ -185,7 +185,10 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
 
       exportCols.forEach(col => {
         // Lấy giá trị raw thay vì render component
-        let val: any = item[col.key];
+        // Use an intermediate variable to avoid TS error: Type 'string' is not assignable to type 'T[keyof T]'
+        const rawValue = item[col.key];
+        let val: any = rawValue;
+        
         // Xử lý một số trường hợp đặc biệt nếu cần (ví dụ object)
         if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
            val = JSON.stringify(val);

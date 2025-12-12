@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrangThaiTaiLieu, TaiLieu } from '../../types';
@@ -15,43 +14,39 @@ interface ChartContainerProps {
   className?: string;
 }
 
-// FIX: ChartContainer with debounce to prevent Recharts rendering before layout is ready
+// FIX: ChartContainer uses explicit pixel dimensions to prevent Recharts rendering issues (width -1)
 const ChartContainer = ({ children, height = 300, className = "" }: ChartContainerProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [isReady, setIsReady] = useState(false);
-    const timeoutRef = useRef<number | null>(null);
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
     useEffect(() => {
         const element = containerRef.current;
         if (!element) return;
 
-        const checkSize = () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
-            
-            // Debounce 100ms to ensure layout stability
-            timeoutRef.current = window.setTimeout(() => {
-                if (element) {
-                    const rect = element.getBoundingClientRect();
-                    // Using rect.width > 0 && rect.height > 0 ensures it's visible in DOM
-                    if (rect.width > 0 && rect.height > 0) {
-                        setIsReady(true);
-                    }
+        const updateDimensions = () => {
+            if (element) {
+                const { clientWidth, clientHeight } = element;
+                // Only update if dimensions represent a valid visible area and have changed
+                if (clientWidth > 0 && clientHeight > 0) {
+                    setDimensions(prev => {
+                        if (prev.width === clientWidth && prev.height === clientHeight) return prev;
+                        return { width: clientWidth, height: clientHeight };
+                    });
                 }
-            }, 100); 
+            }
         };
 
         const observer = new ResizeObserver(() => {
-            checkSize();
+            // Use requestAnimationFrame to throttle updates and sync with render cycle
+            // This also helps avoid "ResizeObserver loop limit exceeded"
+            window.requestAnimationFrame(updateDimensions);
         });
 
         observer.observe(element);
-        checkSize(); // Check immediately
+        updateDimensions(); // Initial check
 
         return () => {
             observer.disconnect();
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
     }, []);
 
@@ -63,8 +58,10 @@ const ChartContainer = ({ children, height = 300, className = "" }: ChartContain
             className={`w-full relative ${className}`}
             style={{ height: styleHeight, minHeight: 0, minWidth: 0 }}
         >
-            {isReady ? (
-                <div style={{ width: '100%', height: '100%' }}>
+            {dimensions.width > 0 && dimensions.height > 0 ? (
+                // Explicitly set pixel width/height for the inner wrapper
+                // This ensures ResponsiveContainer (width="100%") calculates correctly
+                <div style={{ width: dimensions.width, height: dimensions.height, overflow: 'hidden' }}>
                     {children}
                 </div>
             ) : (
