@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MENU_ITEMS, APP_NAME, INITIAL_MASTER_DATA, MOCK_NOTIFICATIONS } from './constants';
-import { Menu, Bell, Search, LogOut, X, ChevronRight, User, Check, Info, AlertTriangle, CheckCircle, Database, Sparkles } from 'lucide-react';
+import { Menu, Bell, Search, LogOut, X, ChevronRight, User, Check, Info, AlertTriangle, CheckCircle, Database, Sparkles, FileText, Archive, CalendarDays, ArrowRight } from 'lucide-react';
 import { Dashboard } from './modules/dashboard/Dashboard';
 import { TaiLieuList } from './modules/tai_lieu/TaiLieuList';
 import { MasterDataLayout } from './modules/master_data/MasterDataLayout';
@@ -22,6 +22,11 @@ const App: React.FC = () => {
   // Notification State
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  // Search State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   // Centralized Data State - INIT WITH EMPTY ARRAYS TO FORCE DB FETCH
   const [masterData, setMasterData] = useState<MasterDataState>({
@@ -82,17 +87,43 @@ const App: React.FC = () => {
     initData();
   }, []);
 
-  // Handle click outside notification dropdown
+  // Handle click outside notification dropdown & Search
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
+      
+      // Close Notification
       if (!target.closest('#notification-container')) {
         setShowNotifications(false);
+      }
+      
+      // Close Search
+      if (searchRef.current && !searchRef.current.contains(target)) {
+         setIsSearchOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // --- GLOBAL SEARCH LOGIC ---
+  const searchResults = useMemo(() => {
+    if (!searchTerm.trim()) return { docs: [], recs: [], audits: [] };
+    const lower = searchTerm.toLowerCase();
+    return {
+        docs: documents.filter(d => d.ten_tai_lieu.toLowerCase().includes(lower) || d.ma_tai_lieu.toLowerCase().includes(lower)).slice(0, 3),
+        recs: records.filter(r => r.tieu_de.toLowerCase().includes(lower) || r.ma_ho_so.toLowerCase().includes(lower)).slice(0, 3),
+        audits: auditPlans.filter(a => a.ten_ke_hoach.toLowerCase().includes(lower)).slice(0, 3)
+    };
+  }, [searchTerm, documents, records, auditPlans]);
+
+  const hasResults = searchResults.docs.length > 0 || searchResults.recs.length > 0 || searchResults.audits.length > 0;
+
+  const handleSearchResultClick = (tab: string) => {
+      setActiveTab(tab);
+      setIsSearchOpen(false);
+      // setSearchTerm(''); // Optional: clear search on navigation
+  };
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -324,13 +355,91 @@ const App: React.FC = () => {
                 </div>
              )}
 
-             <div className="hidden lg:flex items-center bg-gray-100 dark:bg-slate-800 rounded-full px-3 py-1.5 border border-gray-200 dark:border-slate-700 focus-within:ring-2 ring-primary/20 transition-all w-64">
-                <Search size={16} className="text-gray-400" />
-                <input 
-                  type="text" 
-                  placeholder="Tìm kiếm..." 
-                  className="bg-transparent border-none outline-none text-sm ml-2 w-full text-gray-700 dark:text-gray-200 placeholder:text-gray-400"
-                />
+             {/* GLOBAL SEARCH */}
+             <div ref={searchRef} className="hidden lg:block relative w-64 z-50">
+                <div className={`flex items-center bg-gray-100 dark:bg-slate-800 rounded-lg px-3 py-1.5 border transition-all ${isSearchOpen ? 'ring-2 ring-primary/20 border-primary' : 'border-gray-200 dark:border-slate-700'}`}>
+                   <Search size={16} className="text-gray-400 shrink-0" />
+                   <input 
+                     type="text" 
+                     placeholder="Tìm nhanh..." 
+                     className="bg-transparent border-none outline-none text-sm ml-2 w-full text-gray-700 dark:text-gray-200 placeholder:text-gray-400"
+                     value={searchTerm}
+                     onChange={(e) => {
+                         setSearchTerm(e.target.value);
+                         setIsSearchOpen(true);
+                     }}
+                     onFocus={() => setIsSearchOpen(true)}
+                   />
+                   {searchTerm && (
+                     <button onClick={() => { setSearchTerm(''); setIsSearchOpen(false); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                        <X size={14} />
+                     </button>
+                   )}
+                </div>
+
+                {/* SEARCH RESULTS DROPDOWN */}
+                {isSearchOpen && searchTerm && (
+                    <div className="absolute top-full mt-2 w-[400px] right-0 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+                       {!hasResults ? (
+                           <div className="p-8 text-center text-gray-400 text-sm">
+                               <p>Không tìm thấy kết quả cho "{searchTerm}"</p>
+                           </div>
+                       ) : (
+                           <div className="max-h-[60vh] overflow-y-auto">
+                               {/* Docs */}
+                               {searchResults.docs.length > 0 && (
+                                   <div className="py-2">
+                                       <div className="px-4 py-1 text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Tài liệu</div>
+                                       {searchResults.docs.map(doc => (
+                                           <div key={doc.id} onClick={() => handleSearchResultClick('documents')} className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer flex items-start gap-3 group">
+                                               <div className="mt-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-1.5 rounded"><FileText size={16} /></div>
+                                               <div className="flex-1 overflow-hidden">
+                                                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600">{doc.ten_tai_lieu}</p>
+                                                   <p className="text-xs text-gray-500 font-mono">{doc.ma_tai_lieu}</p>
+                                               </div>
+                                               <ArrowRight size={14} className="self-center opacity-0 group-hover:opacity-100 text-gray-400 transition-opacity"/>
+                                           </div>
+                                       ))}
+                                   </div>
+                               )}
+                               
+                               {/* Records */}
+                               {searchResults.recs.length > 0 && (
+                                   <div className="py-2 border-t border-gray-100 dark:border-slate-800">
+                                       <div className="px-4 py-1 text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Hồ sơ</div>
+                                       {searchResults.recs.map(rec => (
+                                           <div key={rec.id} onClick={() => handleSearchResultClick('records')} className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer flex items-start gap-3 group">
+                                               <div className="mt-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-1.5 rounded"><Archive size={16} /></div>
+                                               <div className="flex-1 overflow-hidden">
+                                                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-orange-600">{rec.tieu_de}</p>
+                                                   <p className="text-xs text-gray-500 font-mono">{rec.ma_ho_so}</p>
+                                               </div>
+                                               <ArrowRight size={14} className="self-center opacity-0 group-hover:opacity-100 text-gray-400 transition-opacity"/>
+                                           </div>
+                                       ))}
+                                   </div>
+                               )}
+
+                               {/* Audits */}
+                               {searchResults.audits.length > 0 && (
+                                   <div className="py-2 border-t border-gray-100 dark:border-slate-800">
+                                       <div className="px-4 py-1 text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Kế hoạch Audit</div>
+                                       {searchResults.audits.map(plan => (
+                                           <div key={plan.id} onClick={() => handleSearchResultClick('audit-schedule')} className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer flex items-start gap-3 group">
+                                               <div className="mt-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-1.5 rounded"><CalendarDays size={16} /></div>
+                                               <div className="flex-1 overflow-hidden">
+                                                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-purple-600">{plan.ten_ke_hoach}</p>
+                                                   <p className="text-xs text-gray-500">{plan.loai_danh_gia}</p>
+                                               </div>
+                                               <ArrowRight size={14} className="self-center opacity-0 group-hover:opacity-100 text-gray-400 transition-opacity"/>
+                                           </div>
+                                       ))}
+                                   </div>
+                               )}
+                           </div>
+                       )}
+                    </div>
+                )}
              </div>
 
              <div className="flex items-center gap-2">
