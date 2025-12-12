@@ -10,7 +10,7 @@ import { HoSoList } from './modules/ho_so/HoSoList';
 import { AuditSchedulePage } from './modules/audit/AuditSchedulePage'; 
 import { SettingsPage } from './modules/settings/SettingsPage'; 
 import { MasterDataState, NhanSu, AppNotification, TaiLieu, HoSo, KeHoachDanhGia, BackupData } from './types';
-import { fetchMasterDataFromDB } from './services/supabaseService'; // NEW IMPORT
+import { fetchMasterDataFromDB, fetchDocumentsFromDB, fetchRecordsFromDB, fetchAuditPlansFromDB } from './services/supabaseService';
 
 const App: React.FC = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -37,23 +37,46 @@ const App: React.FC = () => {
   // --- INIT DATA FROM SUPABASE ---
   useEffect(() => {
     const initData = async () => {
-      // Thử tải Master Data từ DB
+      // 1. Tải Master Data (Danh mục, User)
       const dbMasterData = await fetchMasterDataFromDB();
       if (dbMasterData) {
-        console.log("Đã tải dữ liệu từ Supabase thành công!");
+        console.log("✅ [Supabase] Tải Master Data thành công!");
         setMasterData(dbMasterData);
         setIsConnected(true);
         
-        // Nếu có user trong DB, set user đầu tiên làm current
+        // Setup User mặc định từ DB
         if (dbMasterData.nhanSu.length > 0) {
-           // Tìm admin nếu có
            const admin = dbMasterData.nhanSu.find(u => u.roles.includes('QUAN_TRI'));
            setCurrentUser(admin || dbMasterData.nhanSu[0]);
         }
       } else {
-        console.log("Dùng dữ liệu mẫu (Mock Data).");
+        console.log("ℹ️ [Local] Dùng Master Data mẫu.");
+      }
+
+      // 2. Tải Dữ liệu nghiệp vụ (Nếu kết nối thành công)
+      // Lưu ý: Nếu bảng chưa có, hàm sẽ trả về null và App giữ nguyên Mock Data
+      const [dbDocs, dbRecords, dbPlans] = await Promise.all([
+         fetchDocumentsFromDB(),
+         fetchRecordsFromDB(),
+         fetchAuditPlansFromDB()
+      ]);
+
+      if (dbDocs && dbDocs.length > 0) {
+         console.log(`✅ [Supabase] Tải ${dbDocs.length} tài liệu.`);
+         setDocuments(dbDocs);
+      }
+      
+      if (dbRecords && dbRecords.length > 0) {
+         console.log(`✅ [Supabase] Tải ${dbRecords.length} hồ sơ.`);
+         setRecords(dbRecords);
+      }
+
+      if (dbPlans && dbPlans.length > 0) {
+         console.log(`✅ [Supabase] Tải ${dbPlans.length} kế hoạch audit.`);
+         setAuditPlans(dbPlans);
       }
     };
+
     initData();
   }, []);
 
