@@ -4,7 +4,7 @@ import { DataTable } from '../../components/DataTable';
 import { TaiLieu, ColumnDefinition, TrangThaiTaiLieu, MasterDataState, NhanSu, DinhKem, HoSo } from '../../types';
 import { Badge } from '../../components/ui/Badge';
 import { format, differenceInDays } from 'date-fns';
-import { Sparkles, Plus, Pencil, Trash2, X, Calendar, User, FileText, CheckCircle, Filter, Paperclip, Lock, FileType, FileSpreadsheet, Link as LinkIcon, ExternalLink, FileUp, AlertTriangle, ArrowRight, GitCommit, History, RefreshCw, GitBranch, List, ChevronRight, ChevronDown, FolderOpen, Archive, FileBox, Send } from 'lucide-react';
+import { Sparkles, Plus, Pencil, Trash2, X, Calendar, User, FileText, CheckCircle, Filter, Paperclip, Lock, FileType, FileSpreadsheet, Link as LinkIcon, ExternalLink, FileUp, AlertTriangle, ArrowRight, GitCommit, History, RefreshCw, GitBranch, List, ChevronRight, ChevronDown, FolderOpen, Archive, FileBox, Send, Zap, GitMerge, Check } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { TaiLieuForm } from './TaiLieuForm';
 import { Modal } from '../../components/ui/Modal';
@@ -540,7 +540,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({ masterData, currentUse
                    </>
                ) : (
                    <>
-                     <Button className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200 dark:bg-amber-900/30 dark:text-amber-500 dark:border-amber-800" onClick={handleVersionUpClick} leftIcon={<FileUp size={16} />}>Nâng phiên bản</Button>
+                     <Button className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm border border-transparent" onClick={handleVersionUpClick} leftIcon={<FileUp size={16} />}>Nâng phiên bản</Button>
                      <Button variant="secondary" onClick={() => setViewMode('form')}><Pencil size={16} className="mr-2" /> Sửa thông tin</Button>
                    </>
                )}
@@ -552,15 +552,78 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({ masterData, currentUse
       <Modal isOpen={showVersionModal} onClose={() => setShowVersionModal(false)} title="Nâng phiên bản tài liệu" footer={<><Button variant="ghost" onClick={() => setShowVersionModal(false)}>Hủy bỏ</Button><Button onClick={confirmVersionUp} leftIcon={<FileUp size={16} />}>Xác nhận & Tạo bản thảo</Button></>}>
         <div className="space-y-6">
            {selectedDoc && (
-             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg flex items-center justify-between border border-blue-100 dark:border-blue-800">
-               <div><p className="text-xs text-blue-600 dark:text-blue-300 font-bold uppercase">Phiên bản hiện tại</p><p className="text-2xl font-mono font-bold text-blue-700 dark:text-blue-400">{selectedDoc.phien_ban}</p></div>
-               <ArrowRight className="text-gray-400" />
-               <div className="text-right"><p className="text-xs text-green-600 dark:text-green-300 font-bold uppercase">Phiên bản mới</p><p className="text-2xl font-mono font-bold text-green-700 dark:text-green-400">{getNextVersion(selectedDoc.phien_ban, versionType)}</p></div>
+             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800 p-5 rounded-xl flex items-center justify-between border border-blue-100 dark:border-slate-700 relative overflow-hidden">
+               <div className="relative z-10">
+                  <p className="text-[10px] text-blue-600 dark:text-blue-300 font-bold uppercase tracking-wider mb-1">Phiên bản hiện tại</p>
+                  <p className="text-3xl font-mono font-bold text-blue-700 dark:text-blue-400">{selectedDoc.phien_ban}</p>
+               </div>
+               
+               <div className="flex items-center text-blue-300 dark:text-slate-600">
+                  <div className="w-8 h-0.5 bg-current"></div>
+                  <ChevronRight size={24} className="-ml-2" />
+               </div>
+
+               <div className="relative z-10 text-right">
+                  <p className="text-[10px] text-green-600 dark:text-green-300 font-bold uppercase tracking-wider mb-1">Phiên bản mới</p>
+                  <p className="text-3xl font-mono font-bold text-green-700 dark:text-green-400">{getNextVersion(selectedDoc.phien_ban, versionType)}</p>
+               </div>
+               
+               {/* Decorators */}
+               <div className="absolute -right-6 -top-6 w-24 h-24 bg-green-100 dark:bg-green-900/20 rounded-full blur-2xl opacity-50"></div>
+               <div className="absolute -left-6 -bottom-6 w-24 h-24 bg-blue-100 dark:bg-blue-900/20 rounded-full blur-2xl opacity-50"></div>
              </div>
            )}
-           <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Loại nâng cấp</label><div className="grid grid-cols-1 md:grid-cols-2 gap-3"><button onClick={() => setVersionType('minor')} className={`p-3 rounded-lg border text-left transition-all ${versionType === 'minor' ? 'bg-white dark:bg-slate-800 border-primary ring-1 ring-primary' : 'bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800'}`}><div className="flex items-center gap-2 mb-1"><div className={`w-4 h-4 rounded-full border flex items-center justify-center ${versionType === 'minor' ? 'border-primary' : 'border-gray-400'}`}>{versionType === 'minor' && <div className="w-2 h-2 rounded-full bg-primary" />}</div><span className="font-bold text-sm text-gray-800 dark:text-gray-200">Nâng cấp nhỏ (Minor)</span></div><p className="text-xs text-gray-500 pl-6">Sửa lỗi chính tả, format, thay đổi nhỏ không ảnh hưởng quy trình. (VD: 1.0 &rarr; 1.1)</p></button><button onClick={() => setVersionType('major')} className={`p-3 rounded-lg border text-left transition-all ${versionType === 'major' ? 'bg-white dark:bg-slate-800 border-primary ring-1 ring-primary' : 'bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800'}`}><div className="flex items-center gap-2 mb-1"><div className={`w-4 h-4 rounded-full border flex items-center justify-center ${versionType === 'major' ? 'border-primary' : 'border-gray-400'}`}>{versionType === 'major' && <div className="w-2 h-2 rounded-full bg-primary" />}</div><span className="font-bold text-sm text-gray-800 dark:text-gray-200">Nâng cấp lớn (Major)</span></div><p className="text-xs text-gray-500 pl-6">Thay đổi nội dung, lưu đồ, biểu mẫu hoặc quy trình vận hành. (VD: 1.0 &rarr; 2.0)</p></button></div></div>
-           <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nội dung cập nhật / Lý do <span className="text-red-500">*</span></label><textarea className="w-full p-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none text-sm min-h-[100px]" placeholder="Nhập chi tiết các thay đổi so với phiên bản trước..." value={versionReason} onChange={(e) => setVersionReason(e.target.value)}/></div>
-           <div className="bg-amber-50 dark:bg-amber-900/10 p-3 rounded-lg flex gap-2 items-start text-xs text-amber-700 dark:text-amber-500"><AlertTriangle size={16} className="shrink-0 mt-0.5" /><p>Lưu ý: Sau khi xác nhận, tài liệu cũ sẽ chuyển sang trạng thái "Hết hiệu lực". Một bản thảo mới sẽ được tạo ra để bạn chỉnh sửa.</p></div>
+           
+           <div>
+              <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-3">Chọn loại nâng cấp</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <button 
+                    onClick={() => setVersionType('minor')} 
+                    className={`relative p-4 rounded-xl border text-left transition-all duration-200 group hover:shadow-md ${versionType === 'minor' ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500 dark:bg-blue-900/20 dark:border-blue-400' : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'}`}
+                 >
+                    <div className="flex justify-between items-start mb-2">
+                       <div className={`p-2 rounded-lg ${versionType === 'minor' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-600'}`}>
+                          <Zap size={20} />
+                       </div>
+                       {versionType === 'minor' && <Check size={18} className="text-blue-600 dark:text-blue-400" />}
+                    </div>
+                    <span className={`block font-bold text-sm mb-1 ${versionType === 'minor' ? 'text-blue-900 dark:text-blue-100' : 'text-gray-700 dark:text-gray-200'}`}>Nâng cấp nhỏ (Minor)</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Sửa lỗi chính tả, format, thay đổi nhỏ không ảnh hưởng quy trình.</p>
+                 </button>
+
+                 <button 
+                    onClick={() => setVersionType('major')} 
+                    className={`relative p-4 rounded-xl border text-left transition-all duration-200 group hover:shadow-md ${versionType === 'major' ? 'bg-purple-50 border-purple-500 ring-1 ring-purple-500 dark:bg-purple-900/20 dark:border-purple-400' : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'}`}
+                 >
+                    <div className="flex justify-between items-start mb-2">
+                       <div className={`p-2 rounded-lg ${versionType === 'major' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400 group-hover:bg-purple-50 group-hover:text-purple-600'}`}>
+                          <GitMerge size={20} />
+                       </div>
+                       {versionType === 'major' && <Check size={18} className="text-purple-600 dark:text-purple-400" />}
+                    </div>
+                    <span className={`block font-bold text-sm mb-1 ${versionType === 'major' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-200'}`}>Nâng cấp lớn (Major)</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Thay đổi nội dung, lưu đồ, biểu mẫu hoặc quy trình vận hành.</p>
+                 </button>
+              </div>
+           </div>
+
+           <div>
+              <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-2">Nội dung cập nhật / Lý do <span className="text-red-500">*</span></label>
+              <textarea 
+                 className="w-full p-4 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 focus:border-primary outline-none text-sm min-h-[120px] transition-shadow placeholder:text-gray-400" 
+                 placeholder="Mô tả chi tiết các thay đổi so với phiên bản trước để lưu vào lịch sử..." 
+                 value={versionReason} 
+                 onChange={(e) => setVersionReason(e.target.value)}
+              />
+           </div>
+
+           <div className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-xl flex gap-3 items-start border border-amber-100 dark:border-amber-800/30">
+              <AlertTriangle size={18} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" />
+              <div>
+                 <p className="text-xs font-bold text-amber-800 dark:text-amber-400 mb-1">Lưu ý quan trọng</p>
+                 <p className="text-xs text-amber-700 dark:text-amber-500 leading-relaxed">Sau khi xác nhận, tài liệu phiên bản cũ ({selectedDoc?.phien_ban}) sẽ chuyển sang trạng thái "Hết hiệu lực". Một bản thảo mới sẽ được tạo ra để bạn bắt đầu chỉnh sửa.</p>
+              </div>
+           </div>
         </div>
       </Modal>
     </div>
