@@ -3,59 +3,65 @@ import { supabase } from '../lib/supabaseClient';
 import { MasterDataState, DanhMucItem, NhanSu, TaiLieu, HoSo, KeHoachDanhGia } from '../types';
 import { INITIAL_MASTER_DATA } from '../constants';
 
-// --- HELPERS ---
+// --- HELPERS MAPPING ---
+// Chuyển đổi từ cột DB (Tiếng Việt snake_case) -> App Type (CamelCase/Mixed)
+
 const mapCategoryToItem = (record: any): DanhMucItem => ({
   id: record.id,
-  ten: record.name,
-  active: record.active,
-  thu_tu: record.order || 0, 
-  ma_viet_tat: record.code_prefix,
-  parentId: record.parent_id, // Map parent_id
-  ...(record.settings || {})
+  ten: record.ten,            // DB: ten
+  active: record.hoat_dong,   // DB: hoat_dong
+  thu_tu: record.thu_tu || 0, // DB: thu_tu
+  ma_viet_tat: record.ma_viet_tat, // DB: ma_viet_tat
+  parentId: record.id_cha,    // DB: id_cha
+  ...(record.cai_dat || {})   // DB: cai_dat (JSONB)
 });
 
 const mapProfileToUser = (record: any, depts: DanhMucItem[]): NhanSu => {
-  const deptName = depts.find(d => d.id === record.department_id)?.ten || '';
+  // DB: id_phong_ban
+  const deptName = depts.find(d => d.id === record.id_phong_ban)?.ten || '';
   return {
     id: record.id,
-    ho_ten: record.full_name,
+    ho_ten: record.ho_ten,       // DB: ho_ten
     email: record.email || '',
-    chuc_vu: record.job_title || 'Nhân viên',
+    chuc_vu: record.chuc_vu || 'Nhân viên', // DB: chuc_vu
     phong_ban: deptName,
-    roles: record.roles || [],
-    thu_tu: 0,
-    avatar: record.avatar_url
+    roles: record.quyen || [],   // DB: quyen (Array)
+    thu_tu: record.thu_tu || 0,
+    avatar: record.anh_dai_dien  // DB: anh_dai_dien
   };
 };
 
 const sortByOrder = (a: any, b: any) => (a.order || 0) - (b.order || 0);
 
-// --- FETCH MASTER DATA ---
+// --- FETCH MASTER DATA (DANH MUC & NHAN SU) ---
 export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> => {
   try {
-    // 1. Tải Categories
-    const { data: categoriesData, error: catError } = await supabase.from('categories').select('*');
+    // 1. Tải Danh Mục (Table: danh_muc)
+    const { data: categoriesData, error: catError } = await supabase.from('danh_muc').select('*');
     if (catError) throw catError;
 
-    // 2. Tải Profiles
-    const { data: profilesData, error: profError } = await supabase.from('profiles').select('*');
+    // 2. Tải Nhân Sự (Table: nhan_su)
+    const { data: profilesData, error: profError } = await supabase.from('nhan_su').select('*');
     if (profError) throw profError;
 
     const categories = categoriesData || [];
     const profiles = profilesData || [];
 
-    // 3. Phân loại Category
-    const loaiTaiLieu = categories.filter((c: any) => c.type === 'LOAI_TAI_LIEU').sort(sortByOrder).map(mapCategoryToItem);
-    const linhVuc = categories.filter((c: any) => c.type === 'LINH_VUC').sort(sortByOrder).map(mapCategoryToItem);
-    const boPhan = categories.filter((c: any) => c.type === 'BO_PHAN').sort(sortByOrder).map(mapCategoryToItem);
-    const tieuChuan = categories.filter((c: any) => c.type === 'TIEU_CHUAN').sort(sortByOrder).map(mapCategoryToItem);
+    // Helper sort
+    const sortIt = (arr: any[]) => arr.sort((a, b) => (a.thu_tu || 0) - (b.thu_tu || 0));
+
+    // 3. Phân loại Category dựa trên cột 'loai'
+    const loaiTaiLieu = sortIt(categories.filter((c: any) => c.loai === 'LOAI_TAI_LIEU').map(mapCategoryToItem));
+    const linhVuc = sortIt(categories.filter((c: any) => c.loai === 'LINH_VUC').map(mapCategoryToItem));
+    const boPhan = sortIt(categories.filter((c: any) => c.loai === 'BO_PHAN').map(mapCategoryToItem));
+    const tieuChuan = sortIt(categories.filter((c: any) => c.loai === 'TIEU_CHUAN').map(mapCategoryToItem));
     
     // Audit Categories
-    const toChucDanhGia = categories.filter((c: any) => c.type === 'TO_CHUC_AUDIT').sort(sortByOrder).map(mapCategoryToItem);
-    const loaiDanhGia = categories.filter((c: any) => c.type === 'LOAI_AUDIT').sort(sortByOrder).map(mapCategoryToItem);
-    const auditors = categories.filter((c: any) => c.type === 'AUDITOR').sort(sortByOrder).map(mapCategoryToItem);
+    const toChucDanhGia = sortIt(categories.filter((c: any) => c.loai === 'TO_CHUC_AUDIT').map(mapCategoryToItem));
+    const loaiDanhGia = sortIt(categories.filter((c: any) => c.loai === 'LOAI_AUDIT').map(mapCategoryToItem));
+    const auditors = sortIt(categories.filter((c: any) => c.loai === 'AUDITOR').map(mapCategoryToItem));
 
-    // 4. Map Profiles
+    // 4. Map Profiles -> NhanSu
     const nhanSu = profiles.map((p: any) => mapProfileToUser(p, boPhan));
 
     if (categories.length === 0 && profiles.length === 0) return null;
@@ -72,25 +78,23 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
     };
 
   } catch (error: any) {
-    // Chỉ log lỗi nếu không phải do chưa cấu hình Key
-    if (!error?.message?.includes('Invalid API key')) {
-        console.warn("⚠️ Không tải được Master Data (Sẽ dùng Mock Data). Lỗi:", JSON.stringify(error, null, 2));
+    if (!error?.message?.includes('Invalid API key') && error?.code !== 'PGRST301') {
+        console.warn("⚠️ Lỗi tải Master Data (danh_muc/nhan_su):", JSON.stringify(error, null, 2));
     }
     return null;
   }
 };
 
-// --- FETCH DOCUMENTS (TÀI LIỆU) ---
+// --- FETCH DOCUMENTS (Table: tai_lieu) ---
 export const fetchDocumentsFromDB = async (): Promise<TaiLieu[] | null> => {
     try {
-        const { data, error } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
+        // Cột trong DB đã đặt tên trùng với Interface TaiLieu (ma_tai_lieu, ten_tai_lieu...) nên không cần map
+        const { data, error } = await supabase.from('tai_lieu').select('*').order('ngay_tao', { ascending: false });
         
         if (error) {
-            // Log rõ lỗi JSON để debug
-            console.warn("⚠️ Lỗi tải Tài liệu (Supabase):", JSON.stringify(error, null, 2));
-            return null; // Trả về null để App dùng Mock Data
+            console.warn("⚠️ Lỗi tải Tài liệu (tai_lieu):", JSON.stringify(error, null, 2));
+            return null;
         }
-
         return data as TaiLieu[];
     } catch (error) {
         console.error("Exception tải Tài liệu:", error);
@@ -98,12 +102,12 @@ export const fetchDocumentsFromDB = async (): Promise<TaiLieu[] | null> => {
     }
 };
 
-// --- FETCH RECORDS (HỒ SƠ) ---
+// --- FETCH RECORDS (Table: ho_so) ---
 export const fetchRecordsFromDB = async (): Promise<HoSo[] | null> => {
     try {
-        const { data, error } = await supabase.from('records').select('*').order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('ho_so').select('*').order('ngay_tao', { ascending: false });
         if (error) {
-             console.warn("⚠️ Lỗi tải Hồ sơ (Supabase):", JSON.stringify(error, null, 2));
+             console.warn("⚠️ Lỗi tải Hồ sơ (ho_so):", JSON.stringify(error, null, 2));
              return null;
         }
         return data as HoSo[];
@@ -113,12 +117,12 @@ export const fetchRecordsFromDB = async (): Promise<HoSo[] | null> => {
     }
 };
 
-// --- FETCH AUDIT PLANS (KẾ HOẠCH) ---
+// --- FETCH AUDIT PLANS (Table: ke_hoach_danh_gia) ---
 export const fetchAuditPlansFromDB = async (): Promise<KeHoachDanhGia[] | null> => {
     try {
-        const { data, error } = await supabase.from('audit_plans').select('*').order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('ke_hoach_danh_gia').select('*').order('ngay_tao', { ascending: false });
         if (error) {
-             console.warn("⚠️ Lỗi tải Kế hoạch Audit (Supabase):", JSON.stringify(error, null, 2));
+             console.warn("⚠️ Lỗi tải Kế hoạch (ke_hoach_danh_gia):", JSON.stringify(error, null, 2));
              return null;
         }
         return data as KeHoachDanhGia[];

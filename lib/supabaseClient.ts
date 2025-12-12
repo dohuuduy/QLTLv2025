@@ -31,7 +31,7 @@ const getEnv = (key: string) => {
 const FALLBACK_URL = 'https://vbqdrvezzualrabydvif.supabase.co';
 
 // 2. ANON KEY
-const FALLBACK_KEY = ''; 
+const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZicWRydmV6enVhbHJhYnlkdmlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1Mjk2OTcsImV4cCI6MjA4MTEwNTY5N30.HHSA1zmEgFUIBf6xL7VFLyx9IBL11AcCHGX6W_FgYl4'; 
 
 const SUPABASE_URL = getEnv('SUPABASE_URL') || FALLBACK_URL;
 const SUPABASE_ANON_KEY = getEnv('SUPABASE_ANON_KEY') || FALLBACK_KEY;
@@ -41,7 +41,7 @@ if (!SUPABASE_ANON_KEY) {
   console.warn('⚠️ CHƯA CÓ API KEY: App sẽ dùng dữ liệu mẫu (Mock Data).');
   console.warn('👉 Trên Vercel: Vào Settings -> Environment Variables -> Thêm SUPABASE_URL và SUPABASE_ANON_KEY');
 } else {
-  console.log('✅ Đã tìm thấy API Key từ biến môi trường.');
+  console.log('✅ Đã tìm thấy API Key.');
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY || 'missing-key-placeholder');
@@ -49,8 +49,10 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY || 'missing
 // Hàm tiện ích để kiểm tra kết nối
 export const checkConnection = async () => {
   try {
-    const { error } = await supabase.from('categories').select('count', { count: 'exact', head: true });
+    // Thử query bảng danh_muc (đã tạo) thay vì categories cũ
+    const { count, error } = await supabase.from('danh_muc').select('*', { count: 'exact', head: true });
     if (error) throw error;
+    console.log(`✅ Kết nối Supabase thành công! Số lượng danh mục: ${count}`);
     return true;
   } catch (err: any) {
     // Không throw lỗi để App không crash, chỉ log warning
