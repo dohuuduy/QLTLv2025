@@ -72,8 +72,9 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
     };
 
   } catch (error: any) {
+    // Chỉ log lỗi nếu không phải do chưa cấu hình Key
     if (!error?.message?.includes('Invalid API key')) {
-        console.error("Lỗi Master Data:", error);
+        console.warn("⚠️ Không tải được Master Data (Sẽ dùng Mock Data). Lỗi:", JSON.stringify(error, null, 2));
     }
     return null;
   }
@@ -82,24 +83,17 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
 // --- FETCH DOCUMENTS (TÀI LIỆU) ---
 export const fetchDocumentsFromDB = async (): Promise<TaiLieu[] | null> => {
     try {
-        // Giả định tên bảng là 'documents', ánh xạ 1-1 với type TaiLieu
         const { data, error } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
         
         if (error) {
-            // Nếu bảng chưa tồn tại, Supabase trả lỗi 404 hoặc 42P01
-            if (error.code === '42P01') {
-                console.warn("Bảng 'documents' chưa tồn tại trong DB.");
-                return null;
-            }
-            throw error;
+            // Log rõ lỗi JSON để debug
+            console.warn("⚠️ Lỗi tải Tài liệu (Supabase):", JSON.stringify(error, null, 2));
+            return null; // Trả về null để App dùng Mock Data
         }
 
-        // Map snake_case (DB) sang camelCase (App) nếu cần thiết
-        // Ở đây giả định đại ca đã tạo cột giống tên biến trong interface hoặc dùng JSONB
-        // Nếu DB dùng snake_case (vd: ma_tai_lieu), Supabase trả về đúng key đó nên không cần map nhiều.
         return data as TaiLieu[];
     } catch (error) {
-        console.error("Lỗi tải Tài liệu:", error);
+        console.error("Exception tải Tài liệu:", error);
         return null;
     }
 };
@@ -109,12 +103,12 @@ export const fetchRecordsFromDB = async (): Promise<HoSo[] | null> => {
     try {
         const { data, error } = await supabase.from('records').select('*').order('created_at', { ascending: false });
         if (error) {
-             if (error.code === '42P01') return null; // Table not found
-             throw error;
+             console.warn("⚠️ Lỗi tải Hồ sơ (Supabase):", JSON.stringify(error, null, 2));
+             return null;
         }
         return data as HoSo[];
     } catch (error) {
-        console.error("Lỗi tải Hồ sơ:", error);
+        console.error("Exception tải Hồ sơ:", error);
         return null;
     }
 };
@@ -124,12 +118,12 @@ export const fetchAuditPlansFromDB = async (): Promise<KeHoachDanhGia[] | null> 
     try {
         const { data, error } = await supabase.from('audit_plans').select('*').order('created_at', { ascending: false });
         if (error) {
-             if (error.code === '42P01') return null; // Table not found
-             throw error;
+             console.warn("⚠️ Lỗi tải Kế hoạch Audit (Supabase):", JSON.stringify(error, null, 2));
+             return null;
         }
         return data as KeHoachDanhGia[];
     } catch (error) {
-        console.error("Lỗi tải Kế hoạch Audit:", error);
+        console.error("Exception tải Kế hoạch Audit:", error);
         return null;
     }
 };
