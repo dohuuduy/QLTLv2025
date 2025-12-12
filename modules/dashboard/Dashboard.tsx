@@ -15,51 +15,63 @@ interface ChartContainerProps {
   className?: string;
 }
 
-// FIX: ChartContainer theo dõi kích thước thật và chỉ render con khi có size > 0
+// FIX: ChartContainer with debounce to prevent Recharts rendering before layout is ready
 const ChartContainer = ({ children, height = 300, className = "" }: ChartContainerProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+    const [isReady, setIsReady] = useState(false);
+    const timeoutRef = useRef<number | null>(null);
 
     useEffect(() => {
         const element = containerRef.current;
         if (!element) return;
 
-        const observer = new ResizeObserver((entries) => {
-            if (!entries[0]) return;
-            const { width, height } = entries[0].contentRect;
-            // Chỉ update state nếu kích thước thay đổi đáng kể và hợp lệ
-            if (width > 0 && height > 0) {
-                 // Dùng requestAnimationFrame để tránh lỗi ResizeObserver loop limit exceeded
-                 window.requestAnimationFrame(() => {
-                     setDimensions({ width, height });
-                 });
+        const checkSize = () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
             }
+            
+            // Debounce 100ms to ensure layout stability
+            timeoutRef.current = window.setTimeout(() => {
+                if (element) {
+                    const rect = element.getBoundingClientRect();
+                    // Using rect.width > 0 && rect.height > 0 ensures it's visible in DOM
+                    if (rect.width > 0 && rect.height > 0) {
+                        setIsReady(true);
+                    }
+                }
+            }, 100); 
+        };
+
+        const observer = new ResizeObserver(() => {
+            checkSize();
         });
 
         observer.observe(element);
+        checkSize(); // Check immediately
 
         return () => {
             observer.disconnect();
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
     }, []);
 
-    // Kiểm tra style height nếu là string (ví dụ "100%") hoặc number
     const styleHeight = typeof height === 'number' ? `${height}px` : height;
 
     return (
         <div 
             ref={containerRef} 
-            className={`w-full relative min-w-0 min-h-0 overflow-hidden ${className}`}
-            style={{ height: styleHeight }}
+            className={`w-full relative ${className}`}
+            style={{ height: styleHeight, minHeight: 0, minWidth: 0 }}
         >
-            {/* Chỉ render Children (Chart) khi đã có kích thước thực tế */}
-            {dimensions.width > 0 && dimensions.height > 0 ? (
-                children
+            {isReady ? (
+                <div style={{ width: '100%', height: '100%' }}>
+                    {children}
+                </div>
             ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-slate-800/50 rounded text-gray-400 text-xs">
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-slate-800/50 rounded">
                     <div className="flex flex-col items-center gap-2">
                         <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span>Đang khởi tạo biểu đồ...</span>
+                        <span className="text-gray-400 text-xs">Đang tải biểu đồ...</span>
                     </div>
                 </div>
             )}
@@ -229,7 +241,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
                     data={barData} 
                     layout="vertical" 
                     margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-                    onClick={(data) => {
+                    onClick={(data: any) => {
                         if (data && data.activePayload && data.activePayload.length > 0) {
                             const deptName = data.activePayload[0].payload.name;
                             onNavigateToDocuments({ bo_phan: deptName });

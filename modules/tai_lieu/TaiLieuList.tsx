@@ -159,10 +159,8 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({ masterData, currentUse
         await upsertDocument(oldDocUpdated); // Update old
         await upsertDocument(newDoc); // Create new
         
-        onUpdate(prev => {
-           const temp = prev.map(d => d.id === selectedDoc.id ? oldDocUpdated : d);
-           return [newDoc, ...temp];
-        });
+        const temp = data.map(d => d.id === selectedDoc.id ? oldDocUpdated : d);
+        onUpdate([newDoc, ...temp]);
 
         setShowVersionModal(false);
         setSelectedDoc(newDoc);

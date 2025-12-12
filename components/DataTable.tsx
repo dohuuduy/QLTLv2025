@@ -112,8 +112,8 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         // Handle undefined/null safely
-        const aVal = a[sortConfig.key] ?? '';
-        const bVal = b[sortConfig.key] ?? '';
+        const aVal = (a[sortConfig.key] as any) ?? '';
+        const bVal = (b[sortConfig.key] as any) ?? '';
 
         if (aVal < bVal) {
           return sortConfig.direction === 'asc' ? -1 : 1;
@@ -185,7 +185,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
 
       exportCols.forEach(col => {
         // Lấy giá trị raw thay vì render component
-        let val = item[col.key];
+        let val: any = item[col.key];
         // Xử lý một số trường hợp đặc biệt nếu cần (ví dụ object)
         if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
            val = JSON.stringify(val);
