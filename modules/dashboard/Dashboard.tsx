@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrangThaiTaiLieu, TaiLieu } from '../../types';
@@ -8,7 +9,7 @@ interface DashboardProps {
   onNavigateToDocuments: (filters: { trang_thai?: string; bo_phan?: string }) => void;
 }
 
-// Define props interface with optional children to avoid TS errors in some environments
+// Define props interface with optional children to avoid TS errors
 interface ChartContainerProps {
   children?: React.ReactNode;
   height?: number | string;
@@ -29,12 +30,12 @@ const ChartContainer = ({ children, height = 300 }: ChartContainerProps) => {
             }
         }
         
-        // Fallback: Sử dụng ResizeObserver để lắng nghe thay đổi kích thước
+        // Fallback: Sử dụng ResizeObserver
         const observer = new ResizeObserver((entries) => {
             for (const entry of entries) {
                 if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
                     setShouldRender(true);
-                    observer.disconnect(); // Chỉ cần biết khi nào nó hiện lên là đủ
+                    // Không disconnect ngay để handle resize window
                 }
             }
         });
@@ -44,7 +45,7 @@ const ChartContainer = ({ children, height = 300 }: ChartContainerProps) => {
         }
 
         // Fallback cuối cùng: Timer an toàn
-        const timer = setTimeout(() => setShouldRender(true), 500);
+        const timer = setTimeout(() => setShouldRender(true), 1000);
 
         return () => {
             observer.disconnect();
@@ -182,7 +183,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           </h3>
           <div className="flex-1 w-full min-h-0 min-w-0">
              <ChartContainer height="100%">
-                <ResponsiveContainer width="99%" height="100%">
+                {/* Thêm minWidth và minHeight để tránh lỗi width(-1) */}
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <PieChart>
                     <Pie
                       data={pieData}
@@ -223,7 +225,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           </h3>
           <div className="flex-1 w-full min-h-0 min-w-0">
             <ChartContainer height="100%">
-                <ResponsiveContainer width="99%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <BarChart 
                     data={barData} 
                     layout="vertical" 
@@ -270,7 +272,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
           </h3>
           <div className="flex-1 w-full min-h-0 min-w-0">
              <ChartContainer height="100%">
-                <ResponsiveContainer width="99%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                   <BarChart 
                     data={topAuthors} 
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
