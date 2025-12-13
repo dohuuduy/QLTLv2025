@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
 import { signIn, signUpNewUser, upsertProfile, checkSystemHasAdmin } from '../../services/supabaseService';
-import { ShieldCheck, Mail, Lock, Loader2, Wrench, Key, Eye, EyeOff, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, Loader2, Wrench, Key, Eye, EyeOff, CheckCircle2, XCircle, ArrowRight, Headset, ShieldAlert } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 type VerificationStatus = 'idle' | 'verifying' | 'success' | 'error';
@@ -15,6 +16,9 @@ export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // UI States
+  const [showForgotModal, setShowForgotModal] = useState(false);
+
   // Verification State
   const [verifyStatus, setVerifyStatus] = useState<VerificationStatus>('idle');
   const [verifyMessage, setVerifyMessage] = useState('');
@@ -314,7 +318,13 @@ export const LoginPage: React.FC = () => {
                 </div>
                 <span className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Ghi nhớ tài khoản</span>
             </label>
-            <a href="#" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors" onClick={(e) => {e.preventDefault(); alert("Vui lòng liên hệ Admin để đặt lại mật khẩu.");}}>Quên mật khẩu?</a>
+            <a 
+              href="#" 
+              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors" 
+              onClick={(e) => { e.preventDefault(); setShowForgotModal(true); }}
+            >
+              Quên mật khẩu?
+            </a>
           </div>
 
           <Button 
@@ -378,6 +388,31 @@ export const LoginPage: React.FC = () => {
             </div>
         )}
       </div>
+
+      {/* Professional Modal for Forgot Password */}
+      <Modal 
+        isOpen={showForgotModal} 
+        onClose={() => setShowForgotModal(false)} 
+        title="Hỗ trợ khôi phục mật khẩu"
+        size="sm"
+      >
+        <div className="p-6 text-center">
+            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 dark:text-blue-400 animate-in zoom-in duration-300">
+                <Headset size={32} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                Liên hệ Quản trị viên
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">
+                Để đảm bảo an toàn thông tin theo tiêu chuẩn ISO 27001, chức năng tự đặt lại mật khẩu đã được giới hạn. 
+                <br/><br/>
+                Vui lòng liên hệ trực tiếp với <strong>Bộ phận IT</strong> hoặc <strong>Admin hệ thống</strong> để được cấp lại mật khẩu mới.
+            </p>
+            <Button onClick={() => setShowForgotModal(false)} className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200">
+                Đã hiểu
+            </Button>
+        </div>
+      </Modal>
     </div>
   );
 };
