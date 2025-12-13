@@ -8,8 +8,8 @@ import { Badge } from '../../components/ui/Badge';
 import { TaiLieuForm } from './TaiLieuForm';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
 import { AIChatBox } from '../../components/AIChatBox';
-import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File } from 'lucide-react';
-import { upsertDocument } from '../../services/supabaseService';
+import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2 } from 'lucide-react';
+import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 import { format } from 'date-fns';
 
 interface TaiLieuListProps {
@@ -46,8 +46,19 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     });
   }, [data, filters]);
 
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm("Cảnh báo: Hành động này không thể hoàn tác!\nĐại ca có chắc muốn xóa tài liệu này không?")) {
+        try {
+            await deleteDocument(id);
+            onUpdate(data.filter(d => d.id !== id));
+        } catch (error) {
+            alert("Lỗi khi xóa tài liệu!");
+        }
+    }
+  };
+
   const columns: ColumnDefinition<TaiLieu>[] = [
-    // FIX: Changed text-primary to text-blue-700 dark:text-blue-400 for better visibility in Dark Mode
     { key: 'ma_tai_lieu', header: 'Mã tài liệu', visible: true, render: (val) => <span className="font-mono font-bold text-blue-700 dark:text-blue-400">{val}</span> },
     { key: 'ten_tai_lieu', header: 'Tên tài liệu', visible: true, render: (val) => <span className="font-medium text-gray-800 dark:text-gray-200 line-clamp-1" title={val as string}>{val}</span> },
     { key: 'phien_ban', header: 'Ver', visible: true, render: (val) => <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-xs font-mono dark:text-gray-300">{val}</span> },
@@ -55,10 +66,15 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     { key: 'bo_phan_soan_thao', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val}</span> },
     { key: 'ngay_ban_hanh', header: 'Ngày BH', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val ? format(new Date(val), 'dd/MM/yyyy') : '--'}</span> },
     { key: 'trang_thai', header: 'Trạng thái', visible: true, render: (val) => <Badge status={val as TrangThaiTaiLieu} /> },
-    { key: 'id', header: '', visible: true, render: (_, item) => (
-      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleViewDetail(item); }}>
-        <Eye size={16} className="text-gray-500 hover:text-blue-500" />
-      </Button>
+    { key: 'id', header: 'Thao tác', visible: true, render: (_, item) => (
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleViewDetail(item); }} title="Xem chi tiết">
+          <Eye size={16} className="text-gray-500 hover:text-blue-500" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={(e) => handleDelete(item.id, e)} title="Xóa tài liệu">
+          <Trash2 size={16} className="text-gray-500 hover:text-red-500" />
+        </Button>
+      </div>
     )}
   ];
 
