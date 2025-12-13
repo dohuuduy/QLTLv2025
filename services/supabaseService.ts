@@ -3,6 +3,24 @@ import { supabase } from '../lib/supabaseClient';
 import { MasterDataState, DanhMucItem, NhanSu, TaiLieu, HoSo, KeHoachDanhGia } from '../types';
 import { INITIAL_MASTER_DATA } from '../constants';
 
+// --- AUTH SERVICES ---
+
+export const signIn = async (email: string, password: string) => {
+  return await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+};
+
+export const signOut = async () => {
+  return await supabase.auth.signOut();
+};
+
+export const getCurrentSession = async () => {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  return { session, error };
+};
+
 // --- HELPERS MAPPING ---
 
 const mapCategoryToItem = (record: any): DanhMucItem => ({
