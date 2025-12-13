@@ -7,6 +7,7 @@ import { ShieldCheck, Mail, Lock, Loader2, Wrench } from 'lucide-react';
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false); // State ghi nhớ
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -14,13 +15,21 @@ export const LoginPage: React.FC = () => {
   const [systemHasUsers, setSystemHasUsers] = useState(true); // Mặc định true (ẩn) để an toàn
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
-  // Kiểm tra xem hệ thống đã có user chưa khi load trang
+  // Kiểm tra xem hệ thống đã có user chưa khi load trang & Load email đã lưu
   useEffect(() => {
-      const checkUsers = async () => {
+      const initPage = async () => {
+          // 1. Check saved email
+          const savedEmail = localStorage.getItem('iso_remember_email');
+          if (savedEmail) {
+              setEmail(savedEmail);
+              setRememberMe(true);
+          }
+
+          // 2. Check system users
           const hasUsers = await checkSystemHasUsers();
           setSystemHasUsers(hasUsers);
       };
-      checkUsers();
+      initPage();
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -41,6 +50,12 @@ export const LoginPage: React.FC = () => {
             : "Lỗi đăng nhập: " + authError.message);
         setIsLoading(false);
     } else {
+        // Đăng nhập thành công -> Xử lý ghi nhớ
+        if (rememberMe) {
+            localStorage.setItem('iso_remember_email', email);
+        } else {
+            localStorage.removeItem('iso_remember_email');
+        }
         // Successful login will trigger onAuthStateChange in App.tsx
     }
   };
@@ -160,6 +175,25 @@ export const LoginPage: React.FC = () => {
                 autoComplete="current-password"
               />
             </div>
+          </div>
+
+          {/* Remember Me Checkbox */}
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer group">
+                <div className="relative flex items-center">
+                    <input 
+                        type="checkbox" 
+                        checked={rememberMe} 
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 checked:border-blue-600 checked:bg-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    />
+                    <svg className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <span className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Ghi nhớ tài khoản</span>
+            </label>
+            <a href="#" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors" onClick={(e) => {e.preventDefault(); alert("Vui lòng liên hệ Admin để đặt lại mật khẩu.");}}>Quên mật khẩu?</a>
           </div>
 
           <Button 
