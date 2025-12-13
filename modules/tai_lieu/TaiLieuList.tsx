@@ -28,7 +28,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const [viewMode, setViewMode] = useState<'list' | 'form' | 'detail'>('list');
   const [isTreeView, setIsTreeView] = useState(true); 
   const [selectedDoc, setSelectedDoc] = useState<TaiLieu | null>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null); // For Quick View Modal
   
   const [filters, setFilters] = useState<{ trang_thai?: string; bo_phan?: string; loai_tai_lieu?: string }>(initialFilters || {});
   
@@ -123,18 +122,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     }
   };
 
-  const handleQuickViewFile = (e: React.MouseEvent, file: DinhKem) => {
-      e.stopPropagation();
-      if (file.loai === 'pdf') {
-          setPdfUrl(file.url);
-      } else {
-          dialog.alert(
-              "Bạn đang cố gắng mở file Word/Excel. Vui lòng vào trang Chi tiết tài liệu để xem.", 
-              { title: "Hạn chế xem nhanh", type: "info" }
-          );
-      }
-  };
-
   const columns: ColumnDefinition<TaiLieu>[] = [
     { key: 'ma_tai_lieu', header: 'Mã tài liệu', visible: true, render: (val) => <span className="font-mono font-bold text-blue-700 dark:text-blue-400">{val}</span> },
     { 
@@ -162,28 +149,34 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
             const files = doc.dinh_kem || [];
             if (files.length === 0) return <span className="text-gray-300 text-xs">--</span>;
             
-            // Show icon for the first file
+            // Show icon based on file type
             const file = files[0];
+            let Icon = File;
+            let colorClass = "text-gray-400 hover:text-gray-600";
+
             if (file.loai === 'pdf') {
-                return (
-                    <button onClick={(e) => handleQuickViewFile(e, file)} className="p-1 rounded hover:bg-red-50 text-red-600 transition-colors" title="Xem nhanh PDF">
-                        <FileType size={18} />
-                    </button>
-                );
+                Icon = FileType;
+                colorClass = "text-red-600 hover:text-red-700";
             } else if (file.loai === 'doc') {
-                return (
-                    <button onClick={(e) => handleQuickViewFile(e, file)} className="p-1 rounded hover:bg-blue-50 text-blue-600 transition-colors" title="File Word (Vào chi tiết để xem)">
-                        <FileText size={18} />
-                    </button>
-                );
+                Icon = FileText;
+                colorClass = "text-blue-600 hover:text-blue-700";
             } else if (file.loai === 'excel') {
-                return (
-                    <button onClick={(e) => handleQuickViewFile(e, file)} className="p-1 rounded hover:bg-green-50 text-green-600 transition-colors" title="File Excel (Vào chi tiết để xem)">
-                        <FileSpreadsheet size={18} />
-                    </button>
-                );
+                Icon = FileSpreadsheet;
+                colorClass = "text-green-600 hover:text-green-700";
             }
-            return <File size={18} className="text-gray-400" />;
+
+            return (
+                <a 
+                    href={file.url} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()} // Prevent row click
+                    className={`p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors inline-flex items-center justify-center ${colorClass}`}
+                    title={`Mở file: ${file.ten_file}`}
+                >
+                    <Icon size={18} />
+                </a>
+            );
         }
     },
     { key: 'bo_phan_soan_thao', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val}</span> },
@@ -216,7 +209,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     setTimeout(() => setSelectedDoc(null), 200);
   };
 
-  // ... (handleSaveDoc, handleSendRequest, handleVersionUpClick, getNextVersion, confirmVersionUp logic remains unchanged)
   const handleSaveDoc = async (docData: Partial<TaiLieu>) => {
     setIsLoading(true);
     const newDoc: TaiLieu = {
@@ -411,15 +403,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
             actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16}/>} className="shadow-sm">Thêm mới</Button>}
          />
       </div>
-
-      {/* PDF Quick View Modal */}
-      <Modal isOpen={!!pdfUrl} onClose={() => setPdfUrl(null)} title="Xem nhanh tài liệu" size="xl">
-         <div className="w-full h-full min-h-[500px] flex items-center justify-center bg-gray-100 dark:bg-slate-950 rounded-lg overflow-hidden">
-            {pdfUrl ? (
-                <iframe src={pdfUrl} className="w-full h-full" title="PDF Viewer" />
-            ) : <p>Không thể tải file</p>}
-         </div>
-      </Modal>
 
       {(viewMode === 'form' || viewMode === 'detail') && (
         <div className="fixed inset-0 z-50 flex justify-end">
