@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { format, addMonths, isPast, differenceInDays } from 'date-fns';
-import { Archive, Plus, Trash2, Clock, MapPin, ShieldAlert, FileBox, Calendar, HardDrive, Hash, AlignLeft, Link as LinkIcon } from 'lucide-react';
+import { Archive, Plus, Trash2, Clock, MapPin, ShieldAlert, FileBox, Calendar, HardDrive, Hash, AlignLeft, Link as LinkIcon, Filter, X, Database } from 'lucide-react';
 import { upsertRecord, deleteRecord } from '../../services/supabaseService';
 
 interface HoSoListProps {
@@ -22,6 +22,13 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
   const [editingItem, setEditingItem] = useState<Partial<HoSo>>({});
   const [isLoading, setIsLoading] = useState(false);
 
+  // Filter State
+  const [filters, setFilters] = useState<{ 
+      trang_thai?: string; 
+      phong_ban?: string; 
+      dang_luu_tru?: string;
+  }>({});
+
   const docOptions = useMemo(() => {
     return documents.map(d => ({
         value: d.ma_tai_lieu,
@@ -29,6 +36,31 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
         subLabel: d.ma_tai_lieu
     }));
   }, [documents]);
+
+  // --- FILTER LOGIC ---
+  const filteredData = useMemo(() => {
+    return data.filter(item => {
+        // Filter by Status
+        if (filters.trang_thai) {
+            // Logic tính trạng thái động (Sắp hết hạn/Chờ hủy) nếu cần khớp chính xác
+            let currentStatus = item.trang_thai;
+            if (item.ngay_het_han && currentStatus === TrangThaiHoSo.LUU_TRU) {
+                const daysLeft = differenceInDays(new Date(item.ngay_het_han), new Date());
+                if (daysLeft < 0) currentStatus = TrangThaiHoSo.CHO_HUY;
+                else if (daysLeft < 30) currentStatus = TrangThaiHoSo.SAP_HET_HAN;
+            }
+            if (currentStatus !== filters.trang_thai) return false;
+        }
+
+        // Filter by Department
+        if (filters.phong_ban && item.phong_ban !== filters.phong_ban) return false;
+
+        // Filter by Storage Type
+        if (filters.dang_luu_tru && item.dang_luu_tru !== filters.dang_luu_tru) return false;
+
+        return true;
+    });
+  }, [data, filters]);
 
   const handleAddNew = () => {
     setEditingItem({
@@ -133,10 +165,87 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
 
   const boPhanOptions = masterData.boPhan.map(bp => ({ value: bp.ten, label: bp.ten }));
 
+  // --- RENDER FILTERS ---
+  const renderFilters = (
+    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 max-w-full">
+       {/* Department Select */}
+       <div className="relative group shrink-0">
+          <select
+             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[140px]"
+             value={filters.phong_ban || ''}
+             onChange={(e) => setFilters(prev => ({ ...prev, phong_ban: e.target.value || undefined }))}
+          >
+             <option value="">Bộ phận: Tất cả</option>
+             {masterData.boPhan.map(bp => (
+                <option key={bp.id} value={bp.ten}>{bp.ten}</option>
+             ))}
+          </select>
+          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+             <div className="border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-400"></div>
+          </div>
+       </div>
+
+       {/* Status Select */}
+       <div className="relative group shrink-0">
+          <select
+             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[140px]"
+             value={filters.trang_thai || ''}
+             onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}
+          >
+             <option value="">Trạng thái: Tất cả</option>
+             <option value={TrangThaiHoSo.LUU_TRU}>Đang lưu trữ</option>
+             <option value={TrangThaiHoSo.SAP_HET_HAN}>Sắp hết hạn</option>
+             <option value={TrangThaiHoSo.CHO_HUY}>Chờ tiêu hủy</option>
+             <option value={TrangThaiHoSo.DA_HUY}>Đã hủy</option>
+          </select>
+          <Archive size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+             <div className="border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-400"></div>
+          </div>
+       </div>
+
+       {/* Storage Type Select */}
+       <div className="relative group shrink-0">
+          <select
+             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[130px]"
+             value={filters.dang_luu_tru || ''}
+             onChange={(e) => setFilters(prev => ({ ...prev, dang_luu_tru: e.target.value || undefined }))}
+          >
+             <option value="">Lưu trữ: Tất cả</option>
+             <option value="BAN_CUNG">Bản cứng</option>
+             <option value="BAN_MEM">Bản mềm</option>
+             <option value="CA_HAI">Cả hai</option>
+          </select>
+          <Database size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+             <div className="border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-400"></div>
+          </div>
+       </div>
+
+       {/* Clear Filter Action (Compact Icon Button) */}
+       {(filters.trang_thai || filters.phong_ban || filters.dang_luu_tru) && (
+          <button
+            onClick={() => setFilters({})}
+            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400"
+            title="Xóa tất cả bộ lọc"
+          >
+            <X size={16} />
+          </button>
+       )}
+    </div>
+  );
+
   return (
     <div className="flex flex-col h-full animate-fade-in -mx-4 md:mx-0">
-       <div className="flex-1 overflow-hidden h-full">
-          <DataTable data={data} columns={columns} onRowClick={handleEdit} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16}/>} className="h-9 text-sm shadow-sm">Lập hồ sơ</Button>}/>
+       <div className="flex-1 overflow-hidden h-full rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
+          <DataTable 
+            data={filteredData} 
+            columns={columns} 
+            onRowClick={handleEdit} 
+            filters={renderFilters}
+            actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16}/>} className="h-9 text-sm shadow-sm">Lập hồ sơ</Button>}
+          />
        </div>
        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem.id ? 'Cập nhật hồ sơ' : 'Lập hồ sơ mới'} size="lg" footer={<><Button variant="ghost" onClick={() => setIsModalOpen(false)}>Hủy bỏ</Button><Button onClick={handleSave} isLoading={isLoading}>Lưu hồ sơ</Button></>}>
           <div className="space-y-6 p-2">
