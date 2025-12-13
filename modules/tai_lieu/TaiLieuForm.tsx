@@ -28,7 +28,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     lan_ban_hanh: 1,
     ngay_ban_hanh: '',
     ngay_hieu_luc: '',
-    chu_ky_ra_soat: 12,
+    chu_ky_ra_soat: 0, // Default 0 (Disabled)
     ngay_ra_soat_tiep_theo: '',
     bo_phan_soan_thao: '',
     nguoi_soan_thao: '',
@@ -41,6 +41,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
   const [urlInput, setUrlInput] = useState('');
   const [isCodeLocked, setIsCodeLocked] = useState(false);
+  const [isReviewEnabled, setIsReviewEnabled] = useState(false);
   const dialog = useDialog();
 
   const availableParents = fullList.filter(d => d.id !== initialData?.id).map(d => ({
@@ -52,9 +53,11 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
+      setIsReviewEnabled(!!initialData.chu_ky_ra_soat && initialData.chu_ky_ra_soat > 0);
       setIsCodeLocked(false);
     } else {
         setIsCodeLocked(true);
+        setIsReviewEnabled(false);
     }
   }, [initialData]);
 
@@ -96,7 +99,8 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
 
   useEffect(() => {
-    if (formData.ngay_hieu_luc && formData.chu_ky_ra_soat) {
+    // Only calculate if review is enabled and we have valid inputs
+    if (isReviewEnabled && formData.ngay_hieu_luc && formData.chu_ky_ra_soat) {
         try {
             const hieuLucDate = new Date(formData.ngay_hieu_luc);
             const nextDate = addMonths(hieuLucDate, formData.chu_ky_ra_soat);
@@ -109,7 +113,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
             console.error("Lỗi tính ngày rà soát", e);
         }
     }
-  }, [formData.ngay_hieu_luc, formData.chu_ky_ra_soat]);
+  }, [formData.ngay_hieu_luc, formData.chu_ky_ra_soat, isReviewEnabled]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -137,6 +141,18 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
         tieu_chuan: [...currentList, tieuChuanName]
       }));
     }
+  };
+
+  const toggleReview = () => {
+      const newState = !isReviewEnabled;
+      setIsReviewEnabled(newState);
+      if (!newState) {
+          // Turning OFF: Reset cycle
+          setFormData(prev => ({ ...prev, chu_ky_ra_soat: 0, ngay_ra_soat_tiep_theo: '' }));
+      } else {
+          // Turning ON: Default to 12 months if not set
+          setFormData(prev => ({ ...prev, chu_ky_ra_soat: prev.chu_ky_ra_soat || 12 }));
+      }
   };
 
   const getFileNameFromUrl = (url: string): string => {
@@ -440,46 +456,57 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
               />
             </div>
             
-            {/* New Design: Kiểm soát định kỳ */}
+            {/* New Design: Kiểm soát định kỳ (Có Toggle) */}
             <div className="col-span-1 md:col-span-4 mt-2">
-               <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-                  <div className="flex items-center justify-between mb-4">
-                     <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400">
-                           <RefreshCw size={16} />
+               <div className={`rounded-xl border transition-colors ${isReviewEnabled ? 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800' : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 border-dashed'}`}>
+                  <div className="p-4 flex items-center justify-between">
+                     <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg border ${isReviewEnabled ? 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-slate-800 border-transparent text-gray-400'}`}>
+                           <RefreshCw size={18} />
                         </div>
                         <div>
-                           <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">Kiểm soát định kỳ</h4>
+                           <h4 className={`text-sm font-bold ${isReviewEnabled ? 'text-gray-800 dark:text-gray-100' : 'text-gray-500'}`}>Kiểm soát định kỳ</h4>
                            <p className="text-[11px] text-gray-500">Thiết lập thời gian nhắc nhở rà soát tài liệu</p>
                         </div>
                      </div>
+                     
+                     {/* Toggle Switch */}
+                     <label className="relative inline-flex items-center cursor-pointer" title={isReviewEnabled ? "Tắt kiểm soát định kỳ" : "Bật kiểm soát định kỳ"}>
+                        <input type="checkbox" className="sr-only peer" checked={isReviewEnabled} onChange={toggleReview} />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                     </label>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                          <label className={labelClass}>Chu kỳ rà soát (Tháng)</label>
-                          <div className="flex items-center gap-2">
-                              <input
-                                  type="number"
-                                  min="0"
-                                  name="chu_ky_ra_soat"
-                                  value={formData.chu_ky_ra_soat}
-                                  onChange={handleChange}
-                                  className={inputClass}
-                              />
-                              <span className="text-sm text-gray-500 whitespace-nowrap">Tháng</span>
+
+                  {isReviewEnabled && (
+                      <div className="px-4 pb-4 pt-0 animate-in slide-in-from-top-2 fade-in duration-200">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200 dark:border-slate-700">
+                              <div>
+                                  <label className={labelClass}>Chu kỳ rà soát (Tháng)</label>
+                                  <div className="flex items-center gap-2">
+                                      <input
+                                          type="number"
+                                          min="1"
+                                          name="chu_ky_ra_soat"
+                                          value={formData.chu_ky_ra_soat || ''}
+                                          onChange={handleChange}
+                                          className={inputClass}
+                                      />
+                                      <span className="text-sm text-gray-500 whitespace-nowrap">Tháng</span>
+                                  </div>
+                              </div>
+                              <div>
+                                  <label className={labelClass}>Ngày rà soát tiếp theo</label>
+                                  <input
+                                      type="date"
+                                      name="ngay_ra_soat_tiep_theo"
+                                      value={formData.ngay_ra_soat_tiep_theo || ''}
+                                      onChange={handleChange}
+                                      className={`${inputClass} dark:[color-scheme:dark]`}
+                                  />
+                              </div>
                           </div>
                       </div>
-                      <div>
-                          <label className={labelClass}>Ngày rà soát tiếp theo</label>
-                          <input
-                              type="date"
-                              name="ngay_ra_soat_tiep_theo"
-                              value={formData.ngay_ra_soat_tiep_theo}
-                              onChange={handleChange}
-                              className={`${inputClass} dark:[color-scheme:dark]`}
-                          />
-                      </div>
-                  </div>
+                  )}
                </div>
             </div>
           </div>
