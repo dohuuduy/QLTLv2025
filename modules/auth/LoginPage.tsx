@@ -105,8 +105,25 @@ export const LoginPage: React.FC = () => {
   };
 
   const handleQuickSetupAdmin = async () => {
-      // @ts-ignore
-      const envToken = import.meta.env.VITE_ADMIN_SETUP_TOKEN;
+      // Safe Env Access
+      let envToken = '';
+      try {
+          // @ts-ignore
+          if (typeof import.meta !== 'undefined' && import.meta.env) {
+              // @ts-ignore
+              envToken = import.meta.env.VITE_ADMIN_SETUP_TOKEN;
+          }
+      } catch (e) {}
+
+      if (!envToken) {
+          try {
+              // @ts-ignore
+              if (typeof process !== 'undefined' && process.env) {
+                  // @ts-ignore
+                  envToken = process.env.VITE_ADMIN_SETUP_TOKEN || process.env.REACT_APP_ADMIN_SETUP_TOKEN;
+              }
+          } catch(e) {}
+      }
 
       if (!envToken) {
           setError("Lỗi cấu hình: Chưa thiết lập VITE_ADMIN_SETUP_TOKEN trong biến môi trường. Vui lòng liên hệ Dev.");
