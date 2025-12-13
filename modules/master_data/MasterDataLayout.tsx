@@ -60,6 +60,7 @@ export const MasterDataLayout: React.FC<MasterDataLayoutProps> = ({ data, onUpda
           <UserManager 
             users={data.nhanSu} 
             departments={data.boPhan}
+            positions={data.chucVu || []}
             onUpdate={(newUsers) => onUpdate({...data, nhanSu: newUsers})}
           />
         )}

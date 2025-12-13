@@ -10,10 +10,11 @@ import { upsertProfile, deleteProfile, signUpNewUser } from '../../services/supa
 interface UserManagerProps {
   users: NhanSu[];
   departments: DanhMucItem[];
+  positions: DanhMucItem[]; // Added positions
   onUpdate: (newUsers: NhanSu[]) => void;
 }
 
-export const UserManager: React.FC<UserManagerProps> = ({ users, departments, onUpdate }) => {
+export const UserManager: React.FC<UserManagerProps> = ({ users, departments, positions, onUpdate }) => {
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
   const [editingUser, setEditingUser] = useState<Partial<NhanSu>>({});
   const [password, setPassword] = useState(''); // State for new password
@@ -158,6 +159,7 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, on
   ], [users]);
 
   const departmentOptions = departments.map(d => ({ value: d.ten, label: d.ten }));
+  const positionOptions = positions.map(p => ({ value: p.ten, label: p.ten }));
 
   return (
     <div className="h-full flex flex-col relative">
@@ -207,7 +209,15 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, on
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-gray-500 uppercase border-b dark:border-slate-800 pb-1">Công việc</h3>
                 <div className="grid grid-cols-2 gap-4">
-                   <div><label className="text-xs font-semibold mb-1 block">Chức vụ</label><input className="w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all" value={editingUser.chuc_vu || ''} onChange={e => setEditingUser({...editingUser, chuc_vu: e.target.value})} placeholder="Trưởng phòng..."/></div>
+                   <div>
+                        <label className="text-xs font-semibold mb-1 block">Chức vụ</label>
+                        <SearchableSelect 
+                            options={positionOptions} 
+                            value={editingUser.chuc_vu} 
+                            onChange={(val) => setEditingUser({...editingUser, chuc_vu: String(val)})} 
+                            placeholder="-- Chọn chức vụ --"
+                        />
+                   </div>
                    <div><label className="text-xs font-semibold mb-1 block">Phòng ban</label><SearchableSelect options={departmentOptions} value={editingUser.phong_ban} onChange={(val) => setEditingUser({...editingUser, phong_ban: String(val)})} placeholder="-- Chọn --"/></div>
                 </div>
               </div>
