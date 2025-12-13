@@ -150,17 +150,30 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     }
   };
 
+  const detectTypeFromUrl = (url: string): 'pdf' | 'doc' | 'excel' | 'link' => {
+      const lower = url.toLowerCase();
+      if (lower.includes('.pdf')) return 'pdf';
+      if (lower.includes('.doc') || lower.includes('.docx')) return 'doc';
+      if (lower.includes('.xls') || lower.includes('.xlsx') || lower.includes('.csv')) return 'excel';
+      return 'link';
+  };
+
   const handleAddFile = (selectedType: 'pdf' | 'doc' | 'excel' | 'link') => {
     if (!urlInput.trim()) {
       dialog.alert("Vui lòng dán đường dẫn (Link) vào ô trống trước khi chọn loại file!", { type: 'warning' });
       return;
     }
+    
+    // Auto-correct type based on extension if possible
+    const detectedType = detectTypeFromUrl(urlInput);
+    const finalType = detectedType !== 'link' ? detectedType : selectedType;
+
     const name = getFileNameFromUrl(urlInput);
     const file: DinhKem = {
       id: `file_${Date.now()}`,
       ten_file: name,
       url: urlInput,
-      loai: selectedType,
+      loai: finalType,
       ngay_upload: new Date().toISOString()
     };
     setFormData(prev => ({ ...prev, dinh_kem: [...(prev.dinh_kem || []), file] }));

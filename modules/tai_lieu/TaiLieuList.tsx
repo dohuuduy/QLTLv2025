@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { TaiLieu, TrangThaiTaiLieu, MasterDataState, NhanSu, HoSo, ColumnDefinition } from '../../types';
+import { TaiLieu, TrangThaiTaiLieu, MasterDataState, NhanSu, HoSo, ColumnDefinition, DinhKem } from '../../types';
 import { DataTable } from '../../components/DataTable';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
@@ -8,7 +8,7 @@ import { Badge } from '../../components/ui/Badge';
 import { TaiLieuForm } from './TaiLieuForm';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
 import { AIChatBox } from '../../components/AIChatBox';
-import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, Search } from 'lucide-react';
+import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, Search, FileType, FileSpreadsheet, Lock } from 'lucide-react';
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 import { format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
@@ -26,19 +26,19 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   masterData, currentUser, initialFilters, data, onUpdate, records 
 }) => {
   const [viewMode, setViewMode] = useState<'list' | 'form' | 'detail'>('list');
-  const [isTreeView, setIsTreeView] = useState(true); // Default to Tree View
+  const [isTreeView, setIsTreeView] = useState(true); 
   const [selectedDoc, setSelectedDoc] = useState<TaiLieu | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null); // For Quick View Modal
   
-  // UPDATED: Filter state definition
   const [filters, setFilters] = useState<{ trang_thai?: string; bo_phan?: string; loai_tai_lieu?: string }>(initialFilters || {});
   
-  // Modal states
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [versionType, setVersionType] = useState<'minor' | 'major'>('minor');
   const [versionReason, setVersionReason] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const dialog = useDialog();
+  const isAdmin = currentUser.roles.includes('QUAN_TRI');
 
   useEffect(() => {
     if (initialFilters) setFilters(prev => ({ ...prev, ...initialFilters }));
@@ -123,6 +123,18 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     }
   };
 
+  const handleQuickViewFile = (e: React.MouseEvent, file: DinhKem) => {
+      e.stopPropagation();
+      if (file.loai === 'pdf') {
+          setPdfUrl(file.url);
+      } else {
+          dialog.alert(
+              "Bạn đang cố gắng mở file Word/Excel. Vui lòng vào trang Chi tiết tài liệu để xem.", 
+              { title: "Hạn chế xem nhanh", type: "info" }
+          );
+      }
+  };
+
   const columns: ColumnDefinition<TaiLieu>[] = [
     { key: 'ma_tai_lieu', header: 'Mã tài liệu', visible: true, render: (val) => <span className="font-mono font-bold text-blue-700 dark:text-blue-400">{val}</span> },
     { 
@@ -142,7 +154,38 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         }
     },
     { key: 'phien_ban', header: 'Ver', visible: true, render: (val) => <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-xs font-mono dark:text-gray-300">{val}</span> },
-    { key: 'loai_tai_lieu', header: 'Loại', visible: true, render: (val) => <span className="text-xs text-gray-500 dark:text-gray-400">{val}</span> },
+    { 
+        key: 'dinh_kem', 
+        header: 'Tệp', 
+        visible: true, 
+        render: (val, doc) => {
+            const files = doc.dinh_kem || [];
+            if (files.length === 0) return <span className="text-gray-300 text-xs">--</span>;
+            
+            // Show icon for the first file
+            const file = files[0];
+            if (file.loai === 'pdf') {
+                return (
+                    <button onClick={(e) => handleQuickViewFile(e, file)} className="p-1 rounded hover:bg-red-50 text-red-600 transition-colors" title="Xem nhanh PDF">
+                        <FileType size={18} />
+                    </button>
+                );
+            } else if (file.loai === 'doc') {
+                return (
+                    <button onClick={(e) => handleQuickViewFile(e, file)} className="p-1 rounded hover:bg-blue-50 text-blue-600 transition-colors" title="File Word (Vào chi tiết để xem)">
+                        <FileText size={18} />
+                    </button>
+                );
+            } else if (file.loai === 'excel') {
+                return (
+                    <button onClick={(e) => handleQuickViewFile(e, file)} className="p-1 rounded hover:bg-green-50 text-green-600 transition-colors" title="File Excel (Vào chi tiết để xem)">
+                        <FileSpreadsheet size={18} />
+                    </button>
+                );
+            }
+            return <File size={18} className="text-gray-400" />;
+        }
+    },
     { key: 'bo_phan_soan_thao', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val}</span> },
     { key: 'ngay_ban_hanh', header: 'Ngày BH', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val ? format(new Date(val), 'dd/MM/yyyy') : '--'}</span> },
     { key: 'trang_thai', header: 'Trạng thái', visible: true, render: (val) => <Badge status={val as TrangThaiTaiLieu} /> },
@@ -158,7 +201,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     )}
   ];
 
-  // ... (Keep handleAddNew, handleViewDetail, handleCloseDrawer, handleSaveDoc, handleSendRequest, etc. unchanged)
   const handleAddNew = () => {
     setSelectedDoc(null);
     setViewMode('form');
@@ -174,6 +216,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     setTimeout(() => setSelectedDoc(null), 200);
   };
 
+  // ... (handleSaveDoc, handleSendRequest, handleVersionUpClick, getNextVersion, confirmVersionUp logic remains unchanged)
   const handleSaveDoc = async (docData: Partial<TaiLieu>) => {
     setIsLoading(true);
     const newDoc: TaiLieu = {
@@ -319,34 +362,15 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     }
   };
 
-  // ... (Rest of component remains same)
-  // --- UPDATED: Scientific Layout (Fixed Left - Scrollable Middle - Fixed Right) ---
   const renderFilters = (
     <div className="flex items-center gap-2 w-full">
-       {/* 1. View Switcher (Fixed) */}
-       <button
-          onClick={() => setIsTreeView(!isTreeView)}
-          className={`shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border transition-all ${
-            isTreeView 
-              ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300' 
-              : 'bg-white border-gray-200 text-gray-500 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
-          }`}
-          title={isTreeView ? "Đang xem dạng cây. Click để chuyển dạng danh sách." : "Đang xem danh sách. Click để chuyển dạng cây."}
-       >
+       <button onClick={() => setIsTreeView(!isTreeView)} className={`shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border transition-all ${isTreeView ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300' : 'bg-white border-gray-200 text-gray-500 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}`} title={isTreeView ? "Đang xem dạng cây. Click để chuyển dạng danh sách." : "Đang xem danh sách. Click để chuyển dạng cây."}>
           {isTreeView ? <Layers size={18} /> : <List size={18} />}
        </button>
-
        <div className="h-6 w-px bg-gray-200 dark:bg-slate-700 shrink-0 mx-1"></div>
-
-       {/* 2. Filters (Scrollable Area) */}
        <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar min-w-0">
-           {/* Status Select */}
            <div className="relative group shrink-0">
-              <select
-                 className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate"
-                 value={filters.trang_thai || ''}
-                 onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}
-              >
+              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.trang_thai || ''} onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}>
                  <option value="">Trạng thái: Tất cả</option>
                  <option value={TrangThaiTaiLieu.SOAN_THAO}>Đang soạn thảo</option>
                  <option value={TrangThaiTaiLieu.CHO_DUYET}>Chờ duyệt</option>
@@ -355,47 +379,23 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
               </select>
               <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
            </div>
-
-           {/* Department Select */}
            <div className="relative group shrink-0">
-              <select
-                 className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate"
-                 value={filters.bo_phan || ''}
-                 onChange={(e) => setFilters(prev => ({ ...prev, bo_phan: e.target.value || undefined }))}
-              >
+              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.bo_phan || ''} onChange={(e) => setFilters(prev => ({ ...prev, bo_phan: e.target.value || undefined }))}>
                  <option value="">Bộ phận: Tất cả</option>
-                 {masterData.boPhan.map(bp => (
-                    <option key={bp.id} value={bp.ten}>{bp.ten}</option>
-                 ))}
+                 {masterData.boPhan.map(bp => (<option key={bp.id} value={bp.ten}>{bp.ten}</option>))}
               </select>
               <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
            </div>
-
-           {/* Type Select */}
            <div className="relative group shrink-0">
-              <select
-                 className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate"
-                 value={filters.loai_tai_lieu || ''}
-                 onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}
-              >
+              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.loai_tai_lieu || ''} onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}>
                  <option value="">Loại: Tất cả</option>
-                 {masterData.loaiTaiLieu.map(lt => (
-                    <option key={lt.id} value={lt.ten}>{lt.ten}</option>
-                 ))}
+                 {masterData.loaiTaiLieu.map(lt => (<option key={lt.id} value={lt.ten}>{lt.ten}</option>))}
               </select>
               <FileText size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
            </div>
        </div>
-
-       {/* 3. Clear Filter Action (Fixed Right) */}
        {(filters.trang_thai || filters.bo_phan || filters.loai_tai_lieu) && (
-          <button
-            onClick={() => setFilters({})}
-            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 ml-1"
-            title="Xóa tất cả bộ lọc"
-          >
-            <X size={16} />
-          </button>
+          <button onClick={() => setFilters({})} className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 ml-1" title="Xóa tất cả bộ lọc"><X size={16} /></button>
        )}
     </div>
   );
@@ -412,13 +412,18 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
          />
       </div>
 
-      {/* Drawer & Modal components remain same... */}
+      {/* PDF Quick View Modal */}
+      <Modal isOpen={!!pdfUrl} onClose={() => setPdfUrl(null)} title="Xem nhanh tài liệu" size="xl">
+         <div className="w-full h-full min-h-[500px] flex items-center justify-center bg-gray-100 dark:bg-slate-950 rounded-lg overflow-hidden">
+            {pdfUrl ? (
+                <iframe src={pdfUrl} className="w-full h-full" title="PDF Viewer" />
+            ) : <p>Không thể tải file</p>}
+         </div>
+      </Modal>
+
       {(viewMode === 'form' || viewMode === 'detail') && (
         <div className="fixed inset-0 z-50 flex justify-end">
-           <div 
-             className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" 
-             onClick={handleCloseDrawer}
-           />
+           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" onClick={handleCloseDrawer}/>
            <div className="w-full max-w-4xl bg-white dark:bg-slate-950 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-gray-200 dark:border-slate-800">
               {viewMode === 'form' ? (
                  <TaiLieuForm 
@@ -484,16 +489,33 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                        <label className="text-xs text-gray-400 uppercase font-bold block mb-1">File đính kèm</label>
                                        {selectedDoc.dinh_kem && selectedDoc.dinh_kem.length > 0 ? (
                                           <div className="space-y-2">
-                                             {selectedDoc.dinh_kem.map(file => (
-                                                <a key={file.id} href={file.url} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors group">
-                                                   <div className="p-2 bg-gray-100 dark:bg-slate-800 rounded text-gray-500 group-hover:text-blue-500"><File size={20} /></div>
+                                             {selectedDoc.dinh_kem.map(file => {
+                                                // Access Control Logic: Word/Excel restricted for Non-Admin
+                                                const isRestricted = (file.loai === 'doc' || file.loai === 'excel') && !isAdmin;
+                                                
+                                                return (
+                                                <div key={file.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors group">
+                                                   <div className="p-2 bg-gray-100 dark:bg-slate-800 rounded text-gray-500 group-hover:text-blue-500">
+                                                      {file.loai === 'pdf' ? <FileType size={20} className="text-red-500" /> : 
+                                                       file.loai === 'excel' ? <FileSpreadsheet size={20} className="text-green-600" /> : 
+                                                       <FileText size={20} className="text-blue-600" />}
+                                                   </div>
                                                    <div className="flex-1 overflow-hidden">
-                                                      <p className="text-sm font-medium truncate text-blue-600 dark:text-blue-400 group-hover:underline">{file.ten_file}</p>
+                                                      {isRestricted ? (
+                                                          <div className="flex items-center gap-1.5 text-gray-400 italic">
+                                                              <Lock size={12} />
+                                                              <span className="text-sm">File bị giới hạn quyền truy cập</span>
+                                                          </div>
+                                                      ) : (
+                                                          <a href={file.url} target="_blank" rel="noreferrer" className="text-sm font-medium truncate text-blue-600 dark:text-blue-400 hover:underline block">
+                                                              {file.ten_file}
+                                                          </a>
+                                                      )}
                                                       <p className="text-xs text-gray-400">{format(new Date(file.ngay_upload), 'dd/MM/yyyy HH:mm')}</p>
                                                    </div>
-                                                   <Download size={16} className="text-gray-400 group-hover:text-gray-600" />
-                                                </a>
-                                             ))}
+                                                   {!isRestricted && <Download size={16} className="text-gray-400 group-hover:text-gray-600" />}
+                                                </div>
+                                             )})}
                                           </div>
                                        ) : <p className="text-sm text-gray-500 italic">Không có file đính kèm</p>}
                                     </div>
