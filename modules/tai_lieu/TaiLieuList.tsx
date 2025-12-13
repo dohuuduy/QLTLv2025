@@ -27,7 +27,9 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const [viewMode, setViewMode] = useState<'list' | 'form' | 'detail'>('list');
   const [isTreeView, setIsTreeView] = useState(true); // Default to Tree View
   const [selectedDoc, setSelectedDoc] = useState<TaiLieu | null>(null);
-  const [filters, setFilters] = useState<{ trang_thai?: string; bo_phan?: string }>(initialFilters || {});
+  
+  // UPDATED: Filter state definition
+  const [filters, setFilters] = useState<{ trang_thai?: string; bo_phan?: string; loai_tai_lieu?: string }>(initialFilters || {});
   
   // Modal states
   const [showVersionModal, setShowVersionModal] = useState(false);
@@ -36,16 +38,13 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (initialFilters) setFilters(initialFilters);
+    if (initialFilters) setFilters(prev => ({ ...prev, ...initialFilters }));
   }, [initialFilters]);
 
   // --- HIERARCHY LOGIC ---
-  
-  // 1. Tính toán cấp độ (Level) của tài liệu
   const getLevel = (doc: TaiLieu, allDocs: TaiLieu[]): number => {
       let level = 0;
       let currentDoc = doc;
-      // Giới hạn độ sâu tối đa là 5 để tránh infinite loop nếu dữ liệu lỗi
       while (currentDoc.tai_lieu_cha_id && level < 5) {
           const parent = allDocs.find(d => d.id === currentDoc.tai_lieu_cha_id);
           if (parent) {
@@ -58,29 +57,22 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       return level;
   };
 
-  // 2. Sắp xếp danh sách theo cây cha-con
   const sortDataHierarchy = (docs: TaiLieu[]) => {
       const docMap = new Map<string, TaiLieu[]>();
       const roots: TaiLieu[] = [];
 
-      // Gom nhóm theo cha
       docs.forEach(doc => {
           if (doc.tai_lieu_cha_id && docs.find(d => d.id === doc.tai_lieu_cha_id)) {
-              // Nếu có cha và cha cũng nằm trong danh sách lọc
               const siblings = docMap.get(doc.tai_lieu_cha_id) || [];
               siblings.push(doc);
               docMap.set(doc.tai_lieu_cha_id, siblings);
           } else {
-              // Là root (hoặc cha bị lọc mất -> coi như root trong view này)
               roots.push(doc);
           }
       });
 
-      // Hàm đệ quy để build danh sách phẳng từ cây
       const buildList = (nodes: TaiLieu[]): TaiLieu[] => {
-          // Sắp xếp các node cùng cấp theo mã (hoặc thứ tự)
           const sortedNodes = nodes.sort((a, b) => (a.thu_tu || 0) - (b.thu_tu || 0) || a.ma_tai_lieu.localeCompare(b.ma_tai_lieu));
-          
           let result: TaiLieu[] = [];
           sortedNodes.forEach(node => {
               result.push(node);
@@ -94,13 +86,13 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
       return buildList(roots);
   };
-
   // --- END HIERARCHY LOGIC ---
 
   const filteredData = useMemo(() => {
     let result = data.filter(doc => {
       if (filters.trang_thai && doc.trang_thai !== filters.trang_thai) return false;
       if (filters.bo_phan && doc.bo_phan_soan_thao !== filters.bo_phan) return false;
+      if (filters.loai_tai_lieu && doc.loai_tai_lieu !== filters.loai_tai_lieu) return false;
       return true;
     });
 
@@ -157,6 +149,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     )}
   ];
 
+  // ... (Keep handleAddNew, handleViewDetail, handleCloseDrawer, handleSaveDoc, handleSendRequest, etc. unchanged)
   const handleAddNew = () => {
     setSelectedDoc(null);
     setViewMode('form');
@@ -314,8 +307,10 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     }
   };
 
+  // --- UPDATED: Render Filters with Dropdowns ---
   const renderFilters = (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2 items-center">
+       {/* Tree View Toggle */}
        <button 
          onClick={() => setIsTreeView(!isTreeView)}
          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all h-9
@@ -328,8 +323,46 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
          {isTreeView ? <Layers size={16} /> : <List size={16} />}
          <span className="hidden sm:inline">{isTreeView ? "Dạng cây" : "Danh sách"}</span>
        </button>
-       <Button variant="outline" size="sm" onClick={() => setFilters({})} className="h-9">
-         Xóa bộ lọc
+
+       {/* Status Filter */}
+       <select
+          className="h-9 px-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none focus:border-blue-500 text-gray-700 dark:text-gray-200 min-w-[120px]"
+          value={filters.trang_thai || ''}
+          onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}
+       >
+          <option value="">Tất cả trạng thái</option>
+          <option value={TrangThaiTaiLieu.SOAN_THAO}>Đang soạn thảo</option>
+          <option value={TrangThaiTaiLieu.CHO_DUYET}>Chờ duyệt</option>
+          <option value={TrangThaiTaiLieu.DA_BAN_HANH}>Đã ban hành</option>
+          <option value={TrangThaiTaiLieu.HET_HIEU_LUC}>Hết hiệu lực</option>
+       </select>
+
+       {/* Department Filter */}
+       <select
+          className="h-9 px-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none focus:border-blue-500 text-gray-700 dark:text-gray-200 min-w-[130px]"
+          value={filters.bo_phan || ''}
+          onChange={(e) => setFilters(prev => ({ ...prev, bo_phan: e.target.value || undefined }))}
+       >
+          <option value="">Tất cả bộ phận</option>
+          {masterData.boPhan.map(bp => (
+             <option key={bp.id} value={bp.ten}>{bp.ten}</option>
+          ))}
+       </select>
+
+       {/* Document Type Filter */}
+       <select
+          className="h-9 px-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none focus:border-blue-500 text-gray-700 dark:text-gray-200 min-w-[130px]"
+          value={filters.loai_tai_lieu || ''}
+          onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}
+       >
+          <option value="">Tất cả loại tài liệu</option>
+          {masterData.loaiTaiLieu.map(lt => (
+             <option key={lt.id} value={lt.ten}>{lt.ten}</option>
+          ))}
+       </select>
+
+       <Button variant="outline" size="sm" onClick={() => setFilters({})} className="h-9 px-2 text-gray-500 hover:text-red-500" title="Xóa tất cả bộ lọc">
+         <X size={16} />
        </Button>
     </div>
   );
@@ -483,6 +516,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         </div>
       )}
 
+      {/* Keep Version Modal unchanged */}
       <Modal isOpen={showVersionModal} onClose={() => setShowVersionModal(false)} title="Nâng phiên bản tài liệu" size="lg" footer={<><Button variant="ghost" onClick={() => setShowVersionModal(false)}>Hủy bỏ</Button><Button onClick={confirmVersionUp} leftIcon={<FileUp size={16} />}>Xác nhận & Tạo bản thảo</Button></>}>
         <div className="space-y-6 p-6">
            {selectedDoc && (
