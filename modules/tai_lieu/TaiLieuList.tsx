@@ -130,9 +130,28 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         visible: true, 
         render: (val, doc) => {
             const level = isTreeView ? getLevel(doc, data) : 0;
+            const file = doc.dinh_kem?.[0];
+
             return (
-                <div className="flex items-center" style={{ paddingLeft: `${level * 24}px` }}>
-                    {level > 0 && <CornerDownRight size={16} className="mr-2 text-gray-400 shrink-0" />}
+                <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 24}px` }}>
+                    {level > 0 && <CornerDownRight size={16} className="text-gray-400 shrink-0" />}
+                    
+                    {file && (
+                        <a 
+                            href={file.url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()} // Prevent row click
+                            className="shrink-0 hover:scale-110 transition-transform"
+                            title={`Mở file: ${file.ten_file}`}
+                        >
+                            {file.loai === 'pdf' ? <FileType size={18} className="text-red-600" /> : 
+                             file.loai === 'excel' ? <FileSpreadsheet size={18} className="text-green-600" /> : 
+                             file.loai === 'doc' ? <FileText size={18} className="text-blue-600" /> :
+                             <File size={18} className="text-gray-400" />}
+                        </a>
+                    )}
+
                     <span className={`font-medium line-clamp-1 ${level === 0 ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-700 dark:text-gray-300'}`} title={val as string}>
                         {val}
                     </span>
@@ -141,44 +160,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         }
     },
     { key: 'phien_ban', header: 'Ver', visible: true, render: (val) => <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-xs font-mono dark:text-gray-300">{val}</span> },
-    { 
-        key: 'dinh_kem', 
-        header: 'Tệp', 
-        visible: true, 
-        render: (val, doc) => {
-            const files = doc.dinh_kem || [];
-            if (files.length === 0) return <span className="text-gray-300 text-xs">--</span>;
-            
-            // Show icon based on file type
-            const file = files[0];
-            let Icon = File;
-            let colorClass = "text-gray-400 hover:text-gray-600";
-
-            if (file.loai === 'pdf') {
-                Icon = FileType;
-                colorClass = "text-red-600 hover:text-red-700";
-            } else if (file.loai === 'doc') {
-                Icon = FileText;
-                colorClass = "text-blue-600 hover:text-blue-700";
-            } else if (file.loai === 'excel') {
-                Icon = FileSpreadsheet;
-                colorClass = "text-green-600 hover:text-green-700";
-            }
-
-            return (
-                <a 
-                    href={file.url} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    onClick={(e) => e.stopPropagation()} // Prevent row click
-                    className={`p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors inline-flex items-center justify-center ${colorClass}`}
-                    title={`Mở file: ${file.ten_file}`}
-                >
-                    <Icon size={18} />
-                </a>
-            );
-        }
-    },
     { key: 'bo_phan_soan_thao', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val}</span> },
     { key: 'ngay_ban_hanh', header: 'Ngày BH', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val ? format(new Date(val), 'dd/MM/yyyy') : '--'}</span> },
     { key: 'trang_thai', header: 'Trạng thái', visible: true, render: (val) => <Badge status={val as TrangThaiTaiLieu} /> },
