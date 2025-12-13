@@ -8,7 +8,7 @@ import { Badge } from '../../components/ui/Badge';
 import { TaiLieuForm } from './TaiLieuForm';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
 import { AIChatBox } from '../../components/AIChatBox';
-import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List } from 'lucide-react';
+import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, Search } from 'lucide-react';
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 import { format } from 'date-fns';
 
@@ -307,83 +307,91 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     }
   };
 
-  // --- UPDATED: Render Filters Scientific Layout (COMPACT VIEW SWITCHER) ---
+  // --- UPDATED: Render Filters Scientific Layout (Compact View Switcher + Scrollable Filters) ---
   const renderFilters = (
-    <div className="flex flex-wrap items-center gap-3">
-       {/* 1. View Switcher (Compact Icon Button) */}
+    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 max-w-full">
+       {/* 1. View Switcher (Single Compact Icon Button) */}
        <button
           onClick={() => setIsTreeView(!isTreeView)}
-          className={`h-9 w-9 flex items-center justify-center rounded-lg border transition-all ${
+          className={`shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border transition-all ${
             isTreeView 
-              ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300 shadow-sm' 
+              ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300' 
               : 'bg-white border-gray-200 text-gray-500 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
           }`}
-          title={isTreeView ? "Đang xem dạng cây phân cấp. Click để xem danh sách phẳng." : "Đang xem danh sách phẳng. Click để xem dạng cây phân cấp."}
+          title={isTreeView ? "Đang xem dạng cây. Click để chuyển dạng danh sách." : "Đang xem danh sách. Click để chuyển dạng cây."}
        >
           {isTreeView ? <Layers size={18} /> : <List size={18} />}
        </button>
 
-       <div className="w-px h-6 bg-gray-300 dark:bg-slate-700 hidden sm:block"></div>
+       <div className="h-6 w-px bg-gray-200 dark:bg-slate-700 shrink-0 mx-1"></div>
 
-       {/* 2. Filter Group */}
-       <div className="flex flex-wrap items-center gap-2">
-          {/* Status Select */}
-          <div className="relative group">
-             <select
-                className="h-9 pl-3 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer min-w-[130px] transition-all hover:border-blue-300"
-                value={filters.trang_thai || ''}
-                onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}
-             >
-                <option value="">Tất cả trạng thái</option>
-                <option value={TrangThaiTaiLieu.SOAN_THAO}>Đang soạn thảo</option>
-                <option value={TrangThaiTaiLieu.CHO_DUYET}>Chờ duyệt</option>
-                <option value={TrangThaiTaiLieu.DA_BAN_HANH}>Đã ban hành</option>
-                <option value={TrangThaiTaiLieu.HET_HIEU_LUC}>Hết hiệu lực</option>
-             </select>
-             <Filter size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
+       {/* 2. Filters (Horizontal Scrollable) */}
+       
+       {/* Status Select */}
+       <div className="relative group shrink-0">
+          <select
+             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[140px]"
+             value={filters.trang_thai || ''}
+             onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}
+          >
+             <option value="">Trạng thái: Tất cả</option>
+             <option value={TrangThaiTaiLieu.SOAN_THAO}>Đang soạn thảo</option>
+             <option value={TrangThaiTaiLieu.CHO_DUYET}>Chờ duyệt</option>
+             <option value={TrangThaiTaiLieu.DA_BAN_HANH}>Đã ban hành</option>
+             <option value={TrangThaiTaiLieu.HET_HIEU_LUC}>Hết hiệu lực</option>
+          </select>
+          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+             <div className="border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-400"></div>
           </div>
-
-          {/* Department Select */}
-          <div className="relative group">
-             <select
-                className="h-9 pl-3 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer min-w-[140px] transition-all hover:border-blue-300"
-                value={filters.bo_phan || ''}
-                onChange={(e) => setFilters(prev => ({ ...prev, bo_phan: e.target.value || undefined }))}
-             >
-                <option value="">Tất cả bộ phận</option>
-                {masterData.boPhan.map(bp => (
-                   <option key={bp.id} value={bp.ten}>{bp.ten}</option>
-                ))}
-             </select>
-             <Filter size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
-          </div>
-
-          {/* Type Select */}
-          <div className="relative group hidden md:block">
-             <select
-                className="h-9 pl-3 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer min-w-[140px] transition-all hover:border-blue-300"
-                value={filters.loai_tai_lieu || ''}
-                onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}
-             >
-                <option value="">Tất cả loại văn bản</option>
-                {masterData.loaiTaiLieu.map(lt => (
-                   <option key={lt.id} value={lt.ten}>{lt.ten}</option>
-                ))}
-             </select>
-             <Filter size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
-          </div>
-
-          {/* Clear Filter Action */}
-          {(filters.trang_thai || filters.bo_phan || filters.loai_tai_lieu) && (
-             <button
-               onClick={() => setFilters({})}
-               className="h-9 px-3 rounded-lg border border-red-100 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-200 text-xs font-bold transition-all flex items-center gap-1 dark:bg-red-900/20 dark:border-red-900 dark:text-red-400"
-               title="Xóa tất cả bộ lọc"
-             >
-               <X size={14} /> Xóa lọc
-             </button>
-          )}
        </div>
+
+       {/* Department Select */}
+       <div className="relative group shrink-0">
+          <select
+             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[140px]"
+             value={filters.bo_phan || ''}
+             onChange={(e) => setFilters(prev => ({ ...prev, bo_phan: e.target.value || undefined }))}
+          >
+             <option value="">Bộ phận: Tất cả</option>
+             {masterData.boPhan.map(bp => (
+                <option key={bp.id} value={bp.ten}>{bp.ten}</option>
+             ))}
+          </select>
+          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+             <div className="border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-400"></div>
+          </div>
+       </div>
+
+       {/* Type Select */}
+       <div className="relative group shrink-0">
+          <select
+             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[140px]"
+             value={filters.loai_tai_lieu || ''}
+             onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}
+          >
+             <option value="">Loại: Tất cả</option>
+             {masterData.loaiTaiLieu.map(lt => (
+                <option key={lt.id} value={lt.ten}>{lt.ten}</option>
+             ))}
+          </select>
+          <FileText size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+             <div className="border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-400"></div>
+          </div>
+       </div>
+
+       {/* Clear Filter Action (Compact Icon Button) */}
+       {(filters.trang_thai || filters.bo_phan || filters.loai_tai_lieu) && (
+          <button
+            onClick={() => setFilters({})}
+            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400"
+            title="Xóa tất cả bộ lọc"
+          >
+            <X size={16} />
+          </button>
+       )}
     </div>
   );
 
