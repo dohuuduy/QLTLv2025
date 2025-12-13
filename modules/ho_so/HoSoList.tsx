@@ -165,69 +165,63 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
 
   const boPhanOptions = masterData.boPhan.map(bp => ({ value: bp.ten, label: bp.ten }));
 
-  // --- RENDER FILTERS ---
+  // --- RENDER FILTERS (Updated: Separated Clear Button) ---
   const renderFilters = (
-    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 max-w-full relative pr-1">
-       {/* Department Select */}
-       <div className="relative group shrink-0">
-          <select
-             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[130px]"
-             value={filters.phong_ban || ''}
-             onChange={(e) => setFilters(prev => ({ ...prev, phong_ban: e.target.value || undefined }))}
-          >
-             <option value="">Bộ phận: Tất cả</option>
-             {masterData.boPhan.map(bp => (
-                <option key={bp.id} value={bp.ten}>{bp.ten}</option>
-             ))}
-          </select>
-          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-             <div className="border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-400"></div>
-          </div>
+    <div className="flex items-center gap-2 w-full">
+       {/* 1. Scrollable Filters Area */}
+       <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar min-w-0">
+           {/* Department Select */}
+           <div className="relative group shrink-0">
+              <select
+                 className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate"
+                 value={filters.phong_ban || ''}
+                 onChange={(e) => setFilters(prev => ({ ...prev, phong_ban: e.target.value || undefined }))}
+              >
+                 <option value="">Bộ phận: Tất cả</option>
+                 {masterData.boPhan.map(bp => (
+                    <option key={bp.id} value={bp.ten}>{bp.ten}</option>
+                 ))}
+              </select>
+              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           </div>
+
+           {/* Status Select */}
+           <div className="relative group shrink-0">
+              <select
+                 className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate"
+                 value={filters.trang_thai || ''}
+                 onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}
+              >
+                 <option value="">Trạng thái: Tất cả</option>
+                 <option value={TrangThaiHoSo.LUU_TRU}>Đang lưu trữ</option>
+                 <option value={TrangThaiHoSo.SAP_HET_HAN}>Sắp hết hạn</option>
+                 <option value={TrangThaiHoSo.CHO_HUY}>Chờ tiêu hủy</option>
+                 <option value={TrangThaiHoSo.DA_HUY}>Đã hủy</option>
+              </select>
+              <Archive size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           </div>
+
+           {/* Storage Type Select */}
+           <div className="relative group shrink-0">
+              <select
+                 className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate"
+                 value={filters.dang_luu_tru || ''}
+                 onChange={(e) => setFilters(prev => ({ ...prev, dang_luu_tru: e.target.value || undefined }))}
+              >
+                 <option value="">Lưu trữ: Tất cả</option>
+                 <option value="BAN_CUNG">Bản cứng</option>
+                 <option value="BAN_MEM">Bản mềm</option>
+                 <option value="CA_HAI">Cả hai</option>
+              </select>
+              <Database size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           </div>
        </div>
 
-       {/* Status Select */}
-       <div className="relative group shrink-0">
-          <select
-             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[130px]"
-             value={filters.trang_thai || ''}
-             onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}
-          >
-             <option value="">Trạng thái: Tất cả</option>
-             <option value={TrangThaiHoSo.LUU_TRU}>Đang lưu trữ</option>
-             <option value={TrangThaiHoSo.SAP_HET_HAN}>Sắp hết hạn</option>
-             <option value={TrangThaiHoSo.CHO_HUY}>Chờ tiêu hủy</option>
-             <option value={TrangThaiHoSo.DA_HUY}>Đã hủy</option>
-          </select>
-          <Archive size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-             <div className="border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-400"></div>
-          </div>
-       </div>
-
-       {/* Storage Type Select */}
-       <div className="relative group shrink-0">
-          <select
-             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[130px]"
-             value={filters.dang_luu_tru || ''}
-             onChange={(e) => setFilters(prev => ({ ...prev, dang_luu_tru: e.target.value || undefined }))}
-          >
-             <option value="">Lưu trữ: Tất cả</option>
-             <option value="BAN_CUNG">Bản cứng</option>
-             <option value="BAN_MEM">Bản mềm</option>
-             <option value="CA_HAI">Cả hai</option>
-          </select>
-          <Database size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-             <div className="border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-400"></div>
-          </div>
-       </div>
-
-       {/* Clear Filter Action (Compact Icon Button) */}
+       {/* 2. Clear Filter Action (Fixed Right) */}
        {(filters.trang_thai || filters.phong_ban || filters.dang_luu_tru) && (
           <button
             onClick={() => setFilters({})}
-            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 sticky right-0 z-10 shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.1)] dark:shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.5)]"
+            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 ml-1"
             title="Xóa tất cả bộ lọc"
           >
             <X size={16} />

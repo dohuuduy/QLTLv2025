@@ -307,10 +307,10 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     }
   };
 
-  // --- UPDATED: Render Filters Scientific Layout (Compact View Switcher + Scrollable Filters + STICKY Clear Button) ---
+  // --- UPDATED: Scientific Layout (Fixed Left - Scrollable Middle - Fixed Right) ---
   const renderFilters = (
-    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 max-w-full relative pr-1">
-       {/* 1. View Switcher (Single Compact Icon Button) */}
+    <div className="flex items-center gap-2 w-full">
+       {/* 1. View Switcher (Fixed) */}
        <button
           onClick={() => setIsTreeView(!isTreeView)}
           className={`shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border transition-all ${
@@ -325,68 +325,60 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
        <div className="h-6 w-px bg-gray-200 dark:bg-slate-700 shrink-0 mx-1"></div>
 
-       {/* 2. Filters (Horizontal Scrollable) */}
-       
-       {/* Status Select */}
-       <div className="relative group shrink-0">
-          <select
-             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[130px]"
-             value={filters.trang_thai || ''}
-             onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}
-          >
-             <option value="">Trạng thái: Tất cả</option>
-             <option value={TrangThaiTaiLieu.SOAN_THAO}>Đang soạn thảo</option>
-             <option value={TrangThaiTaiLieu.CHO_DUYET}>Chờ duyệt</option>
-             <option value={TrangThaiTaiLieu.DA_BAN_HANH}>Đã ban hành</option>
-             <option value={TrangThaiTaiLieu.HET_HIEU_LUC}>Hết hiệu lực</option>
-          </select>
-          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-             <div className="border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-400"></div>
-          </div>
+       {/* 2. Filters (Scrollable Area) */}
+       <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar min-w-0">
+           {/* Status Select */}
+           <div className="relative group shrink-0">
+              <select
+                 className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate"
+                 value={filters.trang_thai || ''}
+                 onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}
+              >
+                 <option value="">Trạng thái: Tất cả</option>
+                 <option value={TrangThaiTaiLieu.SOAN_THAO}>Đang soạn thảo</option>
+                 <option value={TrangThaiTaiLieu.CHO_DUYET}>Chờ duyệt</option>
+                 <option value={TrangThaiTaiLieu.DA_BAN_HANH}>Đã ban hành</option>
+                 <option value={TrangThaiTaiLieu.HET_HIEU_LUC}>Hết hiệu lực</option>
+              </select>
+              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           </div>
+
+           {/* Department Select */}
+           <div className="relative group shrink-0">
+              <select
+                 className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate"
+                 value={filters.bo_phan || ''}
+                 onChange={(e) => setFilters(prev => ({ ...prev, bo_phan: e.target.value || undefined }))}
+              >
+                 <option value="">Bộ phận: Tất cả</option>
+                 {masterData.boPhan.map(bp => (
+                    <option key={bp.id} value={bp.ten}>{bp.ten}</option>
+                 ))}
+              </select>
+              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           </div>
+
+           {/* Type Select */}
+           <div className="relative group shrink-0">
+              <select
+                 className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate"
+                 value={filters.loai_tai_lieu || ''}
+                 onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}
+              >
+                 <option value="">Loại: Tất cả</option>
+                 {masterData.loaiTaiLieu.map(lt => (
+                    <option key={lt.id} value={lt.ten}>{lt.ten}</option>
+                 ))}
+              </select>
+              <FileText size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           </div>
        </div>
 
-       {/* Department Select */}
-       <div className="relative group shrink-0">
-          <select
-             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[130px]"
-             value={filters.bo_phan || ''}
-             onChange={(e) => setFilters(prev => ({ ...prev, bo_phan: e.target.value || undefined }))}
-          >
-             <option value="">Bộ phận: Tất cả</option>
-             {masterData.boPhan.map(bp => (
-                <option key={bp.id} value={bp.ten}>{bp.ten}</option>
-             ))}
-          </select>
-          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-             <div className="border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-400"></div>
-          </div>
-       </div>
-
-       {/* Type Select */}
-       <div className="relative group shrink-0">
-          <select
-             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[130px]"
-             value={filters.loai_tai_lieu || ''}
-             onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}
-          >
-             <option value="">Loại: Tất cả</option>
-             {masterData.loaiTaiLieu.map(lt => (
-                <option key={lt.id} value={lt.ten}>{lt.ten}</option>
-             ))}
-          </select>
-          <FileText size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-             <div className="border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-400"></div>
-          </div>
-       </div>
-
-       {/* Clear Filter Action (STICKY to the right so it is never obscured) */}
+       {/* 3. Clear Filter Action (Fixed Right) */}
        {(filters.trang_thai || filters.bo_phan || filters.loai_tai_lieu) && (
           <button
             onClick={() => setFilters({})}
-            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 sticky right-0 z-10 shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.1)] dark:shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.5)]"
+            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 ml-1"
             title="Xóa tất cả bộ lọc"
           >
             <X size={16} />
