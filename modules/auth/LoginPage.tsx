@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
 import { signIn, signUpNewUser, upsertProfile, checkSystemHasAdmin } from '../../services/supabaseService';
-import { ShieldCheck, Mail, Lock, Loader2, Wrench, Key } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, Loader2, Wrench, Key, Eye, EyeOff } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false); // State ghi nhớ
+  const [showPassword, setShowPassword] = useState(false); // State hiển thị mật khẩu
+  const [rememberMe, setRememberMe] = useState(false); 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -67,7 +68,6 @@ export const LoginPage: React.FC = () => {
   // --- DEV FUNCTION: KHỞI TẠO ADMIN AN TOÀN ---
   const handleQuickSetupAdmin = async () => {
       // 1. Kiểm tra Token bảo mật
-      // Lấy token từ biến môi trường (Cần cấu hình trong file .env: VITE_ADMIN_SETUP_TOKEN=SecretKey)
       // @ts-ignore
       const envToken = import.meta.env.VITE_ADMIN_SETUP_TOKEN;
 
@@ -187,13 +187,21 @@ export const LoginPage: React.FC = () => {
                 <Lock size={18} />
               </div>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-11 pl-10 pr-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                className="w-full h-11 pl-10 pr-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
                 placeholder="••••••••"
                 autoComplete="current-password"
               />
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-pointer"
+                title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
