@@ -4,8 +4,8 @@ import { NhanSu, UserRole, DanhMucItem, ColumnDefinition } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { DataTable } from '../../components/DataTable';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { Plus, Trash2, Pencil, Shield, User, X, Check } from 'lucide-react';
-import { upsertProfile, deleteProfile } from '../../services/supabaseService';
+import { Plus, Trash2, Pencil, Shield, User, X, Check, Lock, Info } from 'lucide-react';
+import { upsertProfile, deleteProfile, signUpNewUser } from '../../services/supabaseService';
 
 interface UserManagerProps {
   users: NhanSu[];
@@ -16,22 +16,28 @@ interface UserManagerProps {
 export const UserManager: React.FC<UserManagerProps> = ({ users, departments, onUpdate }) => {
   const [viewMode, setViewMode] = useState<'list' | 'form'>('list');
   const [editingUser, setEditingUser] = useState<Partial<NhanSu>>({});
+  const [password, setPassword] = useState(''); // State for new password
+  const [createAuthUser, setCreateAuthUser] = useState(true); // Checkbox to toggle auth creation
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAddNew = () => {
     const nextOrder = users.length > 0 ? Math.max(...users.map(u => u.thu_tu || 0)) + 1 : 1;
     setEditingUser({ roles: ['SOAN_THAO'], thu_tu: nextOrder });
+    setPassword(''); // Reset password
+    setCreateAuthUser(true);
     setViewMode('form');
   };
 
   const handleEdit = (user: NhanSu) => {
     setEditingUser({ ...user });
+    setPassword(''); // No password change in simple mode
+    setCreateAuthUser(false); // Creating auth disabled for edit mode
     setViewMode('form');
   };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Đại ca có chắc muốn xóa nhân sự này khỏi hệ thống DB?')) {
+    if (window.confirm('Cảnh báo: Hành động này sẽ xóa thông tin hồ sơ nhân sự trong Database.\nTài khoản đăng nhập (Auth) sẽ không tự động xóa (cần xóa trong Supabase Console).\nĐại ca có chắc muốn tiếp tục?')) {
       try {
           await deleteProfile(id);
           onUpdate(users.filter(u => u.id !== id));
@@ -46,27 +52,77 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, on
       alert("Vui lòng nhập họ tên!");
       return;
     }
+    
+    // Validate for new user creation
+    if (!editingUser.id && createAuthUser) {
+        if (!editingUser.email) {
+            alert("Vui lòng nhập Email để tạo tài khoản!");
+            return;
+        }
+        if (!password || password.length < 6) {
+            alert("Mật khẩu phải có ít nhất 6 ký tự!");
+            return;
+        }
+    }
+
     setIsLoading(true);
     
-    const roles = editingUser.roles || [];
-    const newUser: NhanSu = {
-      ...editingUser,
-      id: editingUser.id || undefined as any, // ID will be managed
-      roles: roles,
-    } as NhanSu;
-    
     try {
-        await upsertProfile(newUser, departments);
-        // Optimistic update
-        const tempUser = { ...newUser, id: newUser.id || Date.now().toString() };
-        if (editingUser.id) {
-            onUpdate(users.map(u => u.id === editingUser.id ? tempUser : u));
-        } else {
-            onUpdate([...users, tempUser]);
+        let userId = editingUser.id;
+
+        // 1. Nếu là tạo mới và có tick tạo Auth
+        if (!userId && createAuthUser) {
+            const { data, error } = await signUpNewUser(editingUser.email!, password, {
+                full_name: editingUser.ho_ten,
+                roles: editingUser.roles
+            });
+
+            if (error) {
+                alert("Lỗi tạo tài khoản đăng nhập: " + error.message);
+                setIsLoading(false);
+                return;
+            }
+
+            if (data.user) {
+                userId = data.user.id;
+                console.log("✅ Tạo Auth User thành công:", userId);
+            } else {
+                // Trường hợp cần confirm email, data.user có thể null hoặc user.identities rỗng tùy config
+                // Nhưng thường data.user vẫn trả về object user
+                alert("Đã gửi yêu cầu tạo tài khoản. Nếu Supabase bật Confirm Email, vui lòng kiểm tra hộp thư.");
+                // Vẫn tiếp tục lưu vào DB với ID (nếu có) hoặc báo lỗi
+                if (!data.user) {
+                     setIsLoading(false);
+                     return;
+                }
+            }
+        } 
+        // Fallback: Nếu không tạo Auth (chỉ lưu hồ sơ), dùng timestamp ID tạm (Không khuyến khích)
+        else if (!userId) {
+            userId = `temp_${Date.now()}`;
         }
+
+        // 2. Lưu vào bảng nhan_su
+        const roles = editingUser.roles || [];
+        const newUser: NhanSu = {
+          ...editingUser,
+          id: userId!,
+          roles: roles,
+        } as NhanSu;
+
+        await upsertProfile(newUser, departments);
+        
+        // Update Local State
+        if (editingUser.id) {
+            onUpdate(users.map(u => u.id === editingUser.id ? newUser : u));
+        } else {
+            onUpdate([...users, newUser]);
+        }
+        
         setViewMode('list');
-    } catch (error) {
-        alert('Lỗi lưu nhân sự!');
+    } catch (error: any) {
+        console.error(error);
+        alert('Lỗi lưu nhân sự: ' + error.message);
     } finally {
         setIsLoading(false);
     }
@@ -114,14 +170,40 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, on
           <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-gray-200 dark:border-slate-800">
             <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800"><h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2"><User className="text-primary" /> {editingUser.id ? 'Cập nhật nhân sự' : 'Thêm nhân sự mới'}</h2><Button variant="ghost" size="icon" onClick={() => setViewMode('list')}><X size={20} /></Button></div>
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              
+              {/* Account Info Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-gray-500 uppercase border-b dark:border-slate-800 pb-1">Tài khoản & Đăng nhập</h3>
+                <div className="space-y-3">
+                    <div><label className="text-xs font-semibold mb-1 block">Email (Tên đăng nhập) <span className="text-red-500">*</span></label><input type="email" className="w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all" value={editingUser.email || ''} onChange={e => setEditingUser({...editingUser, email: e.target.value})} placeholder="email@company.com" disabled={!!editingUser.id}/></div>
+                    
+                    {/* Only show Password field when creating NEW user */}
+                    {!editingUser.id && (
+                        <div className="bg-blue-50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-800">
+                            <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                <input type="checkbox" checked={createAuthUser} onChange={() => setCreateAuthUser(!createAuthUser)} className="rounded text-primary focus:ring-primary"/>
+                                <span className="text-sm font-bold text-blue-800 dark:text-blue-300">Tạo tài khoản đăng nhập (Auth)</span>
+                            </label>
+                            {createAuthUser && (
+                                <div className="space-y-2 animate-in slide-in-from-top-1">
+                                    <label className="text-xs font-semibold mb-1 block flex items-center gap-1"><Lock size={12}/> Mật khẩu khởi tạo <span className="text-red-500">*</span></label>
+                                    <input type="password" className="w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all" value={password} onChange={e => setPassword(e.target.value)} placeholder="Nhập mật khẩu (min 6 ký tự)"/>
+                                    <p className="text-[10px] text-blue-600 dark:text-blue-400 flex items-start gap-1"><Info size={12} className="mt-0.5 shrink-0"/> User sẽ dùng Email & Mật khẩu này để đăng nhập.</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+              </div>
+
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-gray-500 uppercase border-b dark:border-slate-800 pb-1">Thông tin cá nhân</h3>
                 <div className="grid grid-cols-4 gap-4">
                   <div className="col-span-3"><label className="text-xs font-semibold mb-1 block">Họ và tên <span className="text-red-500">*</span></label><input className="w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all" value={editingUser.ho_ten || ''} onChange={e => setEditingUser({...editingUser, ho_ten: e.target.value})} placeholder="Nguyễn Văn A"/></div>
                   <div className="col-span-1"><label className="text-xs font-semibold mb-1 block">Thứ tự</label><input type="number" className="w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-center" value={editingUser.thu_tu || 0} onChange={e => setEditingUser({...editingUser, thu_tu: parseInt(e.target.value) || 0})}/></div>
                 </div>
-                <div><label className="text-xs font-semibold mb-1 block">Email</label><input type="email" className="w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all" value={editingUser.email || ''} onChange={e => setEditingUser({...editingUser, email: e.target.value})} placeholder="email@company.com"/></div>
               </div>
+
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-gray-500 uppercase border-b dark:border-slate-800 pb-1">Công việc</h3>
                 <div className="grid grid-cols-2 gap-4">
