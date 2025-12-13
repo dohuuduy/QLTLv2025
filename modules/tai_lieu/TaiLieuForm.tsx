@@ -206,7 +206,16 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
         dialog.alert("Vui lòng nhập Mã và Tên tài liệu!", { type: 'warning' });
         return;
     }
-    onSave(formData);
+
+    // Clean data before saving
+    const cleanData = { ...formData };
+    
+    // Convert empty strings to null for DATE fields to prevent Supabase 400 error
+    if (cleanData.ngay_ra_soat_tiep_theo === '') cleanData.ngay_ra_soat_tiep_theo = null as any;
+    if (cleanData.ngay_ban_hanh === '') cleanData.ngay_ban_hanh = null as any;
+    if (cleanData.ngay_hieu_luc === '') cleanData.ngay_hieu_luc = null as any;
+
+    onSave(cleanData);
   };
 
   const getFileTypeConfig = (type: string) => {
