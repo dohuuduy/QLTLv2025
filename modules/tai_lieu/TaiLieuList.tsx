@@ -414,17 +414,17 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                               {selectedDoc.ten_tai_lieu}
                            </h2>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0 pt-0.5">
-                            {/* Unified History Button: Icon only on Mobile, Text on Desktop */}
+                        <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                            {/* Unified History Button with Better Visibility */}
                             <Button 
-                                variant="ghost" 
+                                variant="secondary" 
                                 size="sm" 
                                 onClick={() => setShowHistoryModal(true)} 
-                                className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 h-9"
+                                className="h-9 border-slate-200 text-slate-700 hover:text-blue-600 dark:border-slate-700 dark:text-slate-300 shadow-sm"
                                 title="Xem lịch sử hoạt động"
                             >
-                                <History size={20} className="sm:mr-1.5" /> 
-                                <span className="hidden sm:inline">Lịch sử</span>
+                                <History size={18} className="sm:mr-2 text-blue-500" /> 
+                                <span className="hidden sm:inline font-medium">Lịch sử</span>
                             </Button>
                             
                             <Button variant="ghost" size="icon" onClick={handleCloseDrawer} className="text-gray-500 hover:text-red-500">
