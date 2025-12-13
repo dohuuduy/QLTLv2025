@@ -83,29 +83,38 @@ const mapItemToCategoryPayload = (item: DanhMucItem, type: string) => ({
     }
 });
 
-const mapProfileToUser = (record: any, depts: DanhMucItem[]): NhanSu => {
+const mapProfileToUser = (record: any, depts: DanhMucItem[], positions: DanhMucItem[]): NhanSu => {
   const deptName = depts.find(d => d.id === record.id_phong_ban)?.ten || '';
+  // Mapping ID -> Name cho chức vụ. Nếu không tìm thấy ID, fallback về record.chuc_vu (cho dữ liệu cũ) hoặc rỗng
+  const posName = positions.find(p => p.id === record.id_chuc_vu)?.ten || record.chuc_vu || '';
+  
   return {
     id: record.id,
     ho_ten: record.ho_ten,
     email: record.email || '',
-    chuc_vu: record.chuc_vu || 'Nhân viên',
-    phong_ban: deptName,
+    chuc_vu: posName, // Frontend dùng Tên
+    phong_ban: deptName, // Frontend dùng Tên
     roles: record.quyen || [],
     thu_tu: record.thu_tu || 0,
     avatar: record.anh_dai_dien
   };
 };
 
-const mapUserToProfilePayload = (user: NhanSu, depts: DanhMucItem[]) => {
+const mapUserToProfilePayload = (user: NhanSu, depts: DanhMucItem[], positions: DanhMucItem[]) => {
     // Tìm ID phòng ban từ tên (Mapping ngược)
     const deptId = depts.find(d => d.ten === user.phong_ban)?.id || null;
+    // Tìm ID chức vụ từ tên (Mapping ngược)
+    const posId = positions.find(p => p.ten === user.chuc_vu)?.id || null;
+
     return {
         id: user.id,
         ho_ten: user.ho_ten,
         email: user.email,
-        chuc_vu: user.chuc_vu,
+        // Lưu ID vào DB
+        id_chuc_vu: posId,
         id_phong_ban: deptId,
+        // Giữ lại chuc_vu dạng text nếu muốn backward compatibility, nhưng tốt nhất nên bỏ dần
+        // chuc_vu: user.chuc_vu, 
         quyen: user.roles,
         thu_tu: user.thu_tu,
         anh_dai_dien: user.avatar
@@ -138,7 +147,8 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
     const loaiDanhGia = sortIt(categories.filter((c: any) => c.loai === 'LOAI_AUDIT').map(mapCategoryToItem));
     const auditors = sortIt(categories.filter((c: any) => c.loai === 'AUDITOR').map(mapCategoryToItem));
 
-    const nhanSu = profiles.map((p: any) => mapProfileToUser(p, boPhan));
+    // Pass chucVu list to mapper
+    const nhanSu = profiles.map((p: any) => mapProfileToUser(p, boPhan, chucVu));
 
     if (categories.length === 0 && profiles.length === 0) return null;
 
@@ -180,9 +190,9 @@ export const deleteCategory = async (id: string) => {
 };
 
 // CRUD Nhân Sự
-export const upsertProfile = async (user: NhanSu, allDepts: DanhMucItem[]) => {
-    // 1. Cập nhật Database (Bảng nhan_su)
-    const payload = mapUserToProfilePayload(user, allDepts);
+export const upsertProfile = async (user: NhanSu, allDepts: DanhMucItem[], allPositions: DanhMucItem[]) => {
+    // 1. Cập nhật Database (Bảng nhan_su) - Mapping Name to ID
+    const payload = mapUserToProfilePayload(user, allDepts, allPositions);
     const { error } = await supabase.from('nhan_su').upsert(payload);
     if (error) {
         console.error('Lỗi lưu nhân sự:', error);

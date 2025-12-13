@@ -111,7 +111,8 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
           roles: roles,
         } as NhanSu;
 
-        await upsertProfile(newUser, departments);
+        // --- Pass departments and positions for ID mapping ---
+        await upsertProfile(newUser, departments, positions);
         
         // Update Local State
         if (editingUser.id) {

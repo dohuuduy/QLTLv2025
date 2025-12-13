@@ -151,7 +151,7 @@ export const LoginPage: React.FC = () => {
               roles: ['QUAN_TRI', 'PHE_DUYET', 'XEM_XET', 'SOAN_THAO'],
               thu_tu: 0,
               avatar: ""
-          }, []);
+          }, [], []);
 
           alert(`✅ Cấu hình thành công!\nEmail: ${email}\nPass: ${password}\n\nVui lòng đăng nhập ngay.`);
           setEmail(email);
