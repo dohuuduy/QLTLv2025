@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem } from '../../types';
+import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { X, Save, Info, Calendar, UserCheck, FileType, Check, Paperclip, Trash2, Plus, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, GitBranch, Clock, AlertCircle, Lock, Unlock, Hash, ExternalLink } from 'lucide-react';
@@ -211,11 +211,27 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const linhVucOptions = masterData.linhVuc.map(i => ({ value: i.ten, label: i.ten }));
   const boPhanOptions = masterData.boPhan.map(i => ({ value: i.ten, label: i.ten }));
   
-  const userOptions = masterData.nhanSu.map(u => ({ 
-      value: u.ho_ten, 
-      label: u.ho_ten, 
-      subLabel: u.chuc_vu 
-  }));
+  // --- UPDATED: Lọc nhân sự theo quyền hạn ---
+  const mapUserToOption = (u: NhanSu) => ({
+      value: u.ho_ten,
+      label: u.ho_ten,
+      subLabel: u.chuc_vu
+  });
+
+  // 1. Soạn thảo: Chỉ lấy User có role 'SOAN_THAO' hoặc 'QUAN_TRI'
+  const drafterOptions = masterData.nhanSu
+      .filter(u => u.roles.includes('SOAN_THAO') || u.roles.includes('QUAN_TRI'))
+      .map(mapUserToOption);
+
+  // 2. Xem xét: Chỉ lấy User có role 'XEM_XET' hoặc 'QUAN_TRI'
+  const reviewerOptions = masterData.nhanSu
+      .filter(u => u.roles.includes('XEM_XET') || u.roles.includes('QUAN_TRI'))
+      .map(mapUserToOption);
+
+  // 3. Phê duyệt: Chỉ lấy User có role 'PHE_DUYET' hoặc 'QUAN_TRI'
+  const approverOptions = masterData.nhanSu
+      .filter(u => u.roles.includes('PHE_DUYET') || u.roles.includes('QUAN_TRI'))
+      .map(mapUserToOption);
 
   const inputClass = "w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:focus:ring-primary/40 outline-none transition-all placeholder:text-gray-400 text-sm";
   const textareaClass = "w-full p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:focus:ring-primary/40 outline-none transition-all placeholder:text-gray-400 text-sm";
@@ -511,30 +527,30 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
             <div className="space-y-2">
               <label className={labelClass}>Người soạn thảo</label>
               <SearchableSelect
-                 options={userOptions}
+                 options={drafterOptions}
                  value={formData.nguoi_soan_thao}
                  onChange={(val) => handleSelectChange('nguoi_soan_thao', val)}
-                 placeholder="-- Chọn nhân sự --"
+                 placeholder="-- Chọn người soạn thảo --"
               />
             </div>
             
             <div className="space-y-2">
               <label className={labelClass}>Người xem xét</label>
               <SearchableSelect
-                 options={userOptions}
+                 options={reviewerOptions}
                  value={formData.nguoi_xem_xet}
                  onChange={(val) => handleSelectChange('nguoi_xem_xet', val)}
-                 placeholder="-- Chọn nhân sự --"
+                 placeholder="-- Chọn người xem xét --"
               />
             </div>
             
             <div className="space-y-2">
               <label className={labelClass}>Người phê duyệt</label>
               <SearchableSelect
-                 options={userOptions}
+                 options={approverOptions}
                  value={formData.nguoi_phe_duyet}
                  onChange={(val) => handleSelectChange('nguoi_phe_duyet', val)}
-                 placeholder="-- Chọn nhân sự --"
+                 placeholder="-- Chọn người phê duyệt --"
               />
             </div>
           </div>
