@@ -167,11 +167,11 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
 
   // --- RENDER FILTERS ---
   const renderFilters = (
-    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 max-w-full">
+    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 max-w-full relative pr-1">
        {/* Department Select */}
        <div className="relative group shrink-0">
           <select
-             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[140px]"
+             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[130px]"
              value={filters.phong_ban || ''}
              onChange={(e) => setFilters(prev => ({ ...prev, phong_ban: e.target.value || undefined }))}
           >
@@ -189,7 +189,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
        {/* Status Select */}
        <div className="relative group shrink-0">
           <select
-             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[140px]"
+             className="h-9 pl-9 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors min-w-[130px]"
              value={filters.trang_thai || ''}
              onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}
           >
@@ -227,7 +227,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
        {(filters.trang_thai || filters.phong_ban || filters.dang_luu_tru) && (
           <button
             onClick={() => setFilters({})}
-            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400"
+            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 sticky right-0 z-10 shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.1)] dark:shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.5)]"
             title="Xóa tất cả bộ lọc"
           >
             <X size={16} />
