@@ -8,6 +8,7 @@ import { CalendarDays, Plus, Calendar, Target, MapPin, UserCheck, Briefcase, Tra
 import { format } from 'date-fns';
 import { AuditCalendar } from './AuditCalendar';
 import { upsertAuditPlan, deleteAuditPlan } from '../../services/supabaseService';
+import { useDialog } from '../../contexts/DialogContext';
 
 interface AuditSchedulePageProps {
   auditPlans: KeHoachDanhGia[];
@@ -32,6 +33,7 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
      truong_doan_id: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const dialog = useDialog();
 
   const getStatusBadge = (status: TrangThaiKeHoach) => {
       const map = {
@@ -67,19 +69,21 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
      e.stopPropagation();
-     if (window.confirm("Đại ca có chắc muốn xóa kế hoạch này khỏi Database không?")) {
+     const confirmed = await dialog.confirm('Đại ca có chắc muốn xóa kế hoạch này khỏi Database không?', { type: 'error', title: 'Xóa kế hoạch', confirmLabel: 'Xóa' });
+     if (confirmed) {
         try {
             await deleteAuditPlan(id);
             onUpdate(auditPlans.filter(p => p.id !== id));
+            dialog.alert('Đã xóa kế hoạch thành công!', { type: 'success' });
         } catch (error) {
-            alert("Lỗi xóa kế hoạch!");
+            dialog.alert("Lỗi xóa kế hoạch!", { type: 'error' });
         }
      }
   };
 
   const handleSave = async () => {
       if (!editingPlan.ten_ke_hoach) {
-          alert("Vui lòng nhập tên kế hoạch!");
+          dialog.alert("Vui lòng nhập tên kế hoạch!", { type: 'warning' });
           return;
       }
       setIsLoading(true);
@@ -100,8 +104,9 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
               onUpdate([newPlan, ...auditPlans]);
           }
           setIsDrawerOpen(false);
+          dialog.alert('Lưu kế hoạch thành công!', { type: 'success' });
       } catch (error) {
-          alert("Lỗi lưu kế hoạch!");
+          dialog.alert("Lỗi lưu kế hoạch!", { type: 'error' });
       } finally {
           setIsLoading(false);
       }

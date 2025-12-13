@@ -11,6 +11,7 @@ import { AIChatBox } from '../../components/AIChatBox';
 import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, Search } from 'lucide-react';
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 import { format } from 'date-fns';
+import { useDialog } from '../../contexts/DialogContext';
 
 interface TaiLieuListProps {
   masterData: MasterDataState;
@@ -36,6 +37,8 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const [versionType, setVersionType] = useState<'minor' | 'major'>('minor');
   const [versionReason, setVersionReason] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const dialog = useDialog();
 
   useEffect(() => {
     if (initialFilters) setFilters(prev => ({ ...prev, ...initialFilters }));
@@ -104,12 +107,18 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm("Cảnh báo: Hành động này không thể hoàn tác!\nĐại ca có chắc muốn xóa tài liệu này không?")) {
+    const confirmed = await dialog.confirm(
+        'Hành động này không thể hoàn tác! Bạn có chắc muốn xóa tài liệu này không?',
+        { title: 'Xác nhận xóa tài liệu', type: 'error', confirmLabel: 'Xóa ngay' }
+    );
+
+    if (confirmed) {
         try {
             await deleteDocument(id);
             onUpdate(data.filter(d => d.id !== id));
+            dialog.alert('Đã xóa tài liệu thành công!', { type: 'success' });
         } catch (error) {
-            alert("Lỗi khi xóa tài liệu!");
+            dialog.alert('Lỗi khi xóa tài liệu! Vui lòng thử lại.', { type: 'error' });
         }
     }
   };
@@ -203,8 +212,9 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         onUpdate([newDoc, ...data]);
       }
       handleCloseDrawer();
+      dialog.alert('Lưu tài liệu thành công!', { type: 'success' });
     } catch (e) {
-      alert("Lỗi lưu tài liệu");
+      dialog.alert('Lỗi lưu tài liệu! Vui lòng thử lại.', { type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -234,8 +244,9 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       await upsertDocument(updatedDoc);
       onUpdate(data.map(d => d.id === updatedDoc.id ? updatedDoc : d));
       setSelectedDoc(updatedDoc);
+      dialog.alert('Đã gửi yêu cầu phê duyệt thành công!', { type: 'success' });
     } catch (e) {
-      alert("Lỗi gửi duyệt");
+      dialog.alert('Lỗi gửi yêu cầu phê duyệt.', { type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -258,7 +269,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const confirmVersionUp = async () => {
     if (!selectedDoc) return;
     if (!versionReason.trim()) {
-        alert("Vui lòng nhập lý do nâng cấp!");
+        dialog.alert("Vui lòng nhập lý do nâng cấp!", { type: 'warning' });
         return;
     }
     setIsLoading(true);
@@ -300,13 +311,15 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         setSelectedDoc(newDoc);
         setShowVersionModal(false);
         setViewMode('form');
+        dialog.alert(`Đã nâng cấp lên phiên bản ${newVersion}`, { type: 'success' });
     } catch(e) {
-        alert("Lỗi nâng phiên bản");
+        dialog.alert("Lỗi khi nâng phiên bản tài liệu.", { type: 'error' });
     } finally {
         setIsLoading(false);
     }
   };
 
+  // ... (Rest of component remains same)
   // --- UPDATED: Scientific Layout (Fixed Left - Scrollable Middle - Fixed Right) ---
   const renderFilters = (
     <div className="flex items-center gap-2 w-full">

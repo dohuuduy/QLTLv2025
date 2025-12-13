@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { MasterDataState, TaiLieu, HoSo, KeHoachDanhGia, BackupData } from '../../types';
 import { MOCK_SYSTEM_LOGS } from '../../constants';
 import { format } from 'date-fns';
+import { useDialog } from '../../contexts/DialogContext';
 
 interface SettingsPageProps {
   masterData: MasterDataState;
@@ -21,6 +22,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dialog = useDialog();
 
   // --- Mock Local Settings State ---
   const [settings, setSettings] = useState({
@@ -39,7 +41,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   // --- Handlers ---
   const handleSaveSettings = () => {
     // In real app, save to Backend/LocalStorage
-    alert('Đã lưu cấu hình thành công!');
+    dialog.alert('Đã lưu cấu hình thành công!', { type: 'success' });
   };
 
   const handleBackup = () => {
@@ -66,20 +68,24 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const json = JSON.parse(e.target?.result as string);
         // Simple validation
         if (json.masterData && json.documents) {
-           if(window.confirm(`Xác nhận khôi phục dữ liệu từ bản sao lưu ngày ${format(new Date(json.timestamp), 'dd/MM/yyyy HH:mm')}? \nLưu ý: Dữ liệu hiện tại sẽ bị thay thế!`)) {
+           const confirmed = await dialog.confirm(
+               <>Xác nhận khôi phục dữ liệu từ bản sao lưu ngày <b>{format(new Date(json.timestamp), 'dd/MM/yyyy HH:mm')}</b>?<br/><br/><span className="text-red-500">Lưu ý: Dữ liệu hiện tại sẽ bị thay thế!</span></>, 
+               { title: 'Khôi phục hệ thống', type: 'warning', confirmLabel: 'Khôi phục' }
+           );
+           if(confirmed) {
               onRestore(json);
-              alert('Khôi phục dữ liệu thành công!');
+              dialog.alert('Khôi phục dữ liệu thành công!', { type: 'success' });
            }
         } else {
-           alert('File backup không hợp lệ!');
+           dialog.alert('File backup không hợp lệ!', { type: 'error' });
         }
       } catch (error) {
-        alert('Lỗi đọc file backup!');
+        dialog.alert('Lỗi đọc file backup!', { type: 'error' });
         console.error(error);
       }
     };

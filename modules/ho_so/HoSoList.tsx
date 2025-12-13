@@ -8,6 +8,7 @@ import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { format, addMonths, isPast, differenceInDays } from 'date-fns';
 import { Archive, Plus, Trash2, Clock, MapPin, ShieldAlert, FileBox, Calendar, HardDrive, Hash, AlignLeft, Link as LinkIcon, Filter, X, Database } from 'lucide-react';
 import { upsertRecord, deleteRecord } from '../../services/supabaseService';
+import { useDialog } from '../../contexts/DialogContext';
 
 interface HoSoListProps {
   masterData: MasterDataState;
@@ -21,6 +22,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<HoSo>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const dialog = useDialog();
 
   // Filter State
   const [filters, setFilters] = useState<{ 
@@ -82,7 +84,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
 
   const handleSave = async () => {
     if (!editingItem.tieu_de || !editingItem.ngay_tao) {
-        alert("Vui lòng nhập tiêu đề và ngày lập hồ sơ!");
+        dialog.alert("Vui lòng nhập tiêu đề và ngày lập hồ sơ!", { type: 'warning' });
         return;
     }
 
@@ -109,8 +111,9 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
            onUpdate([newItem, ...data]);
         }
         setIsModalOpen(false);
+        dialog.alert('Lưu hồ sơ thành công!', { type: 'success' });
     } catch (error) {
-        alert("Lỗi khi lưu hồ sơ!");
+        dialog.alert("Lỗi khi lưu hồ sơ!", { type: 'error' });
     } finally {
         setIsLoading(false);
     }
@@ -118,12 +121,14 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
      e.stopPropagation();
-     if(window.confirm('Xác nhận tiêu hủy hồ sơ này khỏi danh sách và Database?')) {
+     const confirmed = await dialog.confirm('Xác nhận tiêu hủy hồ sơ này khỏi danh sách và Database?', { title: 'Tiêu hủy hồ sơ', type: 'error', confirmLabel: 'Tiêu hủy' });
+     if(confirmed) {
         try {
             await deleteRecord(id);
             onUpdate(data.filter(i => i.id !== id));
+            dialog.alert('Tiêu hủy hồ sơ thành công!', { type: 'success' });
         } catch (error) {
-            alert("Lỗi khi xóa hồ sơ!");
+            dialog.alert("Lỗi khi xóa hồ sơ!", { type: 'error' });
         }
      }
   }

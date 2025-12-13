@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Download, Printer, S
 import * as XLSX from 'xlsx';
 import { ColumnDefinition, SortDirection } from '../types';
 import { Button } from './ui/Button';
+import { useDialog } from '../contexts/DialogContext';
 
 interface DataTableProps<T> {
   data: T[];
@@ -41,6 +42,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
   // Refs
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dialog = useDialog();
 
   // Toggle Dropdown logic with Position Calculation
   const toggleColumnSelector = () => {
@@ -205,7 +207,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
   const exportExcel = () => {
     const dataToExport = getDataForExport();
     if (dataToExport.length === 0) {
-        alert("Không có dữ liệu để xuất hoặc chưa chọn cột nào!");
+        dialog.alert("Không có dữ liệu để xuất hoặc chưa chọn cột nào!", { type: 'warning' });
         return;
     }
     const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -219,7 +221,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
     const exportCols = getExportColumns();
     
     if (exportCols.length === 0) {
-        alert("Vui lòng chọn ít nhất một cột để in!");
+        dialog.alert("Vui lòng chọn ít nhất một cột để in!", { type: 'warning' });
         return;
     }
 

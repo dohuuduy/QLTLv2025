@@ -13,8 +13,9 @@ import { LoginPage } from './modules/auth/LoginPage';
 import { MasterDataState, NhanSu, AppNotification, TaiLieu, HoSo, KeHoachDanhGia, BackupData } from './types';
 import { fetchMasterDataFromDB, fetchDocumentsFromDB, fetchRecordsFromDB, fetchAuditPlansFromDB, signOut, getCurrentSession } from './services/supabaseService';
 import { supabase } from './lib/supabaseClient';
+import { DialogProvider } from './contexts/DialogContext';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [session, setSession] = useState<any>(null); // Supabase Session
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -367,6 +368,14 @@ const App: React.FC = () => {
         <main className="flex-1 overflow-auto p-4 md:p-6 relative text-gray-800 dark:text-gray-100">{renderContent()}</main>
       </div>
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <DialogProvider>
+      <AppContent />
+    </DialogProvider>
   );
 };
 

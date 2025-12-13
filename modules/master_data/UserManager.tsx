@@ -6,6 +6,7 @@ import { DataTable } from '../../components/DataTable';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { Plus, Trash2, Pencil, Shield, User, X, Check, Lock, Info } from 'lucide-react';
 import { upsertProfile, deleteProfile, signUpNewUser } from '../../services/supabaseService';
+import { useDialog } from '../../contexts/DialogContext';
 
 interface UserManagerProps {
   users: NhanSu[];
@@ -20,6 +21,7 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
   const [password, setPassword] = useState(''); // State for new password
   const [createAuthUser, setCreateAuthUser] = useState(true); // Checkbox to toggle auth creation
   const [isLoading, setIsLoading] = useState(false);
+  const dialog = useDialog();
 
   const handleAddNew = () => {
     const nextOrder = users.length > 0 ? Math.max(...users.map(u => u.thu_tu || 0)) + 1 : 1;
@@ -38,30 +40,40 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Cảnh báo: Hành động này sẽ xóa thông tin hồ sơ nhân sự trong Database.\nTài khoản đăng nhập (Auth) sẽ không tự động xóa (cần xóa trong Supabase Console).\nĐại ca có chắc muốn tiếp tục?')) {
+    const confirmed = await dialog.confirm(
+        <>
+            Hành động này sẽ xóa thông tin hồ sơ nhân sự trong Database.<br/>
+            Tài khoản đăng nhập (Auth) sẽ không tự động xóa (cần xóa trong Supabase Console).<br/>
+            <br/>Bạn có chắc muốn tiếp tục?
+        </>,
+        { title: 'Cảnh báo xóa nhân sự', type: 'warning', confirmLabel: 'Xóa' }
+    );
+
+    if (confirmed) {
       try {
           await deleteProfile(id);
           onUpdate(users.filter(u => u.id !== id));
+          dialog.alert('Xóa nhân sự thành công!', { type: 'success' });
       } catch (error) {
-          alert('Lỗi xóa nhân sự!');
+          dialog.alert('Lỗi xóa nhân sự!', { type: 'error' });
       }
     }
   };
 
   const handleSave = async () => {
     if (!editingUser.ho_ten) {
-      alert("Vui lòng nhập họ tên!");
+      dialog.alert("Vui lòng nhập họ tên!", { type: 'warning' });
       return;
     }
     
     // Validate for new user creation
     if (!editingUser.id && createAuthUser) {
         if (!editingUser.email) {
-            alert("Vui lòng nhập Email để tạo tài khoản!");
+            dialog.alert("Vui lòng nhập Email để tạo tài khoản!", { type: 'warning' });
             return;
         }
         if (!password || password.length < 6) {
-            alert("Mật khẩu phải có ít nhất 6 ký tự!");
+            dialog.alert("Mật khẩu phải có ít nhất 6 ký tự!", { type: 'warning' });
             return;
         }
     }
@@ -79,7 +91,7 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
             });
 
             if (error) {
-                alert("Lỗi tạo tài khoản đăng nhập: " + error.message);
+                dialog.alert("Lỗi tạo tài khoản đăng nhập: " + error.message, { type: 'error' });
                 setIsLoading(false);
                 return;
             }
@@ -88,10 +100,8 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
                 userId = data.user.id;
                 console.log("✅ Tạo Auth User thành công:", userId);
             } else {
-                // Trường hợp cần confirm email, data.user có thể null hoặc user.identities rỗng tùy config
-                // Nhưng thường data.user vẫn trả về object user
-                alert("Đã gửi yêu cầu tạo tài khoản. Nếu Supabase bật Confirm Email, vui lòng kiểm tra hộp thư.");
-                // Vẫn tiếp tục lưu vào DB với ID (nếu có) hoặc báo lỗi
+                // Trường hợp cần confirm email
+                dialog.alert("Đã gửi yêu cầu tạo tài khoản. Nếu Supabase bật Confirm Email, vui lòng kiểm tra hộp thư.", { type: 'info' });
                 if (!data.user) {
                      setIsLoading(false);
                      return;
@@ -122,9 +132,10 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
         }
         
         setViewMode('list');
+        dialog.alert('Lưu nhân sự thành công!', { type: 'success' });
     } catch (error: any) {
         console.error(error);
-        alert('Lỗi lưu nhân sự: ' + error.message);
+        dialog.alert('Lỗi lưu nhân sự: ' + error.message, { type: 'error' });
     } finally {
         setIsLoading(false);
     }

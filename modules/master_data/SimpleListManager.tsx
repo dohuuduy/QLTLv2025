@@ -6,6 +6,7 @@ import { DataTable } from '../../components/DataTable';
 import { Trash2, Pencil, Plus, CheckCircle, XCircle, Link as LinkIcon, X, Layers, Save, Hash } from 'lucide-react';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { upsertCategory, deleteCategory } from '../../services/supabaseService';
+import { useDialog } from '../../contexts/DialogContext';
 
 interface SimpleListManagerProps {
   data: DanhMucItem[];
@@ -27,11 +28,9 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DanhMucItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const dialog = useDialog();
   
-  // Xác định Loại danh mục dựa vào Title hoặc Props (cần logic tốt hơn trong thực tế, ở đây hardcode tạm dựa vào data)
-  // Trong thực tế, ta nên truyền 'type' xuống props
   const guessType = () => {
-      // Logic tạm: Dùng title để đoán type
       if (title.includes('Loại tài liệu')) return 'LOAI_TAI_LIEU';
       if (title.includes('Phòng ban')) return 'BO_PHAN';
       if (title.includes('Chức vụ')) return 'CHUC_VU';
@@ -91,26 +90,32 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Đại ca có chắc muốn xóa mục này khỏi Database không?')) {
+    const confirmed = await dialog.confirm(
+        'Bạn có chắc muốn xóa mục này khỏi Database không?',
+        { title: 'Xác nhận xóa danh mục', type: 'error', confirmLabel: 'Xóa' }
+    );
+
+    if (confirmed) {
       try {
           await deleteCategory(id);
           onUpdate(data.filter(item => item.id !== id));
+          dialog.alert('Xóa thành công!', { type: 'success' });
       } catch (error) {
-          alert("Lỗi khi xóa danh mục!");
+          dialog.alert('Lỗi khi xóa danh mục!', { type: 'error' });
       }
     }
   };
 
   const handleSave = async () => {
     if (!formState.ten.trim()) {
-      alert("Vui lòng nhập tên danh mục!");
+      dialog.alert("Vui lòng nhập tên danh mục!", { type: 'warning' });
       return;
     }
     setIsLoading(true);
 
     const type = guessType();
     const newItem: DanhMucItem = {
-        id: editingItem ? editingItem.id : undefined as any, // ID sẽ do DB sinh hoặc dùng tạm nếu update
+        id: editingItem ? editingItem.id : undefined as any,
         ten: formState.ten,
         thu_tu: formState.thu_tu,
         active: formState.active,
@@ -124,10 +129,6 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
 
     try {
         await upsertCategory(newItem, type);
-        // Vì Supabase có thể sinh ID, trong thực tế ta nên reload lại list.
-        // Ở đây cập nhật tạm thời optimistic, giả sử ID nếu create mới là string tạm hoặc reload parent
-        // Để đơn giản: reload page hoặc reload data từ cha là tốt nhất.
-        // Tạm thời update local:
         const tempItem = { ...newItem, id: newItem.id || Date.now().toString() }; 
         if (editingItem) {
             onUpdate(data.map(item => item.id === editingItem.id ? tempItem : item));
@@ -135,8 +136,9 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
             onUpdate([...data, tempItem]);
         }
         setIsDrawerOpen(false);
+        dialog.alert('Lưu danh mục thành công!', { type: 'success' });
     } catch (error) {
-        alert("Lỗi khi lưu danh mục!");
+        dialog.alert("Lỗi khi lưu danh mục!", { type: 'error' });
     } finally {
         setIsLoading(false);
     }
