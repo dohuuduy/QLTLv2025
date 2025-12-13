@@ -8,7 +8,7 @@ import { Badge } from '../../components/ui/Badge';
 import { TaiLieuForm } from './TaiLieuForm';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
 import { AIChatBox } from '../../components/AIChatBox';
-import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2 } from 'lucide-react';
+import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List } from 'lucide-react';
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 import { format } from 'date-fns';
 
@@ -25,6 +25,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   masterData, currentUser, initialFilters, data, onUpdate, records 
 }) => {
   const [viewMode, setViewMode] = useState<'list' | 'form' | 'detail'>('list');
+  const [isTreeView, setIsTreeView] = useState(true); // Default to Tree View
   const [selectedDoc, setSelectedDoc] = useState<TaiLieu | null>(null);
   const [filters, setFilters] = useState<{ trang_thai?: string; bo_phan?: string }>(initialFilters || {});
   
@@ -38,13 +39,76 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     if (initialFilters) setFilters(initialFilters);
   }, [initialFilters]);
 
+  // --- HIERARCHY LOGIC ---
+  
+  // 1. Tính toán cấp độ (Level) của tài liệu
+  const getLevel = (doc: TaiLieu, allDocs: TaiLieu[]): number => {
+      let level = 0;
+      let currentDoc = doc;
+      // Giới hạn độ sâu tối đa là 5 để tránh infinite loop nếu dữ liệu lỗi
+      while (currentDoc.tai_lieu_cha_id && level < 5) {
+          const parent = allDocs.find(d => d.id === currentDoc.tai_lieu_cha_id);
+          if (parent) {
+              level++;
+              currentDoc = parent;
+          } else {
+              break;
+          }
+      }
+      return level;
+  };
+
+  // 2. Sắp xếp danh sách theo cây cha-con
+  const sortDataHierarchy = (docs: TaiLieu[]) => {
+      const docMap = new Map<string, TaiLieu[]>();
+      const roots: TaiLieu[] = [];
+
+      // Gom nhóm theo cha
+      docs.forEach(doc => {
+          if (doc.tai_lieu_cha_id && docs.find(d => d.id === doc.tai_lieu_cha_id)) {
+              // Nếu có cha và cha cũng nằm trong danh sách lọc
+              const siblings = docMap.get(doc.tai_lieu_cha_id) || [];
+              siblings.push(doc);
+              docMap.set(doc.tai_lieu_cha_id, siblings);
+          } else {
+              // Là root (hoặc cha bị lọc mất -> coi như root trong view này)
+              roots.push(doc);
+          }
+      });
+
+      // Hàm đệ quy để build danh sách phẳng từ cây
+      const buildList = (nodes: TaiLieu[]): TaiLieu[] => {
+          // Sắp xếp các node cùng cấp theo mã (hoặc thứ tự)
+          const sortedNodes = nodes.sort((a, b) => (a.thu_tu || 0) - (b.thu_tu || 0) || a.ma_tai_lieu.localeCompare(b.ma_tai_lieu));
+          
+          let result: TaiLieu[] = [];
+          sortedNodes.forEach(node => {
+              result.push(node);
+              const children = docMap.get(node.id);
+              if (children && children.length > 0) {
+                  result = result.concat(buildList(children));
+              }
+          });
+          return result;
+      };
+
+      return buildList(roots);
+  };
+
+  // --- END HIERARCHY LOGIC ---
+
   const filteredData = useMemo(() => {
-    return data.filter(doc => {
+    let result = data.filter(doc => {
       if (filters.trang_thai && doc.trang_thai !== filters.trang_thai) return false;
       if (filters.bo_phan && doc.bo_phan_soan_thao !== filters.bo_phan) return false;
       return true;
     });
-  }, [data, filters]);
+
+    if (isTreeView) {
+        return sortDataHierarchy(result);
+    }
+    return result;
+  }, [data, filters, isTreeView]);
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -60,7 +124,22 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
   const columns: ColumnDefinition<TaiLieu>[] = [
     { key: 'ma_tai_lieu', header: 'Mã tài liệu', visible: true, render: (val) => <span className="font-mono font-bold text-blue-700 dark:text-blue-400">{val}</span> },
-    { key: 'ten_tai_lieu', header: 'Tên tài liệu', visible: true, render: (val) => <span className="font-medium text-gray-800 dark:text-gray-200 line-clamp-1" title={val as string}>{val}</span> },
+    { 
+        key: 'ten_tai_lieu', 
+        header: 'Tên tài liệu', 
+        visible: true, 
+        render: (val, doc) => {
+            const level = isTreeView ? getLevel(doc, data) : 0;
+            return (
+                <div className="flex items-center" style={{ paddingLeft: `${level * 24}px` }}>
+                    {level > 0 && <CornerDownRight size={16} className="mr-2 text-gray-400 shrink-0" />}
+                    <span className={`font-medium line-clamp-1 ${level === 0 ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-700 dark:text-gray-300'}`} title={val as string}>
+                        {val}
+                    </span>
+                </div>
+            );
+        }
+    },
     { key: 'phien_ban', header: 'Ver', visible: true, render: (val) => <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-xs font-mono dark:text-gray-300">{val}</span> },
     { key: 'loai_tai_lieu', header: 'Loại', visible: true, render: (val) => <span className="text-xs text-gray-500 dark:text-gray-400">{val}</span> },
     { key: 'bo_phan_soan_thao', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val}</span> },
@@ -90,13 +169,11 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
   const handleCloseDrawer = () => {
     setViewMode('list');
-    // Không reset selectedDoc ngay để tránh giật UI khi đóng drawer
     setTimeout(() => setSelectedDoc(null), 200);
   };
 
   const handleSaveDoc = async (docData: Partial<TaiLieu>) => {
     setIsLoading(true);
-    // Simple logic to create new or update
     const newDoc: TaiLieu = {
       ...docData,
       id: docData.id || `TL${Date.now()}`,
@@ -108,7 +185,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     } as TaiLieu;
 
     if (!docData.id) {
-       // Create log
        newDoc.lich_su?.push({
          id: `H${Date.now()}`,
          nguoi_thuc_hien: currentUser.ho_ten,
@@ -133,7 +209,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       } else {
         onUpdate([newDoc, ...data]);
       }
-      // Sau khi lưu xong thì đóng drawer
       handleCloseDrawer();
     } catch (e) {
       alert("Lỗi lưu tài liệu");
@@ -231,7 +306,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         onUpdate([...data.filter(d => d.id !== selectedDoc.id), oldDoc, newDoc]);
         setSelectedDoc(newDoc);
         setShowVersionModal(false);
-        setViewMode('form'); // Switch to edit mode for new draft
+        setViewMode('form');
     } catch(e) {
         alert("Lỗi nâng phiên bản");
     } finally {
@@ -241,7 +316,18 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
   const renderFilters = (
     <div className="flex gap-2">
-       {/* Filter UI implementation if needed */}
+       <button 
+         onClick={() => setIsTreeView(!isTreeView)}
+         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all h-9
+           ${isTreeView 
+             ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300' 
+             : 'bg-white border-gray-200 text-gray-600 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-300'}
+         `}
+         title={isTreeView ? "Đang xem dạng cây phân cấp" : "Đang xem dạng danh sách phẳng"}
+       >
+         {isTreeView ? <Layers size={16} /> : <List size={16} />}
+         <span className="hidden sm:inline">{isTreeView ? "Dạng cây" : "Danh sách"}</span>
+       </button>
        <Button variant="outline" size="sm" onClick={() => setFilters({})} className="h-9">
          Xóa bộ lọc
        </Button>
@@ -250,7 +336,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
   return (
     <div className="h-full flex flex-col animate-fade-in -mx-4 md:mx-0 relative">
-      {/* 1. Main List Area (Always visible at bottom level) */}
       <div className="flex-1 overflow-hidden h-full rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
          <DataTable 
             title="Danh sách Tài liệu" 
@@ -262,19 +347,14 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
          />
       </div>
 
-      {/* 2. Drawer for FORM or DETAIL */}
+      {/* Drawer & Modal components remain same... */}
       {(viewMode === 'form' || viewMode === 'detail') && (
         <div className="fixed inset-0 z-50 flex justify-end">
-           {/* Backdrop */}
            <div 
              className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" 
              onClick={handleCloseDrawer}
            />
-           
-           {/* Slide-over Panel */}
            <div className="w-full max-w-4xl bg-white dark:bg-slate-950 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-gray-200 dark:border-slate-800">
-              
-              {/* === VIEW MODE: FORM (ADD/EDIT) === */}
               {viewMode === 'form' ? (
                  <TaiLieuForm 
                    initialData={selectedDoc} 
@@ -284,10 +364,8 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                    fullList={data}
                  />
               ) : (
-              /* === VIEW MODE: DETAIL === */
                  selectedDoc && (
                    <div className="flex flex-col h-full overflow-hidden">
-                     {/* Header Detail */}
                      <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 shrink-0">
                         <div>
                            <div className="flex items-center gap-2 mb-2">
@@ -302,7 +380,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                      </div>
 
                      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                        {/* Summary Info Bar */}
                         <div className="flex flex-wrap gap-6 text-sm text-gray-600 dark:text-gray-400 pb-4 border-b border-gray-100 dark:border-slate-800">
                            <div className="flex items-center gap-2"><Clock size={16} /> Phiên bản: <span className="font-bold text-gray-900 dark:text-gray-200">{selectedDoc.phien_ban}</span></div>
                            <div className="flex items-center gap-2"><FileText size={16} /> Loại: <span className="font-bold text-gray-900 dark:text-gray-200">{selectedDoc.loai_tai_lieu}</span></div>
@@ -310,7 +387,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                         </div>
 
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                           {/* Main Info */}
                            <div className="xl:col-span-2 space-y-6">
                               <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
                                  <h3 className="text-sm font-bold text-gray-500 uppercase mb-4">Thông tin chi tiết</h3>
@@ -365,11 +441,8 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                               </div>
                            </div>
 
-                           {/* Sidebar Info (Chat & Actions) */}
                            <div className="space-y-6">
                                <AIChatBox document={selectedDoc} />
-                               
-                               {/* Related Records (Simple list) */}
                                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
                                   <h3 className="text-sm font-bold text-gray-500 uppercase mb-4">Hồ sơ liên quan</h3>
                                   {records.filter(r => r.ma_tai_lieu_lien_quan === selectedDoc.ma_tai_lieu).length > 0 ? (
@@ -390,7 +463,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                         </div>
                      </div>
 
-                     {/* Sticky Action Bar */}
                      <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 sticky bottom-0 grid grid-cols-2 gap-3 z-10 shrink-0">
                        {(selectedDoc.trang_thai === TrangThaiTaiLieu.SOAN_THAO) ? (
                            <>
@@ -411,7 +483,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         </div>
       )}
 
-      {/* Version Upgrade Modal */}
       <Modal isOpen={showVersionModal} onClose={() => setShowVersionModal(false)} title="Nâng phiên bản tài liệu" size="lg" footer={<><Button variant="ghost" onClick={() => setShowVersionModal(false)}>Hủy bỏ</Button><Button onClick={confirmVersionUp} leftIcon={<FileUp size={16} />}>Xác nhận & Tạo bản thảo</Button></>}>
         <div className="space-y-6 p-6">
            {selectedDoc && (
@@ -420,17 +491,14 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                   <p className="text-[10px] text-blue-600 dark:text-blue-300 font-bold uppercase tracking-wider mb-1">Phiên bản hiện tại</p>
                   <p className="text-3xl font-mono font-bold text-blue-700 dark:text-blue-400">{selectedDoc.phien_ban}</p>
                </div>
-               
                <div className="flex items-center text-blue-300 dark:text-slate-600">
                   <div className="w-8 h-0.5 bg-current"></div>
                   <ChevronRight size={24} className="-ml-2" />
                </div>
-
                <div className="relative z-10 text-right">
                   <p className="text-[10px] text-green-600 dark:text-green-300 font-bold uppercase tracking-wider mb-1">Phiên bản mới</p>
                   <p className="text-3xl font-mono font-bold text-green-700 dark:text-green-400">{getNextVersion(selectedDoc.phien_ban, versionType)}</p>
                </div>
-               
                <div className="absolute -right-6 -top-6 w-24 h-24 bg-green-100 dark:bg-green-900/20 rounded-full blur-2xl opacity-50"></div>
                <div className="absolute -left-6 -bottom-6 w-24 h-24 bg-blue-100 dark:bg-blue-900/20 rounded-full blur-2xl opacity-50"></div>
              </div>
