@@ -401,26 +401,41 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
               ) : (
                  selectedDoc && (
                    <div className="flex flex-col h-full overflow-hidden relative">
-                     <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 shrink-0">
-                        <div>
-                           <div className="flex items-center gap-2 mb-2">
-                              <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 rounded text-xs font-mono font-bold border border-blue-200 dark:border-blue-800">{selectedDoc.ma_tai_lieu}</span>
+                     {/* OPTIMIZED HEADER FOR RESPONSIVENESS */}
+                     <div className="flex items-start justify-between p-4 md:p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 shrink-0 gap-3">
+                        <div className="flex-1 min-w-0">
+                           <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 rounded text-xs font-mono font-bold border border-blue-200 dark:border-blue-800 shrink-0">
+                                 {selectedDoc.ma_tai_lieu}
+                              </span>
                               <Badge status={selectedDoc.trang_thai} />
                            </div>
-                           <h2 className="text-xl font-bold text-gray-800 dark:text-white leading-tight line-clamp-1">{selectedDoc.ten_tai_lieu}</h2>
+                           <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white leading-snug break-words">
+                              {selectedDoc.ten_tai_lieu}
+                           </h2>
                         </div>
-                        <div className="flex items-center gap-2">
-                            {/* Nút Xem Lịch Sử */}
+                        <div className="flex items-center gap-1 shrink-0 pt-0.5">
                             <Button 
                                 variant="secondary" 
                                 size="sm" 
                                 onClick={() => setShowHistoryModal(true)} 
-                                className="hidden sm:flex text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                                className="hidden sm:flex text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 h-9"
+                                title="Xem lịch sử"
                             >
                                 <History size={16} className="mr-1.5" /> Lịch sử
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={handleCloseDrawer}>
-                                <X size={20} />
+                            {/* Mobile History Button */}
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => setShowHistoryModal(true)} 
+                                className="sm:hidden text-gray-500 hover:text-blue-600"
+                                title="Xem lịch sử"
+                            >
+                                <History size={20} />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={handleCloseDrawer} className="text-gray-500 hover:text-red-500">
+                                <X size={24} />
                             </Button>
                         </div>
                      </div>
