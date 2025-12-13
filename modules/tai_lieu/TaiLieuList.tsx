@@ -307,62 +307,98 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     }
   };
 
-  // --- UPDATED: Render Filters with Dropdowns ---
+  // --- UPDATED: Render Filters Scientific Layout ---
   const renderFilters = (
-    <div className="flex flex-wrap gap-2 items-center">
-       {/* Tree View Toggle - COMPACT ICON ONLY */}
-       <button 
-         onClick={() => setIsTreeView(!isTreeView)}
-         className={`h-9 w-9 flex items-center justify-center rounded-lg border transition-all
-           ${isTreeView 
-             ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300 shadow-sm' 
-             : 'bg-white border-gray-200 text-gray-500 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}
-         `}
-         title={isTreeView ? "Đang xem dạng cây (Cha-Con). Click để chuyển sang danh sách phẳng." : "Đang xem danh sách phẳng. Click để chuyển sang dạng cây."}
-       >
-         {isTreeView ? <Layers size={18} /> : <List size={18} />}
-       </button>
+    <div className="flex flex-wrap items-center gap-3">
+       {/* 1. View Switcher (Segmented Control Style) */}
+       <div className="bg-gray-100 dark:bg-slate-800 p-1 rounded-lg flex items-center border border-gray-200 dark:border-slate-700">
+          <button
+            onClick={() => setIsTreeView(true)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              isTreeView 
+                ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' 
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
+            }`}
+            title="Xem dạng cây phân cấp"
+          >
+            <Layers size={14} />
+            <span className="hidden sm:inline">Phân cấp</span>
+          </button>
+          <button
+            onClick={() => setIsTreeView(false)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              !isTreeView 
+                ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' 
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
+            }`}
+            title="Xem dạng danh sách phẳng"
+          >
+            <List size={14} />
+            <span className="hidden sm:inline">Phẳng</span>
+          </button>
+       </div>
 
-       {/* Status Filter */}
-       <select
-          className="h-9 px-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none focus:border-blue-500 text-gray-700 dark:text-gray-200 min-w-[120px]"
-          value={filters.trang_thai || ''}
-          onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}
-       >
-          <option value="">Tất cả trạng thái</option>
-          <option value={TrangThaiTaiLieu.SOAN_THAO}>Đang soạn thảo</option>
-          <option value={TrangThaiTaiLieu.CHO_DUYET}>Chờ duyệt</option>
-          <option value={TrangThaiTaiLieu.DA_BAN_HANH}>Đã ban hành</option>
-          <option value={TrangThaiTaiLieu.HET_HIEU_LUC}>Hết hiệu lực</option>
-       </select>
+       <div className="w-px h-6 bg-gray-300 dark:bg-slate-700 hidden sm:block"></div>
 
-       {/* Department Filter */}
-       <select
-          className="h-9 px-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none focus:border-blue-500 text-gray-700 dark:text-gray-200 min-w-[130px]"
-          value={filters.bo_phan || ''}
-          onChange={(e) => setFilters(prev => ({ ...prev, bo_phan: e.target.value || undefined }))}
-       >
-          <option value="">Tất cả bộ phận</option>
-          {masterData.boPhan.map(bp => (
-             <option key={bp.id} value={bp.ten}>{bp.ten}</option>
-          ))}
-       </select>
+       {/* 2. Filter Group */}
+       <div className="flex flex-wrap items-center gap-2">
+          {/* Status Select */}
+          <div className="relative group">
+             <select
+                className="h-9 pl-3 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer min-w-[130px] transition-all hover:border-blue-300"
+                value={filters.trang_thai || ''}
+                onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}
+             >
+                <option value="">Tất cả trạng thái</option>
+                <option value={TrangThaiTaiLieu.SOAN_THAO}>Đang soạn thảo</option>
+                <option value={TrangThaiTaiLieu.CHO_DUYET}>Chờ duyệt</option>
+                <option value={TrangThaiTaiLieu.DA_BAN_HANH}>Đã ban hành</option>
+                <option value={TrangThaiTaiLieu.HET_HIEU_LUC}>Hết hiệu lực</option>
+             </select>
+             <Filter size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
+          </div>
 
-       {/* Document Type Filter */}
-       <select
-          className="h-9 px-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none focus:border-blue-500 text-gray-700 dark:text-gray-200 min-w-[130px]"
-          value={filters.loai_tai_lieu || ''}
-          onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}
-       >
-          <option value="">Tất cả loại tài liệu</option>
-          {masterData.loaiTaiLieu.map(lt => (
-             <option key={lt.id} value={lt.ten}>{lt.ten}</option>
-          ))}
-       </select>
+          {/* Department Select */}
+          <div className="relative group">
+             <select
+                className="h-9 pl-3 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer min-w-[140px] transition-all hover:border-blue-300"
+                value={filters.bo_phan || ''}
+                onChange={(e) => setFilters(prev => ({ ...prev, bo_phan: e.target.value || undefined }))}
+             >
+                <option value="">Tất cả bộ phận</option>
+                {masterData.boPhan.map(bp => (
+                   <option key={bp.id} value={bp.ten}>{bp.ten}</option>
+                ))}
+             </select>
+             <Filter size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
+          </div>
 
-       <Button variant="outline" size="sm" onClick={() => setFilters({})} className="h-9 px-2 text-gray-500 hover:text-red-500" title="Xóa tất cả bộ lọc">
-         <X size={16} />
-       </Button>
+          {/* Type Select */}
+          <div className="relative group hidden md:block">
+             <select
+                className="h-9 pl-3 pr-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer min-w-[140px] transition-all hover:border-blue-300"
+                value={filters.loai_tai_lieu || ''}
+                onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}
+             >
+                <option value="">Tất cả loại văn bản</option>
+                {masterData.loaiTaiLieu.map(lt => (
+                   <option key={lt.id} value={lt.ten}>{lt.ten}</option>
+                ))}
+             </select>
+             <Filter size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-hover:text-blue-500 transition-colors" />
+          </div>
+
+          {/* Clear Filter Action */}
+          {(filters.trang_thai || filters.bo_phan || filters.loai_tai_lieu) && (
+             <button
+               onClick={() => setFilters({})}
+               className="h-9 px-3 rounded-lg border border-red-100 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-200 text-xs font-bold transition-all flex items-center gap-1 dark:bg-red-900/20 dark:border-red-900 dark:text-red-400"
+               title="Xóa tất cả bộ lọc"
+             >
+               <X size={14} /> Xóa lọc
+             </button>
+          )}
+       </div>
     </div>
   );
 
