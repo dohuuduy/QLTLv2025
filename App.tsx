@@ -58,8 +58,15 @@ const App: React.FC = () => {
     });
 
     // 2. Listen for Auth Changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth Event:", event);
       setSession(session);
+      
+      // Nếu đăng nhập thành công và URL có chứa hash access_token (do email redirect), hãy làm sạch URL
+      if (session && window.location.hash && window.location.hash.includes('access_token')) {
+          window.history.replaceState(null, '', window.location.pathname);
+      }
+
       if (!session) {
          // Reset state on logout
          setDocuments([]);
@@ -268,7 +275,7 @@ const App: React.FC = () => {
                   <div className={`w-2 h-2 rounded-full ${isAiEnabled ? 'bg-blue-500' : 'bg-gray-500'}`}></div>{isAiEnabled ? 'AI Ready' : 'No AI Key'}
                </div>
              </div>
-          )}
+           )}
         </div>
       </aside>
 
