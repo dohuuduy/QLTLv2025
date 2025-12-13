@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { X, Save, Info, Calendar, UserCheck, FileType, Check, Paperclip, Trash2, Plus, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, GitBranch, Clock, AlertCircle, Lock, Unlock, Hash, ExternalLink } from 'lucide-react';
+import { X, Save, Info, Calendar, UserCheck, FileType, Check, Paperclip, Trash2, Plus, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, GitBranch, Clock, AlertCircle, Lock, Unlock, Hash, ExternalLink, Eye } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -196,15 +196,40 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const getFileTypeConfig = (type: string) => {
     switch(type) {
       case 'pdf': 
-        return { icon: <FileType size={20} />, color: 'text-red-600', bg: 'bg-red-100 dark:bg-red-900/20' };
+        return { 
+            icon: <FileType size={20} strokeWidth={1.5} />, 
+            color: 'text-red-600 dark:text-red-400', 
+            bg: 'bg-red-50 dark:bg-red-900/20',
+            border: 'border-red-100 dark:border-red-900/30'
+        };
       case 'doc': 
-        return { icon: <FileText size={20} />, color: 'text-blue-600', bg: 'bg-blue-100 dark:bg-blue-900/20' };
+        return { 
+            icon: <FileText size={20} strokeWidth={1.5} />, 
+            color: 'text-blue-600 dark:text-blue-400', 
+            bg: 'bg-blue-50 dark:bg-blue-900/20',
+            border: 'border-blue-100 dark:border-blue-900/30'
+        };
       case 'excel': 
-        return { icon: <FileSpreadsheet size={20} />, color: 'text-green-600', bg: 'bg-green-100 dark:bg-green-900/20' };
+        return { 
+            icon: <FileSpreadsheet size={20} strokeWidth={1.5} />, 
+            color: 'text-emerald-600 dark:text-emerald-400', 
+            bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+            border: 'border-emerald-100 dark:border-emerald-900/30'
+        };
       case 'link': 
-        return { icon: <LinkIcon size={20} />, color: 'text-gray-600', bg: 'bg-gray-100 dark:bg-slate-800' };
+        return { 
+            icon: <LinkIcon size={20} strokeWidth={1.5} />, 
+            color: 'text-indigo-600 dark:text-indigo-400', 
+            bg: 'bg-indigo-50 dark:bg-indigo-900/20',
+            border: 'border-indigo-100 dark:border-indigo-900/30'
+        };
       default: 
-        return { icon: <File size={20} />, color: 'text-gray-600', bg: 'bg-gray-100 dark:bg-slate-800' };
+        return { 
+            icon: <File size={20} strokeWidth={1.5} />, 
+            color: 'text-slate-600 dark:text-slate-400', 
+            bg: 'bg-slate-100 dark:bg-slate-800',
+            border: 'border-slate-200 dark:border-slate-700'
+        };
     }
   };
 
@@ -495,29 +520,49 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
               </div>
 
               {formData.dinh_kem && formData.dinh_kem.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+                <div className="grid grid-cols-1 gap-3 mt-4">
                   {formData.dinh_kem.map(file => {
                     const config = getFileTypeConfig(file.loai);
                     return (
-                      <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg group hover:border-blue-300 dark:hover:border-blue-700 transition-all">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          <div className={`p-1.5 rounded ${config.bg} ${config.color}`}>
-                            {config.icon}
-                          </div>
-                          <div className="flex flex-col overflow-hidden">
-                             <a href={file.url} target="_blank" rel="noreferrer" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate" title={file.ten_file}>
-                                {file.ten_file}
-                             </a>
-                             <span className="text-[10px] text-gray-400">{format(new Date(file.ngay_upload), 'dd/MM/yyyy HH:mm')}</span>
-                          </div>
+                      <div key={file.id} className="group flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all">
+                        {/* Icon */}
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${config.bg} ${config.color}`}>
+                           {config.icon}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeFile(file.id)}
-                          className="text-gray-400 hover:text-red-500 p-1.5 rounded-md hover:bg-white dark:hover:bg-slate-800 transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                           <a href={file.url} target="_blank" rel="noreferrer" className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate hover:text-blue-600 dark:hover:text-blue-400 block mb-0.5">
+                              {file.ten_file}
+                           </a>
+                           <div className="flex items-center gap-2 text-xs text-gray-400">
+                              <span className="uppercase font-bold">{file.loai}</span>
+                              <span>•</span>
+                              <span>{format(new Date(file.ngay_upload), 'dd/MM/yyyy HH:mm')}</span>
+                           </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                           <a 
+                             href={file.url} 
+                             target="_blank" 
+                             rel="noreferrer"
+                             className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                             title="Mở liên kết"
+                           >
+                             <ExternalLink size={18} />
+                           </a>
+                           <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 mx-1"></div>
+                           <button 
+                             type="button"
+                             onClick={() => removeFile(file.id)}
+                             className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                             title="Xóa file"
+                           >
+                             <Trash2 size={18} />
+                           </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -530,7 +575,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
         {/* Nhóm 4: Trách nhiệm */}
         <div>
           <h3 className={sectionTitleClass}>
-            <UserCheck size={18} className="text-orange-500" /> Phân công trách nhiệm
+            <UserCheck size={18} className="text-orange-500" /> Trách nhiệm
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -554,7 +599,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
             </div>
 
             <div className="space-y-2">
-              <label className={labelClass}>Người xem xét (Review)</label>
+              <label className={labelClass}>Người xem xét</label>
               <SearchableSelect
                  options={reviewerOptions}
                  value={formData.nguoi_xem_xet}
@@ -564,27 +609,23 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
             </div>
 
             <div className="space-y-2">
-              <label className={labelClass}>Người phê duyệt (Approve)</label>
+              <label className={labelClass}>Người phê duyệt</label>
               <SearchableSelect
                  options={approverOptions}
                  value={formData.nguoi_phe_duyet}
                  onChange={(val) => handleSelectChange('nguoi_phe_duyet', val)}
-                 placeholder="-- Chọn người phê duyệt --"
+                 placeholder="-- Chọn người duyệt --"
               />
             </div>
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
-          <Button type="button" variant="ghost" onClick={onCancel}>
-            Hủy bỏ
-          </Button>
-          <Button type="submit" leftIcon={<Save size={18} />}>
-            Lưu tài liệu
-          </Button>
-        </div>
       </form>
+
+      <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 sticky bottom-0 flex justify-end gap-3">
+        <Button variant="ghost" onClick={onCancel}>Hủy bỏ</Button>
+        <Button onClick={handleSubmit} leftIcon={<Save size={16} />}>Lưu thông tin</Button>
+      </div>
     </div>
   );
 };
