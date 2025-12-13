@@ -3,14 +3,14 @@ import React, { useState } from 'react';
 import { MasterDataState } from '../../types';
 import { SimpleListManager } from './SimpleListManager';
 import { UserManager } from './UserManager';
-import { Database, Users, Layers, Tag, Bookmark, Award, UserCheck, ClipboardList } from 'lucide-react';
+import { Database, Users, Layers, Tag, Bookmark, Award, UserCheck, ClipboardList, Briefcase } from 'lucide-react';
 
 interface MasterDataLayoutProps {
   data: MasterDataState;
   onUpdate: (newData: MasterDataState) => void;
 }
 
-type TabType = 'users' | 'docTypes' | 'departments' | 'fields' | 'standards' | 'auditOrgs' | 'auditors' | 'auditTypes';
+type TabType = 'users' | 'docTypes' | 'departments' | 'positions' | 'fields' | 'standards' | 'auditOrgs' | 'auditors' | 'auditTypes';
 
 export const MasterDataLayout: React.FC<MasterDataLayoutProps> = ({ data, onUpdate }) => {
   const [activeTab, setActiveTab] = useState<TabType>('users');
@@ -19,6 +19,7 @@ export const MasterDataLayout: React.FC<MasterDataLayoutProps> = ({ data, onUpda
     { id: 'users', label: 'Người dùng & Quyền', icon: Users },
     { id: 'docTypes', label: 'Loại tài liệu', icon: Layers },
     { id: 'departments', label: 'Phòng ban / Bộ phận', icon: Database },
+    { id: 'positions', label: 'Chức vụ', icon: Briefcase }, // New Tab
     { id: 'fields', label: 'Lĩnh vực', icon: Tag },
     { id: 'standards', label: 'Tiêu chuẩn', icon: Bookmark },
     // New Tabs
@@ -77,6 +78,14 @@ export const MasterDataLayout: React.FC<MasterDataLayoutProps> = ({ data, onUpda
             title="Danh mục Phòng ban / Bộ phận"
             data={data.boPhan}
             onUpdate={(newData) => onUpdate({...data, boPhan: newData})}
+          />
+        )}
+
+        {activeTab === 'positions' && (
+          <SimpleListManager 
+            title="Danh mục Chức vụ"
+            data={data.chucVu || []}
+            onUpdate={(newData) => onUpdate({...data, chucVu: newData})}
           />
         )}
 

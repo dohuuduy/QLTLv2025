@@ -35,7 +35,7 @@ const App: React.FC = () => {
   // Centralized Data State
   const [masterData, setMasterData] = useState<MasterDataState>({
       ...INITIAL_MASTER_DATA,
-      loaiTaiLieu: [], boPhan: [], linhVuc: [], tieuChuan: [], nhanSu: [], toChucDanhGia: [], auditors: [], loaiDanhGia: []
+      loaiTaiLieu: [], boPhan: [], chucVu: [], linhVuc: [], tieuChuan: [], nhanSu: [], toChucDanhGia: [], auditors: [], loaiDanhGia: []
   });
   const [documents, setDocuments] = useState<TaiLieu[]>([]); 
   const [records, setRecords] = useState<HoSo[]>([]);         

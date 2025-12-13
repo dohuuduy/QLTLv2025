@@ -132,6 +132,7 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
     const loaiTaiLieu = sortIt(categories.filter((c: any) => c.loai === 'LOAI_TAI_LIEU').map(mapCategoryToItem));
     const linhVuc = sortIt(categories.filter((c: any) => c.loai === 'LINH_VUC').map(mapCategoryToItem));
     const boPhan = sortIt(categories.filter((c: any) => c.loai === 'BO_PHAN').map(mapCategoryToItem));
+    const chucVu = sortIt(categories.filter((c: any) => c.loai === 'CHUC_VU').map(mapCategoryToItem));
     const tieuChuan = sortIt(categories.filter((c: any) => c.loai === 'TIEU_CHUAN').map(mapCategoryToItem));
     const toChucDanhGia = sortIt(categories.filter((c: any) => c.loai === 'TO_CHUC_AUDIT').map(mapCategoryToItem));
     const loaiDanhGia = sortIt(categories.filter((c: any) => c.loai === 'LOAI_AUDIT').map(mapCategoryToItem));
@@ -145,6 +146,7 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
       loaiTaiLieu: loaiTaiLieu.length ? loaiTaiLieu : INITIAL_MASTER_DATA.loaiTaiLieu,
       linhVuc: linhVuc.length ? linhVuc : INITIAL_MASTER_DATA.linhVuc,
       boPhan: boPhan.length ? boPhan : INITIAL_MASTER_DATA.boPhan,
+      chucVu: chucVu.length ? chucVu : INITIAL_MASTER_DATA.chucVu,
       tieuChuan: tieuChuan.length ? tieuChuan : INITIAL_MASTER_DATA.tieuChuan,
       nhanSu: nhanSu.length ? nhanSu : INITIAL_MASTER_DATA.nhanSu,
       toChucDanhGia: toChucDanhGia.length ? toChucDanhGia : INITIAL_MASTER_DATA.toChucDanhGia,

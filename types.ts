@@ -208,6 +208,7 @@ export interface MasterDataState {
   loaiTaiLieu: DanhMucItem[];
   linhVuc: DanhMucItem[];
   boPhan: DanhMucItem[];
+  chucVu: DanhMucItem[]; // NEW: Chức vụ
   tieuChuan: DanhMucItem[];
   nhanSu: NhanSu[];
   // NEW CATEGORIES FOR AUDIT

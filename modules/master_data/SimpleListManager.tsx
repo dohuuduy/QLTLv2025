@@ -34,6 +34,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
       // Logic tạm: Dùng title để đoán type
       if (title.includes('Loại tài liệu')) return 'LOAI_TAI_LIEU';
       if (title.includes('Phòng ban')) return 'BO_PHAN';
+      if (title.includes('Chức vụ')) return 'CHUC_VU';
       if (title.includes('Lĩnh vực')) return 'LINH_VUC';
       if (title.includes('Tiêu chuẩn')) return 'TIEU_CHUAN';
       if (title.includes('Tổ chức')) return 'TO_CHUC_AUDIT';

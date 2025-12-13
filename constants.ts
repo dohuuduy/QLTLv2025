@@ -39,6 +39,15 @@ export const INITIAL_MASTER_DATA: MasterDataState = {
     { id: '4', ten: "Phòng Kinh Doanh", active: true, thu_tu: 4 },
     { id: '5', ten: "Xưởng Sản Xuất", active: true, thu_tu: 5 },
   ],
+  chucVu: [
+    { id: '1', ten: "Giám đốc", active: true, thu_tu: 1 },
+    { id: '2', ten: "Phó giám đốc", active: true, thu_tu: 2 },
+    { id: '3', ten: "Trưởng phòng", active: true, thu_tu: 3 },
+    { id: '4', ten: "Phó phòng", active: true, thu_tu: 4 },
+    { id: '5', ten: "Trưởng nhóm", active: true, thu_tu: 5 },
+    { id: '6', ten: "Chuyên viên", active: true, thu_tu: 6 },
+    { id: '7', ten: "Nhân viên", active: true, thu_tu: 7 },
+  ],
   tieuChuan: [
     { id: '1', ten: "ISO 9001:2015", active: true, thu_tu: 1 },
     { id: '2', ten: "ISO 14001:2015", active: true, thu_tu: 2 },
