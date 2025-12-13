@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
-import { signIn, signUpNewUser, upsertProfile, checkSystemHasUsers } from '../../services/supabaseService';
+import { signIn, signUpNewUser, upsertProfile, checkSystemHasAdmin } from '../../services/supabaseService';
 import { ShieldCheck, Mail, Lock, Loader2, Wrench } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
@@ -12,7 +12,7 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   // State quản lý hiển thị nút tạo Admin
-  const [systemHasUsers, setSystemHasUsers] = useState(true); // Mặc định true (ẩn) để an toàn
+  const [hasAdminAccount, setHasAdminAccount] = useState(true); // Mặc định true (ẩn) để an toàn
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
   // Kiểm tra xem hệ thống đã có user chưa khi load trang & Load email đã lưu
@@ -25,9 +25,9 @@ export const LoginPage: React.FC = () => {
               setRememberMe(true);
           }
 
-          // 2. Check system users
-          const hasUsers = await checkSystemHasUsers();
-          setSystemHasUsers(hasUsers);
+          // 2. Check system admins
+          const adminExists = await checkSystemHasAdmin();
+          setHasAdminAccount(adminExists);
       };
       initPage();
   }, []);
@@ -62,7 +62,7 @@ export const LoginPage: React.FC = () => {
 
   // --- DEV FUNCTION: KHỞI TẠO ADMIN ---
   const handleQuickSetupAdmin = async () => {
-      if (!window.confirm("Hành động này sẽ tạo tài khoản 'admin@iso.com' với quyền quản trị cao nhất.\nDùng để khởi tạo hệ thống lần đầu.\n\nTiếp tục?")) return;
+      if (!window.confirm("Hành động này sẽ tạo (hoặc nâng quyền) tài khoản 'admin@iso.com' thành Quản trị viên (Admin).\n\nDùng khi hệ thống chưa có Admin nào.\n\nTiếp tục?")) return;
       
       setIsCreatingAdmin(true);
       setError(null);
@@ -77,23 +77,23 @@ export const LoginPage: React.FC = () => {
               roles: ["QUAN_TRI"]
           });
 
-          // Lưu ý: Nếu user đã tồn tại trong Auth nhưng chưa có trong nhan_su, code dưới vẫn chạy để fix lỗi
+          // Lưu ý: Nếu user đã tồn tại trong Auth (ví dụ do tạo thủ công), ta bỏ qua lỗi duplicate và tiếp tục để cấp quyền
           if (authError && !authError.message.includes("already registered")) {
               throw authError;
           }
 
           let userId = data.user?.id;
 
-          // Nếu user đã tồn tại, ta cần đăng nhập để lấy ID (vì signUp không trả về ID nếu duplicate)
+          // Nếu user đã tồn tại (do signUp fail vì duplicate), ta cần đăng nhập để lấy ID
           if (!userId) {
               const { data: loginData, error: loginError } = await signIn(email, password);
-              if (loginError) throw new Error("Tài khoản đã tồn tại nhưng sai mật khẩu hoặc lỗi khác.");
+              if (loginError) throw new Error("Tài khoản 'admin@iso.com' đã tồn tại nhưng sai mật khẩu. Vui lòng kiểm tra lại hoặc xóa user cũ.");
               userId = loginData.user?.id;
           }
 
           if (!userId) throw new Error("Không lấy được User ID.");
 
-          // 2. Insert vào bảng nhan_su (Cấp quyền Admin)
+          // 2. Insert/Update vào bảng nhan_su (Cấp quyền Admin)
           await upsertProfile({
               id: userId,
               ho_ten: "Super Admin",
@@ -105,12 +105,12 @@ export const LoginPage: React.FC = () => {
               avatar: ""
           }, []); // Truyền mảng rỗng department để bypass check ID tạm thời
 
-          alert(`✅ Tạo thành công!\nEmail: ${email}\nPass: ${password}\n\nVui lòng đăng nhập ngay.`);
+          alert(`✅ Cấu hình thành công!\nEmail: ${email}\nPass: ${password}\n\nVui lòng đăng nhập ngay.`);
           setEmail(email);
           setPassword(password);
           
           // Ẩn nút sau khi tạo thành công
-          setSystemHasUsers(true);
+          setHasAdminAccount(true);
 
       } catch (err: any) {
           setError("Lỗi tạo Admin: " + err.message);
@@ -205,8 +205,8 @@ export const LoginPage: React.FC = () => {
           </Button>
         </form>
 
-        {/* Chỉ hiện nút tạo Admin khi Database HOÀN TOÀN TRỐNG (chưa có user nào) */}
-        {!systemHasUsers && (
+        {/* Chỉ hiện nút tạo Admin khi CHƯA CÓ ADMIN nào trong DB (kể cả có user thường) */}
+        {!hasAdminAccount && (
             <div className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800 text-center animate-in fade-in">
               <button 
                 onClick={handleQuickSetupAdmin}
@@ -214,10 +214,10 @@ export const LoginPage: React.FC = () => {
                 className="text-xs text-orange-500 hover:text-orange-600 font-medium transition-colors flex items-center justify-center gap-1 w-full bg-orange-50 dark:bg-orange-900/10 p-2 rounded-lg"
               >
                  {isCreatingAdmin ? <Loader2 size={12} className="animate-spin" /> : <Wrench size={12} />}
-                 {isCreatingAdmin ? "Đang khởi tạo..." : "Thiết lập tài khoản Quản trị đầu tiên"}
+                 {isCreatingAdmin ? "Đang khởi tạo..." : "Khôi phục / Khởi tạo Admin"}
               </button>
               <p className="text-[10px] text-gray-400 mt-2">
-                  (Nút này chỉ hiển thị khi hệ thống chưa có dữ liệu nhân sự)
+                  (Hiển thị khi hệ thống chưa có tài khoản Quản trị viên nào)
               </p>
             </div>
         )}

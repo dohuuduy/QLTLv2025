@@ -33,17 +33,26 @@ export const getCurrentSession = async () => {
   return { session, error };
 };
 
-// NEW: Kiểm tra xem hệ thống đã có user nào chưa
-export const checkSystemHasUsers = async (): Promise<boolean> => {
+// NEW: Kiểm tra xem hệ thống đã có ADMIN nào chưa (Thay vì chỉ check có user)
+export const checkSystemHasAdmin = async (): Promise<boolean> => {
     try {
+        // Kiểm tra xem có bản ghi nào trong bảng nhan_su mà cột 'quyen' chứa 'QUAN_TRI'
+        // Lưu ý: Cột 'quyen' trong DB tương ứng với 'roles'
         const { count, error } = await supabase
             .from('nhan_su')
-            .select('*', { count: 'exact', head: true });
+            .select('*', { count: 'exact', head: true })
+            .contains('quyen', ['QUAN_TRI']);
         
-        if (error) return true; // Nếu lỗi, giả định là có user để ẩn nút cho an toàn
+        if (error) {
+             console.warn("Check Admin Error:", error);
+             // Nếu lỗi (ví dụ chưa tạo bảng), trả về false để hiện nút (cho phép thử tạo)
+             // Nhưng để an toàn production, thường mặc định true. 
+             // Ở đây dev mode ta trả về false nếu count null.
+             return false; 
+        }
         return (count || 0) > 0;
     } catch (e) {
-        return true;
+        return false;
     }
 };
 
