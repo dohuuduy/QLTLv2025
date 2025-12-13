@@ -47,16 +47,17 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   }, [data, filters]);
 
   const columns: ColumnDefinition<TaiLieu>[] = [
-    { key: 'ma_tai_lieu', header: 'Mã tài liệu', visible: true, render: (val) => <span className="font-mono font-bold text-primary">{val}</span> },
+    // FIX: Changed text-primary to text-blue-700 dark:text-blue-400 for better visibility in Dark Mode
+    { key: 'ma_tai_lieu', header: 'Mã tài liệu', visible: true, render: (val) => <span className="font-mono font-bold text-blue-700 dark:text-blue-400">{val}</span> },
     { key: 'ten_tai_lieu', header: 'Tên tài liệu', visible: true, render: (val) => <span className="font-medium text-gray-800 dark:text-gray-200 line-clamp-1" title={val as string}>{val}</span> },
-    { key: 'phien_ban', header: 'Ver', visible: true, render: (val) => <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-xs font-mono">{val}</span> },
-    { key: 'loai_tai_lieu', header: 'Loại', visible: true, render: (val) => <span className="text-xs text-gray-500">{val}</span> },
-    { key: 'bo_phan_soan_thao', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs">{val}</span> },
-    { key: 'ngay_ban_hanh', header: 'Ngày BH', visible: true, render: (val) => <span className="text-xs">{val ? format(new Date(val), 'dd/MM/yyyy') : '--'}</span> },
+    { key: 'phien_ban', header: 'Ver', visible: true, render: (val) => <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-xs font-mono dark:text-gray-300">{val}</span> },
+    { key: 'loai_tai_lieu', header: 'Loại', visible: true, render: (val) => <span className="text-xs text-gray-500 dark:text-gray-400">{val}</span> },
+    { key: 'bo_phan_soan_thao', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val}</span> },
+    { key: 'ngay_ban_hanh', header: 'Ngày BH', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val ? format(new Date(val), 'dd/MM/yyyy') : '--'}</span> },
     { key: 'trang_thai', header: 'Trạng thái', visible: true, render: (val) => <Badge status={val as TrangThaiTaiLieu} /> },
     { key: 'id', header: '', visible: true, render: (_, item) => (
       <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleViewDetail(item); }}>
-        <Eye size={16} className="text-gray-500" />
+        <Eye size={16} className="text-gray-500 hover:text-blue-500" />
       </Button>
     )}
   ];
@@ -307,11 +308,11 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                     <div className="grid grid-cols-2 gap-4">
                                        <div>
                                           <label className="text-xs text-gray-400 uppercase font-bold block mb-1">Ngày ban hành</label>
-                                          <p className="font-medium">{selectedDoc.ngay_ban_hanh ? format(new Date(selectedDoc.ngay_ban_hanh), 'dd/MM/yyyy') : '---'}</p>
+                                          <p className="font-medium text-gray-800 dark:text-gray-200">{selectedDoc.ngay_ban_hanh ? format(new Date(selectedDoc.ngay_ban_hanh), 'dd/MM/yyyy') : '---'}</p>
                                        </div>
                                        <div>
                                           <label className="text-xs text-gray-400 uppercase font-bold block mb-1">Ngày hiệu lực</label>
-                                          <p className="font-medium">{selectedDoc.ngay_hieu_luc ? format(new Date(selectedDoc.ngay_hieu_luc), 'dd/MM/yyyy') : '---'}</p>
+                                          <p className="font-medium text-gray-800 dark:text-gray-200">{selectedDoc.ngay_hieu_luc ? format(new Date(selectedDoc.ngay_hieu_luc), 'dd/MM/yyyy') : '---'}</p>
                                        </div>
                                     </div>
                                     <div>
@@ -358,7 +359,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                   {records.filter(r => r.ma_tai_lieu_lien_quan === selectedDoc.ma_tai_lieu).length > 0 ? (
                                      <div className="space-y-2">
                                         {records.filter(r => r.ma_tai_lieu_lien_quan === selectedDoc.ma_tai_lieu).map(rec => (
-                                           <div key={rec.id} className="p-2 border rounded text-sm hover:bg-gray-50 dark:hover:bg-slate-800">
+                                           <div key={rec.id} className="p-2 border border-gray-200 dark:border-slate-700 rounded text-sm hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                                               <div className="font-bold text-gray-800 dark:text-gray-200 truncate">{rec.tieu_de}</div>
                                               <div className="flex justify-between mt-1 text-xs text-gray-500">
                                                  <span>{rec.ma_ho_so}</span>
@@ -455,7 +456,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
            <div>
               <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-2">Nội dung cập nhật / Lý do <span className="text-red-500">*</span></label>
               <textarea 
-                 className="w-full p-4 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 focus:border-primary outline-none text-sm min-h-[120px] transition-shadow placeholder:text-gray-400 shadow-sm" 
+                 className="w-full p-4 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 focus:border-primary outline-none text-sm min-h-[120px] transition-shadow placeholder:text-gray-400 shadow-sm dark:text-gray-200" 
                  placeholder="Mô tả chi tiết các thay đổi so với phiên bản trước để lưu vào lịch sử..." 
                  value={versionReason} 
                  onChange={(e) => setVersionReason(e.target.value)}
