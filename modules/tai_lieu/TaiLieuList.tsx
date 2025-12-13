@@ -415,25 +415,18 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                            </h2>
                         </div>
                         <div className="flex items-center gap-1 shrink-0 pt-0.5">
-                            <Button 
-                                variant="secondary" 
-                                size="sm" 
-                                onClick={() => setShowHistoryModal(true)} 
-                                className="hidden sm:flex text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 h-9"
-                                title="Xem lịch sử"
-                            >
-                                <History size={16} className="mr-1.5" /> Lịch sử
-                            </Button>
-                            {/* Mobile History Button */}
+                            {/* Unified History Button: Icon only on Mobile, Text on Desktop */}
                             <Button 
                                 variant="ghost" 
-                                size="icon" 
+                                size="sm" 
                                 onClick={() => setShowHistoryModal(true)} 
-                                className="sm:hidden text-gray-500 hover:text-blue-600"
-                                title="Xem lịch sử"
+                                className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 h-9"
+                                title="Xem lịch sử hoạt động"
                             >
-                                <History size={20} />
+                                <History size={20} className="sm:mr-1.5" /> 
+                                <span className="hidden sm:inline">Lịch sử</span>
                             </Button>
+                            
                             <Button variant="ghost" size="icon" onClick={handleCloseDrawer} className="text-gray-500 hover:text-red-500">
                                 <X size={24} />
                             </Button>
