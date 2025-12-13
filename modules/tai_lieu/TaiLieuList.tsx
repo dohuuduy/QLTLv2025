@@ -307,36 +307,21 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     }
   };
 
-  // --- UPDATED: Render Filters Scientific Layout ---
+  // --- UPDATED: Render Filters Scientific Layout (COMPACT VIEW SWITCHER) ---
   const renderFilters = (
     <div className="flex flex-wrap items-center gap-3">
-       {/* 1. View Switcher (Segmented Control Style) */}
-       <div className="bg-gray-100 dark:bg-slate-800 p-1 rounded-lg flex items-center border border-gray-200 dark:border-slate-700">
-          <button
-            onClick={() => setIsTreeView(true)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              isTreeView 
-                ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' 
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
-            }`}
-            title="Xem dạng cây phân cấp"
-          >
-            <Layers size={14} />
-            <span className="hidden sm:inline">Phân cấp</span>
-          </button>
-          <button
-            onClick={() => setIsTreeView(false)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              !isTreeView 
-                ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm' 
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
-            }`}
-            title="Xem dạng danh sách phẳng"
-          >
-            <List size={14} />
-            <span className="hidden sm:inline">Phẳng</span>
-          </button>
-       </div>
+       {/* 1. View Switcher (Compact Icon Button) */}
+       <button
+          onClick={() => setIsTreeView(!isTreeView)}
+          className={`h-9 w-9 flex items-center justify-center rounded-lg border transition-all ${
+            isTreeView 
+              ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300 shadow-sm' 
+              : 'bg-white border-gray-200 text-gray-500 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+          }`}
+          title={isTreeView ? "Đang xem dạng cây phân cấp. Click để xem danh sách phẳng." : "Đang xem danh sách phẳng. Click để xem dạng cây phân cấp."}
+       >
+          {isTreeView ? <Layers size={18} /> : <List size={18} />}
+       </button>
 
        <div className="w-px h-6 bg-gray-300 dark:bg-slate-700 hidden sm:block"></div>
 
