@@ -157,9 +157,9 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
             )}
         </div>
         {isDrawerOpen && (
-            <div className="fixed inset-0 z-[100] flex justify-end">
+            <div className="fixed inset-0 top-16 z-[50] flex justify-end">
                 <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)} />
-                <div className="w-full md:max-w-2xl bg-white dark:bg-slate-900 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-gray-200 dark:border-slate-800">
+                <div className="w-full md:max-w-2xl bg-white dark:bg-slate-900 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
                     <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50"><h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2"><Layers className="text-primary" /> {editingPlan.id ? 'Cập nhật kế hoạch đánh giá' : 'Lập kế hoạch đánh giá mới'}</h2><Button variant="ghost" size="icon" onClick={() => setIsDrawerOpen(false)}><X size={20} /></Button></div>
                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
                         <div className="space-y-4">

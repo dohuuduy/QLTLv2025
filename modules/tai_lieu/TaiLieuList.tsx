@@ -387,9 +387,12 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       </div>
 
       {(viewMode === 'form' || viewMode === 'detail') && (
-        <div className="fixed inset-0 z-[100] flex justify-end">
+        <div className="fixed inset-0 top-16 z-[50] flex justify-end">
+           {/* Backdrop starts below navbar */}
            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" onClick={handleCloseDrawer}/>
-           <div className="w-full max-w-4xl bg-white dark:bg-slate-950 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-gray-200 dark:border-slate-800">
+           
+           {/* Drawer starts below navbar with top border */}
+           <div className="w-full max-w-4xl bg-white dark:bg-slate-950 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
               {viewMode === 'form' ? (
                  <TaiLieuForm 
                    initialData={selectedDoc} 
