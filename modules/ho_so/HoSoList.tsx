@@ -136,7 +136,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
   return (
     <div className="flex flex-col h-full animate-fade-in -mx-4 md:mx-0">
        <div className="flex-1 overflow-hidden h-full">
-          <DataTable title="Danh sách Hồ sơ lưu trữ" data={data} columns={columns} onRowClick={handleEdit} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16}/>} className="h-9 text-sm shadow-sm">Lập hồ sơ</Button>}/>
+          <DataTable data={data} columns={columns} onRowClick={handleEdit} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16}/>} className="h-9 text-sm shadow-sm">Lập hồ sơ</Button>}/>
        </div>
        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem.id ? 'Cập nhật hồ sơ' : 'Lập hồ sơ mới'} size="lg" footer={<><Button variant="ghost" onClick={() => setIsModalOpen(false)}>Hủy bỏ</Button><Button onClick={handleSave} isLoading={isLoading}>Lưu hồ sơ</Button></>}>
           <div className="space-y-6 p-2">

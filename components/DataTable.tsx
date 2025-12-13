@@ -9,9 +9,8 @@ import { Button } from './ui/Button';
 interface DataTableProps<T> {
   data: T[];
   columns: ColumnDefinition<T>[];
-  title: string;
+  title?: string; // Optional or deprecated, we won't render it
   onRowClick?: (item: T) => void;
-  // New props for layout optimization
   filters?: React.ReactNode;
   actions?: React.ReactNode;
 }
@@ -250,7 +249,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
         </style>
       </head>
       <body>
-        <h1>${title}</h1>
+        <h1>${title || 'Danh sách dữ liệu'}</h1>
         <div class="meta">Ngày xuất: ${new Date().toLocaleDateString('vi-VN')} | Tổng số dòng: ${sortedData.length}</div>
         
         <table>
@@ -293,8 +292,6 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
   };
 
   // --- Sticky Column Styles helper ---
-  // Updated: We only handle Right Sticky (Action column) here. 
-  // Left Sticky is now exclusively for the new STT column to avoid complexity.
   const getStickyClass = (index: number, total: number, isHeader: boolean) => {
     // Cố định cột cuối cùng (Thường là action)
     if (index === total - 1) {
@@ -309,22 +306,21 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-lg shadow border border-gray-200 dark:border-slate-800 flex flex-col h-full transition-colors">
-      {/* Optimized Toolbar */}
-      <div className="p-3 border-b border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/30 rounded-t-lg">
+      {/* Optimized Toolbar: Removed Title, Compact Layout */}
+      <div className="p-2 border-b border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/30 rounded-t-lg shrink-0">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           
-          {/* Left Group: Title & Filters */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto">
-            {title && <h3 className="font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap">{title}</h3>}
+          {/* Left Group: Filters (Maximize space) */}
+          <div className="flex-1 w-full lg:w-auto min-w-0">
             {filters && (
-               <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+               <div className="flex flex-wrap gap-2 w-full">
                  {filters}
                </div>
             )}
           </div>
 
           {/* Right Group: Actions & Tools */}
-          <div className="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-end">
+          <div className="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-end shrink-0">
              {actions && (
                <div className="flex-1 lg:flex-none">
                  {actions}
@@ -346,10 +342,10 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                       }`}
                     title="Ẩn/Hiện cột trên bảng"
                   >
-                    <Settings2 size={16} /> <span className="hidden xl:inline">Cấu hình</span>
+                    <Settings2 size={16} /> 
                   </button>
                   
-                  {/* React Portal for Dropdown - Solves Z-Index & Overflow */}
+                  {/* React Portal for Dropdown */}
                   {showColumnSelector && dropdownPosition && createPortal(
                     <div 
                       ref={dropdownRef}
@@ -386,7 +382,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                   className="flex items-center justify-center gap-1 px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200 rounded text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors h-9"
                   title="Xuất dữ liệu & In"
                 >
-                  <Download size={16} /> <span className="hidden xl:inline">Xuất / In</span>
+                  <Download size={16} /> 
                 </button>
              </div>
           </div>
@@ -463,7 +459,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
       </div>
 
       {/* Pagination */}
-      <div className="p-3 border-t border-gray-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-3 bg-gray-50 dark:bg-slate-800/50 rounded-b-lg text-sm">
+      <div className="p-2 border-t border-gray-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-3 bg-gray-50 dark:bg-slate-800/50 rounded-b-lg text-sm shrink-0">
         <div className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm order-2 sm:order-1">
           {sortedData.length > 0 
             ? `Hiển thị ${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, sortedData.length)} / ${sortedData.length}`

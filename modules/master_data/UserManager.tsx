@@ -106,7 +106,7 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, on
   return (
     <div className="h-full flex flex-col relative">
       <div className="flex-1 overflow-hidden rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm">
-        <DataTable title="Danh sách nhân sự" data={users} columns={columns} onRowClick={handleEdit} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16} />} size="sm">Thêm nhân sự</Button>}/>
+        <DataTable data={users} columns={columns} onRowClick={handleEdit} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16} />} size="sm">Thêm nhân sự</Button>}/>
       </div>
       {viewMode === 'form' && (
         <div className="fixed inset-0 z-50 flex justify-end">

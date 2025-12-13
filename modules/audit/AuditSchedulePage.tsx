@@ -141,14 +141,14 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
         <div className="flex-1 overflow-hidden h-full rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 flex flex-col">
             {viewMode === 'calendar' ? (
                 <>
-                    <div className="p-3 border-b border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/30 rounded-t-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shrink-0">
-                        <div className="flex items-center gap-3"><h3 className="font-bold text-gray-800 dark:text-gray-100">Lịch đánh giá (Có lịch Âm)</h3>{renderFilters}</div>
+                    <div className="p-2 border-b border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/30 rounded-t-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shrink-0">
+                        <div className="flex items-center gap-3">{renderFilters}</div>
                         <Button onClick={handleAddNew} leftIcon={<Plus size={16} />} className="shadow-sm h-9 text-sm">Lập kế hoạch mới</Button>
                     </div>
                     <div className="flex-1 overflow-hidden p-0 relative"><AuditCalendar auditPlans={auditPlans} onEventClick={handleCalendarEventClick} /></div>
                 </>
             ) : (
-                <DataTable title="Danh sách Chương trình đánh giá" data={auditPlans} columns={columns} onRowClick={handleEdit} filters={renderFilters} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16} />} className="shadow-sm">Lập kế hoạch mới</Button>}/>
+                <DataTable data={auditPlans} columns={columns} onRowClick={handleEdit} filters={renderFilters} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16} />} className="shadow-sm">Lập kế hoạch mới</Button>}/>
             )}
         </div>
         {isDrawerOpen && (

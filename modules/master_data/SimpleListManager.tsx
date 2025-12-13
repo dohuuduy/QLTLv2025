@@ -200,7 +200,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
   return (
     <div className="h-full flex flex-col relative">
       <div className="flex-1 overflow-hidden rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm">
-        <DataTable title={title} data={data} columns={columns} onRowClick={handleEdit} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16} />} size="sm">Thêm mới</Button>}/>
+        <DataTable data={data} columns={columns} onRowClick={handleEdit} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16} />} size="sm">Thêm mới</Button>}/>
       </div>
       {isDrawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
