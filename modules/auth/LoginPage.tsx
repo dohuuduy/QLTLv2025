@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
 import { signIn, signUpNewUser, upsertProfile, checkSystemHasAdmin } from '../../services/supabaseService';
-import { ShieldCheck, Mail, Lock, Loader2, Wrench } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, Loader2, Wrench, Key } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -13,6 +13,10 @@ export const LoginPage: React.FC = () => {
   
   // State quản lý hiển thị nút tạo Admin
   const [hasAdminAccount, setHasAdminAccount] = useState(true); // Mặc định true (ẩn) để an toàn
+  
+  // State cho quy trình Setup an toàn
+  const [isSetupMode, setIsSetupMode] = useState(false);
+  const [setupToken, setSetupToken] = useState('');
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
   // Kiểm tra xem hệ thống đã có user chưa khi load trang & Load email đã lưu
@@ -60,9 +64,24 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // --- DEV FUNCTION: KHỞI TẠO ADMIN ---
+  // --- DEV FUNCTION: KHỞI TẠO ADMIN AN TOÀN ---
   const handleQuickSetupAdmin = async () => {
-      if (!window.confirm("Hành động này sẽ tạo (hoặc nâng quyền) tài khoản 'admin@iso.com' thành Quản trị viên (Admin).\n\nDùng khi hệ thống chưa có Admin nào.\n\nTiếp tục?")) return;
+      // 1. Kiểm tra Token bảo mật
+      // Lấy token từ biến môi trường (Cần cấu hình trong file .env: VITE_ADMIN_SETUP_TOKEN=SecretKey)
+      // @ts-ignore
+      const envToken = import.meta.env.VITE_ADMIN_SETUP_TOKEN;
+
+      if (!envToken) {
+          setError("Lỗi cấu hình: Chưa thiết lập VITE_ADMIN_SETUP_TOKEN trong biến môi trường. Vui lòng liên hệ Dev.");
+          return;
+      }
+
+      if (setupToken !== envToken) {
+          setError("Mã bảo mật cài đặt không chính xác!");
+          return;
+      }
+      
+      if (!window.confirm("Hành động này sẽ tạo (hoặc nâng quyền) tài khoản 'admin@iso.com' thành Quản trị viên (Admin).\n\nTiếp tục?")) return;
       
       setIsCreatingAdmin(true);
       setError(null);
@@ -108,6 +127,7 @@ export const LoginPage: React.FC = () => {
           alert(`✅ Cấu hình thành công!\nEmail: ${email}\nPass: ${password}\n\nVui lòng đăng nhập ngay.`);
           setEmail(email);
           setPassword(password);
+          setIsSetupMode(false); // Tắt chế độ setup
           
           // Ẩn nút sau khi tạo thành công
           setHasAdminAccount(true);
@@ -205,20 +225,56 @@ export const LoginPage: React.FC = () => {
           </Button>
         </form>
 
-        {/* Chỉ hiện nút tạo Admin khi CHƯA CÓ ADMIN nào trong DB (kể cả có user thường) */}
+        {/* Chỉ hiện nút tạo Admin khi CHƯA CÓ ADMIN nào trong DB */}
         {!hasAdminAccount && (
             <div className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800 text-center animate-in fade-in">
-              <button 
-                onClick={handleQuickSetupAdmin}
-                disabled={isCreatingAdmin || isLoading}
-                className="text-xs text-orange-500 hover:text-orange-600 font-medium transition-colors flex items-center justify-center gap-1 w-full bg-orange-50 dark:bg-orange-900/10 p-2 rounded-lg"
-              >
-                 {isCreatingAdmin ? <Loader2 size={12} className="animate-spin" /> : <Wrench size={12} />}
-                 {isCreatingAdmin ? "Đang khởi tạo..." : "Khôi phục / Khởi tạo Admin"}
-              </button>
-              <p className="text-[10px] text-gray-400 mt-2">
-                  (Hiển thị khi hệ thống chưa có tài khoản Quản trị viên nào)
-              </p>
+              {!isSetupMode ? (
+                  <>
+                    <button 
+                        onClick={() => setIsSetupMode(true)}
+                        className="text-xs text-orange-500 hover:text-orange-600 font-medium transition-colors flex items-center justify-center gap-1 w-full bg-orange-50 dark:bg-orange-900/10 p-2 rounded-lg"
+                    >
+                        <Wrench size={12} /> Khôi phục / Khởi tạo Admin
+                    </button>
+                    <p className="text-[10px] text-gray-400 mt-2">
+                        (Hiển thị khi hệ thống chưa có tài khoản Quản trị viên nào)
+                    </p>
+                  </>
+              ) : (
+                  <div className="bg-orange-50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-200 dark:border-orange-800 animate-in zoom-in-95">
+                      <h3 className="text-sm font-bold text-orange-800 dark:text-orange-300 mb-2 flex items-center gap-2 justify-center">
+                          <Key size={14} /> Xác thực quyền chủ sở hữu
+                      </h3>
+                      <p className="text-[11px] text-gray-600 dark:text-gray-400 mb-3 text-center">
+                          Vui lòng nhập <strong>Setup Token</strong> đã cấu hình trong biến môi trường (VITE_ADMIN_SETUP_TOKEN).
+                      </p>
+                      <input 
+                          type="password" 
+                          placeholder="Nhập mã bảo mật hệ thống..." 
+                          className="w-full h-9 px-3 rounded-lg border border-orange-300 dark:border-orange-700 text-sm mb-3 focus:ring-2 ring-orange-500/20 outline-none dark:bg-slate-900"
+                          value={setupToken}
+                          onChange={(e) => setSetupToken(e.target.value)}
+                      />
+                      <div className="flex gap-2">
+                          <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="flex-1 text-xs" 
+                              onClick={() => { setIsSetupMode(false); setSetupToken(''); setError(null); }}
+                          >
+                              Hủy
+                          </Button>
+                          <Button 
+                              size="sm" 
+                              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-xs"
+                              disabled={isCreatingAdmin || !setupToken}
+                              onClick={handleQuickSetupAdmin}
+                          >
+                              {isCreatingAdmin ? <Loader2 size={12} className="animate-spin" /> : "Xác nhận tạo"}
+                          </Button>
+                      </div>
+                  </div>
+              )}
             </div>
         )}
       </div>
