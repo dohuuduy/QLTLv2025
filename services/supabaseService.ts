@@ -17,11 +17,7 @@ export const signOut = async () => {
 };
 
 // NEW: Hàm tạo user mới (Client-side creation)
-// Lưu ý: Trong môi trường Production thực tế, việc tạo User nên được thực hiện qua Edge Function (Server-side)
-// để tránh việc Admin bị đăng xuất hoặc cần confirm email.
-// Ở đây dùng signUp cơ bản để demo luồng hoạt động.
 export const signUpNewUser = async (email: string, password: string, metaData: any) => {
-    // Tắt tự động đăng nhập sau khi đăng ký để Admin không bị out (yêu cầu cấu hình Supabase Project tắt 'Confirm Email')
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -35,6 +31,20 @@ export const signUpNewUser = async (email: string, password: string, metaData: a
 export const getCurrentSession = async () => {
   const { data: { session }, error } = await supabase.auth.getSession();
   return { session, error };
+};
+
+// NEW: Kiểm tra xem hệ thống đã có user nào chưa
+export const checkSystemHasUsers = async (): Promise<boolean> => {
+    try {
+        const { count, error } = await supabase
+            .from('nhan_su')
+            .select('*', { count: 'exact', head: true });
+        
+        if (error) return true; // Nếu lỗi, giả định là có user để ẩn nút cho an toàn
+        return (count || 0) > 0;
+    } catch (e) {
+        return true;
+    }
 };
 
 // --- HELPERS MAPPING ---

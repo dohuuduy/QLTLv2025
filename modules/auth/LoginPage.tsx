@@ -1,14 +1,27 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
-import { signIn } from '../../services/supabaseService';
-import { ShieldCheck, Mail, Lock, Loader2 } from 'lucide-react';
+import { signIn, signUpNewUser, upsertProfile, checkSystemHasUsers } from '../../services/supabaseService';
+import { ShieldCheck, Mail, Lock, Loader2, Wrench } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // State quản lý hiển thị nút tạo Admin
+  const [systemHasUsers, setSystemHasUsers] = useState(true); // Mặc định true (ẩn) để an toàn
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+
+  // Kiểm tra xem hệ thống đã có user chưa khi load trang
+  useEffect(() => {
+      const checkUsers = async () => {
+          const hasUsers = await checkSystemHasUsers();
+          setSystemHasUsers(hasUsers);
+      };
+      checkUsers();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,8 +42,66 @@ export const LoginPage: React.FC = () => {
         setIsLoading(false);
     } else {
         // Successful login will trigger onAuthStateChange in App.tsx
-        // No need to set loading false here as component will unmount
     }
+  };
+
+  // --- DEV FUNCTION: KHỞI TẠO ADMIN ---
+  const handleQuickSetupAdmin = async () => {
+      if (!window.confirm("Hành động này sẽ tạo tài khoản 'admin@iso.com' với quyền quản trị cao nhất.\nDùng để khởi tạo hệ thống lần đầu.\n\nTiếp tục?")) return;
+      
+      setIsCreatingAdmin(true);
+      setError(null);
+
+      try {
+          const email = "admin@iso.com";
+          const password = "admin123"; // Mật khẩu mặc định
+
+          // 1. Đăng ký Auth User
+          const { data, error: authError } = await signUpNewUser(email, password, {
+              full_name: "Super Admin",
+              roles: ["QUAN_TRI"]
+          });
+
+          // Lưu ý: Nếu user đã tồn tại trong Auth nhưng chưa có trong nhan_su, code dưới vẫn chạy để fix lỗi
+          if (authError && !authError.message.includes("already registered")) {
+              throw authError;
+          }
+
+          let userId = data.user?.id;
+
+          // Nếu user đã tồn tại, ta cần đăng nhập để lấy ID (vì signUp không trả về ID nếu duplicate)
+          if (!userId) {
+              const { data: loginData, error: loginError } = await signIn(email, password);
+              if (loginError) throw new Error("Tài khoản đã tồn tại nhưng sai mật khẩu hoặc lỗi khác.");
+              userId = loginData.user?.id;
+          }
+
+          if (!userId) throw new Error("Không lấy được User ID.");
+
+          // 2. Insert vào bảng nhan_su (Cấp quyền Admin)
+          await upsertProfile({
+              id: userId,
+              ho_ten: "Super Admin",
+              email: email,
+              chuc_vu: "Quản trị viên hệ thống",
+              phong_ban: "Ban ISO", 
+              roles: ['QUAN_TRI', 'PHE_DUYET', 'XEM_XET', 'SOAN_THAO'],
+              thu_tu: 0,
+              avatar: ""
+          }, []); // Truyền mảng rỗng department để bypass check ID tạm thời
+
+          alert(`✅ Tạo thành công!\nEmail: ${email}\nPass: ${password}\n\nVui lòng đăng nhập ngay.`);
+          setEmail(email);
+          setPassword(password);
+          
+          // Ẩn nút sau khi tạo thành công
+          setSystemHasUsers(true);
+
+      } catch (err: any) {
+          setError("Lỗi tạo Admin: " + err.message);
+      } finally {
+          setIsCreatingAdmin(false);
+      }
   };
 
   return (
@@ -94,17 +165,28 @@ export const LoginPage: React.FC = () => {
           <Button 
             type="submit" 
             className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 mt-2 text-base"
-            disabled={isLoading}
+            disabled={isLoading || isCreatingAdmin}
           >
             {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Đang xử lý...</> : "Đăng nhập hệ thống"}
           </Button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800 text-center">
-          <p className="text-xs text-gray-400">
-            Chưa có tài khoản? Vui lòng liên hệ bộ phận IT hoặc Admin ISO.
-          </p>
-        </div>
+        {/* Chỉ hiện nút tạo Admin khi Database HOÀN TOÀN TRỐNG (chưa có user nào) */}
+        {!systemHasUsers && (
+            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800 text-center animate-in fade-in">
+              <button 
+                onClick={handleQuickSetupAdmin}
+                disabled={isCreatingAdmin || isLoading}
+                className="text-xs text-orange-500 hover:text-orange-600 font-medium transition-colors flex items-center justify-center gap-1 w-full bg-orange-50 dark:bg-orange-900/10 p-2 rounded-lg"
+              >
+                 {isCreatingAdmin ? <Loader2 size={12} className="animate-spin" /> : <Wrench size={12} />}
+                 {isCreatingAdmin ? "Đang khởi tạo..." : "Thiết lập tài khoản Quản trị đầu tiên"}
+              </button>
+              <p className="text-[10px] text-gray-400 mt-2">
+                  (Nút này chỉ hiển thị khi hệ thống chưa có dữ liệu nhân sự)
+              </p>
+            </div>
+        )}
       </div>
     </div>
   );
