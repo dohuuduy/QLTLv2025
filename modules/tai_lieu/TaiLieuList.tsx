@@ -310,18 +310,17 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   // --- UPDATED: Render Filters with Dropdowns ---
   const renderFilters = (
     <div className="flex flex-wrap gap-2 items-center">
-       {/* Tree View Toggle */}
+       {/* Tree View Toggle - COMPACT ICON ONLY */}
        <button 
          onClick={() => setIsTreeView(!isTreeView)}
-         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all h-9
+         className={`h-9 w-9 flex items-center justify-center rounded-lg border transition-all
            ${isTreeView 
-             ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300' 
-             : 'bg-white border-gray-200 text-gray-600 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-300'}
+             ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300 shadow-sm' 
+             : 'bg-white border-gray-200 text-gray-500 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}
          `}
-         title={isTreeView ? "Đang xem dạng cây phân cấp" : "Đang xem dạng danh sách phẳng"}
+         title={isTreeView ? "Đang xem dạng cây (Cha-Con). Click để chuyển sang danh sách phẳng." : "Đang xem danh sách phẳng. Click để chuyển sang dạng cây."}
        >
-         {isTreeView ? <Layers size={16} /> : <List size={16} />}
-         <span className="hidden sm:inline">{isTreeView ? "Dạng cây" : "Danh sách"}</span>
+         {isTreeView ? <Layers size={18} /> : <List size={18} />}
        </button>
 
        {/* Status Filter */}
