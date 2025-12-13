@@ -105,24 +105,23 @@ export const LoginPage: React.FC = () => {
   };
 
   const handleQuickSetupAdmin = async () => {
-      // Safe Env Access
+      // Safe Env Access logic updated
       let envToken = '';
       try {
+          // Check for Vite env
           // @ts-ignore
-          if (typeof import.meta !== 'undefined' && import.meta.env) {
+          const meta: any = import.meta;
+          if (meta && meta.env && meta.env.VITE_ADMIN_SETUP_TOKEN) {
+              envToken = meta.env.VITE_ADMIN_SETUP_TOKEN;
+          } 
+          // Fallback to process.env (Node/CRA compat)
+          // @ts-ignore
+          else if (typeof process !== 'undefined' && process.env) {
               // @ts-ignore
-              envToken = import.meta.env.VITE_ADMIN_SETUP_TOKEN;
+              envToken = process.env.VITE_ADMIN_SETUP_TOKEN || process.env.REACT_APP_ADMIN_SETUP_TOKEN;
           }
-      } catch (e) {}
-
-      if (!envToken) {
-          try {
-              // @ts-ignore
-              if (typeof process !== 'undefined' && process.env) {
-                  // @ts-ignore
-                  envToken = process.env.VITE_ADMIN_SETUP_TOKEN || process.env.REACT_APP_ADMIN_SETUP_TOKEN;
-              }
-          } catch(e) {}
+      } catch (e) {
+          console.error("Error accessing env vars", e);
       }
 
       if (!envToken) {

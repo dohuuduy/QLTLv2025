@@ -31,6 +31,7 @@ const AppContent: React.FC = () => {
   // Search State
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false); // Mobile search
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Centralized Data State
@@ -153,7 +154,10 @@ const AppContent: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       if (!target.closest('#notification-container')) setShowNotifications(false);
-      if (searchRef.current && !searchRef.current.contains(target)) setIsSearchOpen(false);
+      if (searchRef.current && !searchRef.current.contains(target)) {
+          setIsSearchOpen(false);
+          setIsMobileSearchOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -175,6 +179,7 @@ const AppContent: React.FC = () => {
   const handleSearchResultClick = (tab: string) => {
       setActiveTab(tab);
       setIsSearchOpen(false);
+      setIsMobileSearchOpen(false);
   };
 
   const handleNotificationClick = (notification: AppNotification) => {
@@ -283,28 +288,67 @@ const AppContent: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Header */}
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-4 md:px-6 shadow-sm z-40 transition-colors relative">
-          <div className="flex items-center gap-4 flex-1">
-             <button className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded" onClick={() => setMobileMenuOpen(true)}><Menu size={24} /></button>
-             <button className="hidden md:block p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded" onClick={() => setSidebarOpen(!isSidebarOpen)}><Menu size={20} /></button>
-             <div className="hidden md:flex flex-col border-l border-gray-200 dark:border-slate-700 pl-4">
-                <h1 className="text-base font-bold text-gray-800 dark:text-gray-100 leading-none">{getPageTitle()}</h1>
-                <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate max-w-md">{getPageDescription()}</span>
+        <header className="h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-3 md:px-6 shadow-sm z-40 transition-colors relative">
+          {/* Left: Mobile Menu & Title */}
+          <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+             <button className="md:hidden p-2 -ml-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg" onClick={() => setMobileMenuOpen(true)}>
+                <Menu size={24} />
+             </button>
+             <button className="hidden md:block p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg" onClick={() => setSidebarOpen(!isSidebarOpen)}>
+                <Menu size={20} />
+             </button>
+             
+             {/* Title - Visible on Mobile now */}
+             <div className="flex flex-col border-l-0 md:border-l border-gray-200 dark:border-slate-700 md:pl-4 min-w-0">
+                <h1 className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-100 leading-none truncate pr-2">
+                    {getPageTitle()}
+                </h1>
+                <span className="hidden md:block text-xs text-gray-500 dark:text-gray-400 mt-1 truncate max-w-md">
+                    {getPageDescription()}
+                </span>
              </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
              {/* GLOBAL SEARCH */}
-             <div ref={searchRef} className="hidden lg:block relative w-64 z-50">
-                <div className={`flex items-center bg-gray-100 dark:bg-slate-800 rounded-lg px-3 py-1.5 border transition-all ${isSearchOpen ? 'ring-2 ring-primary/20 border-primary' : 'border-gray-200 dark:border-slate-700'}`}>
+             <div ref={searchRef} className="relative">
+                {/* Desktop Search Input */}
+                <div className="hidden md:flex items-center bg-gray-100 dark:bg-slate-800 rounded-lg px-3 py-1.5 border transition-all w-64">
                    <Search size={16} className="text-gray-400 shrink-0" />
                    <input type="text" placeholder="Tìm nhanh..." className="bg-transparent border-none outline-none text-sm ml-2 w-full text-gray-700 dark:text-gray-200 placeholder:text-gray-400" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setIsSearchOpen(true); }} onFocus={() => setIsSearchOpen(true)} />
                    {searchTerm && <button onClick={() => { setSearchTerm(''); setIsSearchOpen(false); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={14} /></button>}
                 </div>
-                {/* Search Results Dropdown */}
-                {isSearchOpen && searchTerm && (
-                    <div className="absolute top-full mt-2 w-[400px] right-0 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
-                       {!hasResults ? <div className="p-8 text-center text-gray-400 text-sm"><p>Không tìm thấy kết quả cho "{searchTerm}"</p></div> : (
+
+                {/* Mobile Search Trigger */}
+                <button 
+                    className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full"
+                    onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+                >
+                    <Search size={20} />
+                </button>
+
+                {/* Search Results Dropdown (Shared for both) */}
+                {((isSearchOpen && searchTerm) || (isMobileSearchOpen)) && (
+                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-24px)] md:w-[400px] max-w-sm bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right z-50">
+                       {/* Mobile Input Field inside Dropdown */}
+                       <div className="md:hidden p-3 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50">
+                           <div className="flex items-center bg-white dark:bg-slate-900 rounded-lg px-3 py-2 border border-gray-200 dark:border-slate-700 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+                               <Search size={16} className="text-gray-400 shrink-0" />
+                               <input 
+                                  type="text" 
+                                  autoFocus
+                                  placeholder="Tìm tài liệu, hồ sơ..." 
+                                  className="bg-transparent border-none outline-none text-sm ml-2 w-full text-gray-700 dark:text-gray-200 placeholder:text-gray-400" 
+                                  value={searchTerm} 
+                                  onChange={(e) => setSearchTerm(e.target.value)} 
+                               />
+                               {searchTerm && <button onClick={() => setSearchTerm('')}><X size={14} className="text-gray-400"/></button>}
+                           </div>
+                       </div>
+
+                       {!hasResults && searchTerm ? (
+                           <div className="p-8 text-center text-gray-400 text-sm"><p>Không tìm thấy kết quả cho "{searchTerm}"</p></div>
+                       ) : searchTerm ? (
                            <div className="max-h-[60vh] overflow-y-auto">
                                {searchResults.docs.length > 0 && (
                                    <div className="py-2"><div className="px-4 py-1 text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Tài liệu</div>{searchResults.docs.map(doc => (<div key={doc.id} onClick={() => handleSearchResultClick('documents')} className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer flex items-start gap-3 group"><div className="mt-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-1.5 rounded"><FileText size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600">{doc.ten_tai_lieu}</p><p className="text-xs text-gray-500 font-mono">{doc.ma_tai_lieu}</p></div><ArrowRight size={14} className="self-center opacity-0 group-hover:opacity-100 text-gray-400 transition-opacity"/></div>))}</div>
@@ -316,12 +360,15 @@ const AppContent: React.FC = () => {
                                    <div className="py-2 border-t border-gray-100 dark:border-slate-800"><div className="px-4 py-1 text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Kế hoạch Audit</div>{searchResults.audits.map(plan => (<div key={plan.id} onClick={() => handleSearchResultClick('audit-schedule')} className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer flex items-start gap-3 group"><div className="mt-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-1.5 rounded"><CalendarDays size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-purple-600">{plan.ten_ke_hoach}</p><p className="text-xs text-gray-500">{plan.loai_danh_gia}</p></div><ArrowRight size={14} className="self-center opacity-0 group-hover:opacity-100 text-gray-400 transition-opacity"/></div>))}</div>
                                )}
                            </div>
+                       ) : (
+                           // Just opened mobile search, show hint
+                           <div className="p-4 text-center text-gray-400 text-xs md:hidden">Nhập từ khóa để tìm kiếm</div>
                        )}
                     </div>
                 )}
              </div>
 
-             <div className="flex items-center gap-2">
+             <div className="flex items-center gap-1 md:gap-2">
                 <div id="notification-container" className="relative">
                   <button onClick={() => setShowNotifications(!showNotifications)} className={`relative p-2 rounded-full transition-colors ${showNotifications ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800'}`}>
                     <Bell size={20} />
@@ -344,8 +391,10 @@ const AppContent: React.FC = () => {
                     </div>
                   )}
                 </div>
+                
                 <div className="h-6 w-px bg-gray-200 dark:bg-slate-700 hidden sm:block"></div>
-                <button onClick={handleLogout} className="flex items-center gap-2 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400" title="Đăng xuất">
+                
+                <button onClick={handleLogout} className="flex items-center gap-2 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400" title="Đăng xuất">
                   <LogOut size={18} />
                 </button>
              </div>
