@@ -7,8 +7,8 @@ import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { TaiLieuForm } from './TaiLieuForm';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
-import { AIChatBox } from '../../components/AIChatBox';
-import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, Search, FileType, FileSpreadsheet, Lock } from 'lucide-react';
+import { AIChatWidget } from '../../components/AIChatWidget';
+import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, Search, FileType, FileSpreadsheet, Lock, History } from 'lucide-react';
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 import { format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
@@ -32,6 +32,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const [filters, setFilters] = useState<{ trang_thai?: string; bo_phan?: string; loai_tai_lieu?: string }>(initialFilters || {});
   
   const [showVersionModal, setShowVersionModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false); // NEW STATE FOR HISTORY
   const [versionType, setVersionType] = useState<'minor' | 'major'>('minor');
   const [versionReason, setVersionReason] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -399,7 +400,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                  />
               ) : (
                  selectedDoc && (
-                   <div className="flex flex-col h-full overflow-hidden">
+                   <div className="flex flex-col h-full overflow-hidden relative">
                      <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 shrink-0">
                         <div>
                            <div className="flex items-center gap-2 mb-2">
@@ -408,12 +409,23 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                            </div>
                            <h2 className="text-xl font-bold text-gray-800 dark:text-white leading-tight line-clamp-1">{selectedDoc.ten_tai_lieu}</h2>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={handleCloseDrawer}>
-                           <X size={20} />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            {/* Nút Xem Lịch Sử */}
+                            <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                onClick={() => setShowHistoryModal(true)} 
+                                className="hidden sm:flex text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                            >
+                                <History size={16} className="mr-1.5" /> Lịch sử
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={handleCloseDrawer}>
+                                <X size={20} />
+                            </Button>
+                        </div>
                      </div>
 
-                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                     <div className="flex-1 overflow-y-auto p-6 space-y-6 pb-24">
                         <div className="flex flex-wrap gap-6 text-sm text-gray-600 dark:text-gray-400 pb-4 border-b border-gray-100 dark:border-slate-800">
                            <div className="flex items-center gap-2"><Clock size={16} /> Phiên bản: <span className="font-bold text-gray-900 dark:text-gray-200">{selectedDoc.phien_ban}</span></div>
                            <div className="flex items-center gap-2"><FileText size={16} /> Loại: <span className="font-bold text-gray-900 dark:text-gray-200">{selectedDoc.loai_tai_lieu}</span></div>
@@ -485,15 +497,9 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                     </div>
                                  </div>
                               </div>
-
-                              <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
-                                  <h3 className="text-sm font-bold text-gray-500 uppercase mb-4">Lịch sử hoạt động</h3>
-                                  <DocumentTimeline history={selectedDoc.lich_su || []} />
-                              </div>
                            </div>
 
                            <div className="space-y-6">
-                               <AIChatBox document={selectedDoc} />
                                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
                                   <h3 className="text-sm font-bold text-gray-500 uppercase mb-4">Hồ sơ liên quan</h3>
                                   {records.filter(r => r.ma_tai_lieu_lien_quan === selectedDoc.ma_tai_lieu).length > 0 ? (
@@ -527,12 +533,35 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                            </>
                        )}
                     </div>
+                    
+                    {/* ADD FLOATING CHAT WIDGET HERE */}
+                    <AIChatWidget document={selectedDoc} />
                    </div>
                  )
               )}
            </div>
         </div>
       )}
+
+      {/* History Modal */}
+      <Modal 
+        isOpen={showHistoryModal} 
+        onClose={() => setShowHistoryModal(false)} 
+        title="Lịch sử hoạt động tài liệu" 
+        size="lg"
+        footer={<Button onClick={() => setShowHistoryModal(false)}>Đóng</Button>}
+      >
+        <div className="p-6">
+            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg mb-6 border border-blue-100 dark:border-blue-900/50">
+                <h4 className="font-bold text-blue-800 dark:text-blue-300 text-sm mb-1">{selectedDoc?.ten_tai_lieu}</h4>
+                <div className="flex gap-4 text-xs text-blue-600 dark:text-blue-400">
+                    <span>Mã: {selectedDoc?.ma_tai_lieu}</span>
+                    <span>Phiên bản hiện tại: {selectedDoc?.phien_ban}</span>
+                </div>
+            </div>
+            <DocumentTimeline history={selectedDoc?.lich_su || []} />
+        </div>
+      </Modal>
 
       {/* Keep Version Modal unchanged */}
       <Modal isOpen={showVersionModal} onClose={() => setShowVersionModal(false)} title="Nâng phiên bản tài liệu" size="lg" footer={<><Button variant="ghost" onClick={() => setShowVersionModal(false)}>Hủy bỏ</Button><Button onClick={confirmVersionUp} leftIcon={<FileUp size={16} />}>Xác nhận & Tạo bản thảo</Button></>}>
