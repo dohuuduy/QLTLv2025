@@ -179,11 +179,31 @@ export const deleteCategory = async (id: string) => {
 
 // CRUD Nhân Sự
 export const upsertProfile = async (user: NhanSu, allDepts: DanhMucItem[]) => {
+    // 1. Cập nhật Database (Bảng nhan_su)
     const payload = mapUserToProfilePayload(user, allDepts);
     const { error } = await supabase.from('nhan_su').upsert(payload);
     if (error) {
         console.error('Lỗi lưu nhân sự:', error);
         throw error;
+    }
+
+    // 2. Đồng bộ Auth Metadata (Nếu đang cập nhật chính mình)
+    // Client SDK chỉ cho phép update user metadata của CHÍNH USER ĐANG LOGIN.
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user.id === user.id) {
+            const { error: authError } = await supabase.auth.updateUser({
+                data: { full_name: user.ho_ten }
+            });
+            
+            if (authError) {
+                console.warn("Lỗi đồng bộ tên sang Auth:", authError.message);
+            } else {
+                console.log("✅ Đã đồng bộ tên sang Auth Metadata");
+            }
+        }
+    } catch (e) {
+        console.warn("Không thể đồng bộ Auth Metadata (có thể do lỗi mạng hoặc permission):", e);
     }
 };
 
