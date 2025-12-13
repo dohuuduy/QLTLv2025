@@ -387,7 +387,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       </div>
 
       {(viewMode === 'form' || viewMode === 'detail') && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-[100] flex justify-end">
            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" onClick={handleCloseDrawer}/>
            <div className="w-full max-w-4xl bg-white dark:bg-slate-950 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-gray-200 dark:border-slate-800">
               {viewMode === 'form' ? (
@@ -401,8 +401,8 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
               ) : (
                  selectedDoc && (
                    <div className="flex flex-col h-full overflow-hidden relative">
-                     {/* OPTIMIZED HEADER FOR RESPONSIVENESS */}
-                     <div className="flex items-start justify-between p-4 md:p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 shrink-0 gap-3">
+                     {/* OPTIMIZED HEADER FOR RESPONSIVENESS: Increased Opacity for readability */}
+                     <div className="flex items-start justify-between p-4 md:p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50/90 dark:bg-slate-900/90 shrink-0 gap-3 backdrop-blur-sm">
                         <div className="flex-1 min-w-0">
                            <div className="flex flex-wrap items-center gap-2 mb-2">
                               <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-0.5 rounded text-xs font-mono font-bold border border-blue-200 dark:border-blue-800 shrink-0">
