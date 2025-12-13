@@ -605,39 +605,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                    </div>
                                </div>
 
-                               {/* Responsibilities Card */}
-                               <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                                   <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
-                                       <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                                           <UserCheck size={16} className="text-blue-500" /> Trách nhiệm
-                                       </h4>
-                                   </div>
-                                   <div className="p-4 space-y-4">
-                                       <div className="flex items-start gap-3">
-                                           <div className="mt-0.5 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-bold text-blue-600">S</div>
-                                           <div>
-                                               <p className="text-xs text-gray-500 font-bold">Người soạn thảo</p>
-                                               <p className="text-sm font-medium">{selectedDoc.nguoi_soan_thao}</p>
-                                           </div>
-                                       </div>
-                                       <div className="flex items-start gap-3">
-                                           <div className="mt-0.5 w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-[10px] font-bold text-purple-600">X</div>
-                                           <div>
-                                               <p className="text-xs text-gray-500 font-bold">Người xem xét</p>
-                                               <p className="text-sm font-medium">{selectedDoc.nguoi_xem_xet || '---'}</p>
-                                           </div>
-                                       </div>
-                                       <div className="flex items-start gap-3">
-                                           <div className="mt-0.5 w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-[10px] font-bold text-green-600">P</div>
-                                           <div>
-                                               <p className="text-xs text-gray-500 font-bold">Người phê duyệt</p>
-                                               <p className="text-sm font-medium">{selectedDoc.nguoi_phe_duyet || '---'}</p>
-                                           </div>
-                                       </div>
-                                   </div>
-                               </div>
-
-                               {/* Related Records */}
+                               {/* Related Records (Moved Up) */}
                                <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
                                    <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
                                        <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
@@ -658,6 +626,31 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                               ))}
                                            </div>
                                        ) : <p className="text-xs text-gray-400 italic text-center py-2">Chưa có hồ sơ phát sinh.</p>}
+                                   </div>
+                               </div>
+
+                               {/* Responsibilities Card (Moved Down & Compacted) */}
+                               <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                   <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
+                                       <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                           <UserCheck size={16} className="text-blue-500" /> Trách nhiệm
+                                       </h4>
+                                   </div>
+                                   <div className="p-4 space-y-3">
+                                       <div className="flex items-center justify-between text-sm">
+                                           <span className="text-gray-500 text-xs uppercase font-semibold">Soạn thảo</span>
+                                           <span className="font-medium text-gray-800 dark:text-gray-200">{selectedDoc.nguoi_soan_thao}</span>
+                                       </div>
+                                       <div className="w-full h-px bg-gray-100 dark:bg-slate-800"></div>
+                                       <div className="flex items-center justify-between text-sm">
+                                           <span className="text-gray-500 text-xs uppercase font-semibold">Xem xét</span>
+                                           <span className="font-medium text-gray-800 dark:text-gray-200">{selectedDoc.nguoi_xem_xet || '---'}</span>
+                                       </div>
+                                       <div className="w-full h-px bg-gray-100 dark:bg-slate-800"></div>
+                                       <div className="flex items-center justify-between text-sm">
+                                           <span className="text-gray-500 text-xs uppercase font-semibold">Phê duyệt</span>
+                                           <span className="font-medium text-gray-800 dark:text-gray-200">{selectedDoc.nguoi_phe_duyet || '---'}</span>
+                                       </div>
                                    </div>
                                </div>
 
