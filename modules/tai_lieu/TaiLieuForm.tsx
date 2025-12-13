@@ -5,7 +5,6 @@ import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { X, Save, Info, Calendar, UserCheck, FileType, Check, Paperclip, Trash2, Plus, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, GitBranch, Clock, AlertCircle, Lock, Unlock, Hash, ExternalLink } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
-import { MOCK_TAI_LIEU } from '../../constants'; 
 import { useDialog } from '../../contexts/DialogContext';
 
 interface TaiLieuFormProps {
@@ -13,7 +12,7 @@ interface TaiLieuFormProps {
   onSave: (data: Partial<TaiLieu>) => void;
   onCancel: () => void;
   masterData: MasterDataState;
-  fullList?: TaiLieu[]; // NEW: Nhận danh sách đầy đủ để đếm số lượng con
+  fullList?: TaiLieu[];
 }
 
 export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, onCancel, masterData, fullList = [] }) => {
@@ -41,10 +40,9 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   });
 
   const [urlInput, setUrlInput] = useState('');
-  const [isCodeLocked, setIsCodeLocked] = useState(false); // Trạng thái khóa ô Mã tài liệu
+  const [isCodeLocked, setIsCodeLocked] = useState(false);
   const dialog = useDialog();
 
-  // Lấy danh sách tài liệu có thể làm cha
   const availableParents = fullList.filter(d => d.id !== initialData?.id).map(d => ({
       value: d.id,
       label: d.ten_tai_lieu,
@@ -54,19 +52,15 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   useEffect(() => {
     if (initialData) {
       setFormData(initialData);
-      setIsCodeLocked(false); // Nếu sửa, mặc định cho sửa mã (hoặc lock tùy ý)
+      setIsCodeLocked(false);
     } else {
-        // Nếu tạo mới, mặc định lock để auto-gen
         setIsCodeLocked(true);
     }
   }, [initialData]);
 
-  // AUTO-NUMBERING LOGIC
   useEffect(() => {
-      // Chỉ chạy khi tạo mới hoặc đang bật chế độ khóa (Auto)
       if (initialData || !isCodeLocked) return;
       
-      // Cần có Loại tài liệu để xác định Prefix
       if (!formData.loai_tai_lieu) return;
 
       const docTypeConfig = masterData.loaiTaiLieu.find(t => t.ten === formData.loai_tai_lieu);
@@ -79,30 +73,19 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
       let newCode = '';
 
       if (formData.tai_lieu_cha_id) {
-          // Logic con: Mã cha + Sep + Prefix + AutoNum
           const parentDoc = fullList.find(d => d.id === formData.tai_lieu_cha_id);
           if (parentDoc) {
-             // Đếm số lượng anh em cùng cha và cùng loại
              const siblings = fullList.filter(d => 
                 d.tai_lieu_cha_id === parentDoc.id && 
                 d.loai_tai_lieu === formData.loai_tai_lieu &&
-                d.id !== initialData?.id // Trừ chính nó (nếu có - dù đây là create new)
+                d.id !== initialData?.id 
              );
              const nextNum = siblings.length + 1;
              const paddedNum = String(nextNum).padStart(digitCount, '0');
              newCode = `${parentDoc.ma_tai_lieu}${separator}${prefix}${paddedNum}`;
           }
       } else {
-          // Logic root (Nếu cần): Prefix + AutoNum (Đếm số lượng root docs cùng loại)
-          // Tạm thời chỉ áp dụng nếu có config prefix, nếu không để trống user tự nhập
-          if (prefix) {
-             const rootSiblings = fullList.filter(d => 
-                !d.tai_lieu_cha_id && 
-                d.loai_tai_lieu === formData.loai_tai_lieu
-             );
-             // Logic này đơn giản, thực tế Root code phức tạp hơn
-             // newCode = `${prefix}${String(rootSiblings.length + 1).padStart(digitCount, '0')}`;
-          }
+          // Root logic (optional)
       }
 
       if (newCode && newCode !== formData.ma_tai_lieu) {
@@ -167,7 +150,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     }
   };
 
-  const handleAddFile = (selectedType: 'pdf' | 'doc' | 'excel') => {
+  const handleAddFile = (selectedType: 'pdf' | 'doc' | 'excel' | 'link') => {
     if (!urlInput.trim()) {
       dialog.alert("Vui lòng dán đường dẫn (Link) vào ô trống trước khi chọn loại file!", { type: 'warning' });
       return;
@@ -190,6 +173,10 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.ma_tai_lieu || !formData.ten_tai_lieu) {
+        dialog.alert("Vui lòng nhập Mã và Tên tài liệu!", { type: 'warning' });
+        return;
+    }
     onSave(formData);
   };
 
@@ -208,29 +195,24 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     }
   };
 
-  // Prepare Options for SearchableSelect
   const loaiTaiLieuOptions = masterData.loaiTaiLieu.map(i => ({ value: i.ten, label: i.ten }));
   const linhVucOptions = masterData.linhVuc.map(i => ({ value: i.ten, label: i.ten }));
   const boPhanOptions = masterData.boPhan.map(i => ({ value: i.ten, label: i.ten }));
   
-  // --- UPDATED: Lọc nhân sự theo quyền hạn ---
   const mapUserToOption = (u: NhanSu) => ({
       value: u.ho_ten,
       label: u.ho_ten,
       subLabel: u.chuc_vu
   });
 
-  // 1. Soạn thảo: Chỉ lấy User có role 'SOAN_THAO' hoặc 'QUAN_TRI'
   const drafterOptions = masterData.nhanSu
       .filter(u => u.roles.includes('SOAN_THAO') || u.roles.includes('QUAN_TRI'))
       .map(mapUserToOption);
 
-  // 2. Xem xét: Chỉ lấy User có role 'XEM_XET' hoặc 'QUAN_TRI'
   const reviewerOptions = masterData.nhanSu
       .filter(u => u.roles.includes('XEM_XET') || u.roles.includes('QUAN_TRI'))
       .map(mapUserToOption);
 
-  // 3. Phê duyệt: Chỉ lấy User có role 'PHE_DUYET' hoặc 'QUAN_TRI'
   const approverOptions = masterData.nhanSu
       .filter(u => u.roles.includes('PHE_DUYET') || u.roles.includes('QUAN_TRI'))
       .map(mapUserToOption);
@@ -271,7 +253,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
               />
             </div>
             
-             {/* Parent Document - Searchable - Đưa lên trước để kích hoạt logic mã */}
              <div className="space-y-2">
               <label className={labelClass}><span className="flex items-center gap-1"><GitBranch size={12}/> Thuộc tài liệu (Cha)</span></label>
               <SearchableSelect
@@ -432,3 +413,165 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                         <div>
                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">Kiểm soát định kỳ</h4>
                            <p className="text-[11px] text-gray-500">Thiết lập thời gian nhắc nhở rà soát tài liệu</p>
+                        </div>
+                     </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                          <label className={labelClass}>Chu kỳ rà soát (Tháng)</label>
+                          <div className="flex items-center gap-2">
+                              <input
+                                  type="number"
+                                  min="0"
+                                  name="chu_ky_ra_soat"
+                                  value={formData.chu_ky_ra_soat}
+                                  onChange={handleChange}
+                                  className={inputClass}
+                              />
+                              <span className="text-sm text-gray-500 whitespace-nowrap">Tháng</span>
+                          </div>
+                      </div>
+                      <div>
+                          <label className={labelClass}>Ngày rà soát tiếp theo</label>
+                          <input
+                              type="date"
+                              name="ngay_ra_soat_tiep_theo"
+                              value={formData.ngay_ra_soat_tiep_theo}
+                              onChange={handleChange}
+                              className={`${inputClass} dark:[color-scheme:dark]`}
+                          />
+                      </div>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Nhóm 3: Nội dung & Đính kèm */}
+        <div>
+          <h3 className={sectionTitleClass}>
+            <Paperclip size={18} className="text-purple-500" /> Nội dung & Đính kèm
+          </h3>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <label className={labelClass}>Mô tả tóm tắt nội dung</label>
+              <textarea
+                name="mo_ta_tom_tat"
+                value={formData.mo_ta_tom_tat}
+                onChange={handleChange}
+                className={`${textareaClass} min-h-[100px]`}
+                placeholder="Tóm tắt phạm vi, mục đích của tài liệu..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className={labelClass}>Link tài liệu đính kèm (PDF/Word/Excel)</label>
+              <div className="flex gap-2">
+                <input
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  className={inputClass}
+                  placeholder="Dán đường dẫn (URL) tài liệu vào đây..."
+                />
+              </div>
+              <div className="flex gap-2 mt-2">
+                 <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('pdf')}><FileType size={14} className="mr-1 text-red-600"/> PDF</Button>
+                 <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('doc')}><FileText size={14} className="mr-1 text-blue-600"/> Word</Button>
+                 <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('excel')}><FileSpreadsheet size={14} className="mr-1 text-green-600"/> Excel</Button>
+                 <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('link')}><LinkIcon size={14} className="mr-1"/> Link Khác</Button>
+              </div>
+
+              {formData.dinh_kem && formData.dinh_kem.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+                  {formData.dinh_kem.map(file => {
+                    const config = getFileTypeConfig(file.loai);
+                    return (
+                      <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg group hover:border-blue-300 dark:hover:border-blue-700 transition-all">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <div className={`p-1.5 rounded ${config.bg} ${config.color}`}>
+                            {config.icon}
+                          </div>
+                          <div className="flex flex-col overflow-hidden">
+                             <a href={file.url} target="_blank" rel="noreferrer" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate" title={file.ten_file}>
+                                {file.ten_file}
+                             </a>
+                             <span className="text-[10px] text-gray-400">{format(new Date(file.ngay_upload), 'dd/MM/yyyy HH:mm')}</span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeFile(file.id)}
+                          className="text-gray-400 hover:text-red-500 p-1.5 rounded-md hover:bg-white dark:hover:bg-slate-800 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Nhóm 4: Trách nhiệm */}
+        <div>
+          <h3 className={sectionTitleClass}>
+            <UserCheck size={18} className="text-orange-500" /> Phân công trách nhiệm
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className={labelClass}>Bộ phận soạn thảo</label>
+              <SearchableSelect
+                 options={boPhanOptions}
+                 value={formData.bo_phan_soan_thao}
+                 onChange={(val) => handleSelectChange('bo_phan_soan_thao', val)}
+                 placeholder="-- Chọn bộ phận --"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className={labelClass}>Người soạn thảo</label>
+              <SearchableSelect
+                 options={drafterOptions}
+                 value={formData.nguoi_soan_thao}
+                 onChange={(val) => handleSelectChange('nguoi_soan_thao', val)}
+                 placeholder="-- Chọn người soạn --"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className={labelClass}>Người xem xét (Review)</label>
+              <SearchableSelect
+                 options={reviewerOptions}
+                 value={formData.nguoi_xem_xet}
+                 onChange={(val) => handleSelectChange('nguoi_xem_xet', val)}
+                 placeholder="-- Chọn người xem xét --"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className={labelClass}>Người phê duyệt (Approve)</label>
+              <SearchableSelect
+                 options={approverOptions}
+                 value={formData.nguoi_phe_duyet}
+                 onChange={(val) => handleSelectChange('nguoi_phe_duyet', val)}
+                 placeholder="-- Chọn người phê duyệt --"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            Hủy bỏ
+          </Button>
+          <Button type="submit" leftIcon={<Save size={18} />}>
+            Lưu tài liệu
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+};
