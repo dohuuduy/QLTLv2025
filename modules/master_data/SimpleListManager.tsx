@@ -201,6 +201,9 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
     return cols;
   }, [data, parentOptions, parentLabel, showDocTypeConfig]);
 
+  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm";
+  const labelClass = "block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5";
+
   return (
     <div className="h-full flex flex-col relative">
       <div className="flex-1 overflow-hidden rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm">
@@ -211,7 +214,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)} />
           <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
             {/* STICKY HEADER */}
-            <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50/95 dark:bg-slate-800/95 backdrop-blur-sm shrink-0">
+            <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-6 border-b border-gray-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shrink-0">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2 truncate pr-2">
                     <Layers className="text-primary shrink-0" /> <span className="truncate">{editingItem ? 'Cập nhật danh mục' : 'Thêm danh mục mới'}</span>
                 </h2>
@@ -220,22 +223,24 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray-500 uppercase border-b dark:border-slate-800 pb-1">Thông tin chi tiết</h3>
+                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase border-b border-gray-100 dark:border-slate-800 pb-2">Thông tin chi tiết</h3>
                 <div className="space-y-4">
-                  <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tên hiển thị <span className="text-red-500">*</span></label><input autoFocus className="w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all" value={formState.ten} onChange={(e) => setFormState({...formState, ten: e.target.value})} placeholder="Nhập tên danh mục..." onKeyDown={(e) => e.key === 'Enter' && handleSave()}/></div>
-                  <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Thứ tự hiển thị</label><input type="number" className="w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all" value={formState.thu_tu} onChange={(e) => setFormState({...formState, thu_tu: parseInt(e.target.value) || 0})}/></div>
-                  {parentOptions && parentOptions.length > 0 && (<div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{parentLabel}</label><SearchableSelect options={parentOptions} value={formState.parentId} onChange={(val) => setFormState({...formState, parentId: String(val)})} placeholder={`-- Chọn ${parentLabel.toLowerCase()} --`}/></div>)}
+                  <div><label className={labelClass}>Tên hiển thị <span className="text-red-500">*</span></label><input autoFocus className={inputClass} value={formState.ten} onChange={(e) => setFormState({...formState, ten: e.target.value})} placeholder="Nhập tên danh mục..." onKeyDown={(e) => e.key === 'Enter' && handleSave()}/></div>
+                  <div><label className={labelClass}>Thứ tự hiển thị</label><input type="number" className={inputClass} value={formState.thu_tu} onChange={(e) => setFormState({...formState, thu_tu: parseInt(e.target.value) || 0})}/></div>
+                  {parentOptions && parentOptions.length > 0 && (<div><label className={labelClass}>{parentLabel}</label><SearchableSelect options={parentOptions} value={formState.parentId} onChange={(val) => setFormState({...formState, parentId: String(val)})} placeholder={`-- Chọn ${parentLabel.toLowerCase()} --`}/></div>)}
+                  
                   {showDocTypeConfig && (
-                     <div className="pt-2">
-                        <h4 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase border-b border-blue-100 dark:border-blue-900 pb-1 mb-3 flex items-center gap-2"><Hash size={14}/> Cấu hình sinh mã tự động</h4>
-                        <div className="grid grid-cols-2 gap-4 bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
-                           <div className="col-span-2"><label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Mã viết tắt (Prefix)</label><input className="w-full h-9 px-3 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 uppercase font-mono text-sm" value={formState.ma_viet_tat} onChange={(e) => setFormState({...formState, ma_viet_tat: e.target.value.toUpperCase()})} placeholder="VD: QT, BM, HD..."/></div>
-                           <div><label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Ký tự nối</label><select className="w-full h-9 px-2 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-mono" value={formState.ky_tu_noi} onChange={(e) => setFormState({...formState, ky_tu_noi: e.target.value})}><option value=".">Dấu chấm (.)</option><option value="-">Gạch ngang (-)</option><option value="/">Gạch chéo (/)</option><option value="_">Gạch dưới (_)</option></select></div>
-                           <div><label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Độ dài số</label><input type="number" min="1" max="5" className="w-full h-9 px-3 rounded border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm" value={formState.do_dai_so} onChange={(e) => setFormState({...formState, do_dai_so: parseInt(e.target.value) || 2})}/></div>
+                     <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                        <h4 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase border-b border-blue-100 dark:border-blue-900 pb-2 mb-3 flex items-center gap-2"><Hash size={14}/> Cấu hình sinh mã tự động</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                           <div className="col-span-2"><label className={labelClass}>Mã viết tắt (Prefix)</label><input className={`${inputClass} uppercase font-mono`} value={formState.ma_viet_tat} onChange={(e) => setFormState({...formState, ma_viet_tat: e.target.value.toUpperCase()})} placeholder="VD: QT, BM, HD..."/></div>
+                           <div><label className={labelClass}>Ký tự nối</label><select className={`${inputClass} font-mono`} value={formState.ky_tu_noi} onChange={(e) => setFormState({...formState, ky_tu_noi: e.target.value})}><option value=".">Dấu chấm (.)</option><option value="-">Gạch ngang (-)</option><option value="/">Gạch chéo (/)</option><option value="_">Gạch dưới (_)</option></select></div>
+                           <div><label className={labelClass}>Độ dài số</label><input type="number" min="1" max="5" className={inputClass} value={formState.do_dai_so} onChange={(e) => setFormState({...formState, do_dai_so: parseInt(e.target.value) || 2})}/></div>
                            <div className="col-span-2"><p className="text-[11px] text-gray-500 italic">Ví dụ: Nếu tài liệu cha là <span className="font-bold">P06</span>, Prefix là <span className="font-bold">QT</span> &rarr; Mã con sẽ là <span className="font-bold">P06.QT01</span></p></div>
                         </div>
                      </div>
                   )}
+                  
                   <div className="pt-2"><label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"><div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formState.active ? 'bg-primary border-primary text-white' : 'bg-white border-gray-400'}`}>{formState.active && <CheckCircle size={14} />}</div><input type="checkbox" className="hidden" checked={formState.active} onChange={() => setFormState({...formState, active: !formState.active})}/><div><p className="text-sm font-bold text-gray-800 dark:text-gray-200">Đang hoạt động</p><p className="text-xs text-gray-500">Bỏ chọn để tạm khóa danh mục này.</p></div></label></div>
                 </div>
               </div>

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { Save, Info, Calendar, UserCheck, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, Lock, Unlock, Layers, Tag } from 'lucide-react';
+import { Save, Info, Calendar, UserCheck, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, Lock, Unlock, Layers, Tag, UploadCloud, AlertCircle } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -60,9 +60,9 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     }
   }, [initialData]);
 
+  // Auto-generate code logic
   useEffect(() => {
       if (initialData || !isCodeLocked) return;
-      
       if (!formData.loai_tai_lieu) return;
 
       const docTypeConfig = masterData.loaiTaiLieu.find(t => t.ten === formData.loai_tai_lieu);
@@ -87,7 +87,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
              newCode = `${parentDoc.ma_tai_lieu}${separator}${prefix}${paddedNum}`;
           }
       } else {
-          // Root logic (optional)
+          // Root level logic could be added here if needed
       }
 
       if (newCode && newCode !== formData.ma_tai_lieu) {
@@ -224,118 +224,146 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const reviewerOptions = masterData.nhanSu.filter(u => u.roles.includes('XEM_XET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
   const approverOptions = masterData.nhanSu.filter(u => u.roles.includes('PHE_DUYET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
 
-  const inputClass = "w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-gray-400 text-sm";
-  const textareaClass = "w-full p-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-gray-400 text-sm";
-  const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5 block";
+  // Styles
+  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-gray-400 text-sm disabled:bg-gray-100 disabled:text-gray-500 dark:disabled:bg-slate-800";
+  const textareaClass = "w-full p-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-gray-400 text-sm resize-none";
+  const labelClass = "text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1.5 block flex items-center gap-1";
   
-  // Section Wrapper
   const Section = ({ title, icon: Icon, children, className = "" }: any) => (
-      <div className={`bg-white dark:bg-slate-900 p-5 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm ${className}`}>
-          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2 border-b border-gray-50 dark:border-slate-800/50 pb-2">
-              <Icon size={16} className="text-blue-500" /> {title}
-          </h3>
-          {children}
+      <div className={`bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden ${className}`}>
+          <div className="px-5 py-3 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-950/30 flex items-center gap-2">
+              <Icon size={18} className="text-blue-600 dark:text-blue-400" />
+              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wide">{title}</h3>
+          </div>
+          <div className="p-5">{children}</div>
       </div>
   );
 
   return (
     <div className="flex flex-col h-full bg-gray-50/50 dark:bg-slate-950">
-      {/* 
-          --- RESPONSIVE STICKY HEADER --- 
-          - Mobile: Flex-col to allow title wrapping and buttons below
-          - Desktop: Flex-row for standard layout
-          - Sticky & Z-index: Ensures it stays on top while scrolling form
-      */}
-      <div className="sticky top-0 z-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 md:p-6 border-b border-gray-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shrink-0 shadow-sm">
-        <div className="flex flex-col min-w-0 flex-1 w-full sm:w-auto">
-            <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white truncate pr-2" title={initialData ? initialData.ten_tai_lieu : 'Tạo mới'}>
-                {initialData ? initialData.ten_tai_lieu : 'Soạn thảo tài liệu mới'}
-            </h2>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mt-1">
-                <span>{initialData ? 'Cập nhật thông tin' : 'Điền thông tin bên dưới'}</span>
-                {initialData && <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-1.5 py-0.5 rounded font-mono border border-blue-200 dark:border-blue-800">v{initialData.phien_ban}</span>}
+      {/* Header */}
+      <div className="sticky top-0 z-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 md:px-6 md:py-4 border-b border-gray-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-sm">
+        <div className="flex flex-col min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+                    <FileText size={20} />
+                </div>
+                <div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate" title={initialData ? initialData.ten_tai_lieu : 'Tạo mới'}>
+                        {initialData ? 'Cập nhật tài liệu' : 'Soạn thảo tài liệu mới'}
+                    </h2>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                        {initialData ? 
+                            <span className="font-mono bg-gray-100 dark:bg-slate-800 px-1.5 rounded">{initialData.ma_tai_lieu}</span> : 
+                            <span>Điền thông tin bên dưới để khởi tạo</span>
+                        }
+                    </div>
+                </div>
             </div>
         </div>
-        <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-end">
-            <Button variant="ghost" onClick={onCancel} className="flex-1 sm:flex-none justify-center">Hủy bỏ</Button>
-            <Button onClick={handleSubmit} leftIcon={<Save size={16} />} className="flex-1 sm:flex-none justify-center">Lưu lại</Button>
+        <div className="flex gap-3 w-full sm:w-auto justify-end">
+            <Button variant="secondary" onClick={onCancel}>Hủy bỏ</Button>
+            <Button onClick={handleSubmit} leftIcon={<Save size={16} />} className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20">Lưu dữ liệu</Button>
         </div>
       </div>
 
+      {/* Form Content */}
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto">
             
-            {/* --- LEFT COLUMN: MAIN CONTENT (66%) --- */}
-            <div className="lg:col-span-2 space-y-6">
+            {/* Left Column (Main Content) */}
+            <div className="lg:col-span-8 space-y-6">
                 
-                {/* 1. Basic Info */}
-                <Section title="Thông tin định danh" icon={FileText}>
-                    <div className="space-y-4">
-                        <div>
+                <Section title="Thông tin định danh" icon={Info}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="md:col-span-2">
                             <label className={labelClass}>Tên tài liệu <span className="text-red-500">*</span></label>
-                            <input required name="ten_tai_lieu" value={formData.ten_tai_lieu} onChange={handleChange} className={inputClass} placeholder="VD: Quy trình kiểm soát chất lượng..." autoFocus />
+                            <input required name="ten_tai_lieu" value={formData.ten_tai_lieu} onChange={handleChange} className={inputClass} placeholder="VD: Quy trình kiểm soát chất lượng đầu vào" autoFocus />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className={labelClass}>Mã tài liệu <span className="text-red-500">*</span></label>
-                                <div className="relative">
-                                    <input required name="ma_tai_lieu" value={formData.ma_tai_lieu} onChange={handleChange} className={`${inputClass} pr-9 font-mono font-bold text-blue-700 dark:text-blue-400 ${isCodeLocked ? 'bg-gray-50 dark:bg-slate-800 text-gray-500 cursor-not-allowed' : ''}`} placeholder="Auto-gen or Type..." readOnly={isCodeLocked} />
-                                    <button type="button" onClick={() => setIsCodeLocked(!isCodeLocked)} className="absolute right-2 top-2 text-gray-400 hover:text-blue-500 transition-colors" title={isCodeLocked ? "Mở khóa sửa thủ công" : "Khóa để sinh mã tự động"}>
-                                        {isCodeLocked ? <Lock size={14} /> : <Unlock size={14} />}
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <label className={labelClass}>Tài liệu cha (Nếu có)</label>
-                                <SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} placeholder="-- Chọn tài liệu gốc --" />
-                            </div>
-                        </div>
+                        
                         <div>
+                            <label className={labelClass}>Mã tài liệu <span className="text-red-500">*</span></label>
+                            <div className="relative group">
+                                <input 
+                                    required 
+                                    name="ma_tai_lieu" 
+                                    value={formData.ma_tai_lieu} 
+                                    onChange={handleChange} 
+                                    className={`${inputClass} pr-10 font-mono font-bold text-blue-700 dark:text-blue-400 ${isCodeLocked ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} 
+                                    placeholder="Tự động sinh mã..." 
+                                    readOnly={isCodeLocked} 
+                                />
+                                <button 
+                                    type="button" 
+                                    onClick={() => setIsCodeLocked(!isCodeLocked)} 
+                                    className="absolute right-3 top-2.5 text-gray-400 hover:text-blue-500 transition-colors"
+                                    title={isCodeLocked ? "Mở khóa để sửa thủ công" : "Khóa để sinh mã tự động"}
+                                >
+                                    {isCodeLocked ? <Lock size={16} /> : <Unlock size={16} />}
+                                </button>
+                            </div>
+                            {isCodeLocked && <p className="text-[10px] text-gray-400 mt-1 pl-1">Mã được sinh tự động dựa trên Loại tài liệu & Tài liệu cha.</p>}
+                        </div>
+
+                        <div>
+                            <label className={labelClass}>Tài liệu gốc (Parent)</label>
+                            <SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} placeholder="-- Chọn tài liệu cha --" />
+                        </div>
+
+                        <div className="md:col-span-2">
                             <label className={labelClass}>Mô tả tóm tắt</label>
-                            <textarea name="mo_ta_tom_tat" value={formData.mo_ta_tom_tat} onChange={handleChange} className={`${textareaClass} min-h-[120px]`} placeholder="Mô tả phạm vi áp dụng, mục đích của tài liệu..." />
+                            <textarea name="mo_ta_tom_tat" value={formData.mo_ta_tom_tat} onChange={handleChange} className={`${textareaClass} min-h-[100px]`} placeholder="Mô tả phạm vi áp dụng, mục đích của tài liệu..." />
                         </div>
                     </div>
                 </Section>
 
-                {/* 2. Attachments */}
                 <Section title="Nội dung & Đính kèm" icon={Paperclip}>
                     <div className="space-y-4">
-                        <div className="flex gap-2 flex-col sm:flex-row">
-                            <input value={urlInput} onChange={(e) => setUrlInput(e.target.value)} className={inputClass} placeholder="Dán đường dẫn (Google Drive, SharePoint...) vào đây" />
-                            <div className="flex gap-1 shrink-0 justify-end">
-                                <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('pdf')}><FileType size={14} className="text-red-600"/> PDF</Button>
-                                <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('doc')}><FileText size={14} className="text-blue-600"/> Word</Button>
-                                <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('excel')}><FileSpreadsheet size={14} className="text-green-600"/> Excel</Button>
+                        <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 p-4 transition-colors hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 group">
+                            <div className="flex gap-3 flex-col sm:flex-row items-center">
+                                <div className="flex-1 w-full relative">
+                                    <LinkIcon size={16} className="absolute left-3 top-3 text-gray-400"/>
+                                    <input value={urlInput} onChange={(e) => setUrlInput(e.target.value)} className={`${inputClass} pl-9 bg-white dark:bg-slate-950`} placeholder="Dán đường dẫn tài liệu (Google Drive, SharePoint...) tại đây" />
+                                </div>
+                                <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-center">
+                                    <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('pdf')} className="hover:text-red-600 hover:border-red-200 bg-white dark:bg-slate-900"><FileType size={14} className="mr-1"/> PDF</Button>
+                                    <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('doc')} className="hover:text-blue-600 hover:border-blue-200 bg-white dark:bg-slate-900"><FileText size={14} className="mr-1"/> Word</Button>
+                                    <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('excel')} className="hover:text-emerald-600 hover:border-emerald-200 bg-white dark:bg-slate-900"><FileSpreadsheet size={14} className="mr-1"/> Excel</Button>
+                                </div>
+                            </div>
+                            <div className="text-center mt-2 text-[10px] text-gray-400 group-hover:text-blue-500 transition-colors">
+                                <UploadCloud size={14} className="inline mr-1" /> Hỗ trợ link Google Drive, OneDrive, Dropbox
                             </div>
                         </div>
 
                         {formData.dinh_kem && formData.dinh_kem.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-2">
+                            <div className="grid grid-cols-1 gap-2.5">
                                 {formData.dinh_kem.map(file => {
                                     const config = getFileTypeConfig(file.loai);
                                     return (
-                                        <div key={file.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/30 group hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
-                                            <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${config.bg} ${config.color}`}>{config.icon}</div>
+                                        <div key={file.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm group hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all">
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${config.bg} ${config.color}`}>{config.icon}</div>
                                             <div className="flex-1 min-w-0">
                                                 <a href={file.url} target="_blank" rel="noreferrer" className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate hover:text-blue-600 block">{file.ten_file}</a>
-                                                <div className="text-[10px] text-gray-400">{format(new Date(file.ngay_upload), 'dd/MM/yyyy HH:mm')}</div>
+                                                <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-2">
+                                                    <span>{format(new Date(file.ngay_upload), 'dd/MM/yyyy HH:mm')}</span>
+                                                    <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                                    <span className="uppercase">{file.loai}</span>
+                                                </div>
                                             </div>
-                                            <button type="button" onClick={() => removeFile(file.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button>
+                                            <button type="button" onClick={() => removeFile(file.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={18} /></button>
                                         </div>
                                     );
                                 })}
                             </div>
-                        ) : (
-                            <div className="text-center py-6 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-lg text-gray-400 text-sm">Chưa có file đính kèm</div>
-                        )}
+                        ) : null}
                     </div>
                 </Section>
             </div>
 
-            {/* --- RIGHT COLUMN: META DATA (33%) --- */}
-            <div className="space-y-6">
+            {/* Right Column (Sidebar) */}
+            <div className="lg:col-span-4 space-y-6">
                 
-                {/* 3. Classification */}
                 <Section title="Phân loại" icon={Layers}>
                     <div className="space-y-4">
                         <div>
@@ -347,13 +375,13 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             <SearchableSelect options={linhVucOptions} value={formData.linh_vuc} onChange={(val) => handleSelectChange('linh_vuc', val)} placeholder="-- Chọn lĩnh vực --" />
                         </div>
                         <div>
-                            <label className={labelClass}>Tiêu chuẩn ISO (Tag)</label>
-                            <div className="flex flex-wrap gap-2">
+                            <label className={labelClass}>Tiêu chuẩn áp dụng</label>
+                            <div className="flex flex-wrap gap-2 pt-1">
                                 {masterData.tieuChuan.map(item => {
                                     const isSelected = formData.tieu_chuan?.includes(item.ten);
                                     return (
-                                        <button key={item.id} type="button" onClick={() => toggleTieuChuan(item.ten)} className={`px-2 py-1 rounded text-xs border transition-all ${isSelected ? 'bg-blue-100 text-blue-700 border-blue-200 font-bold' : 'bg-white dark:bg-slate-800 text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
-                                            {item.ten}
+                                        <button key={item.id} type="button" onClick={() => toggleTieuChuan(item.ten)} className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-all flex items-center gap-1.5 ${isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-300'}`}>
+                                            <Tag size={12} /> {item.ten}
                                         </button>
                                     );
                                 })}
@@ -362,32 +390,42 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                     </div>
                 </Section>
 
-                {/* 4. Control Info */}
                 <Section title="Kiểm soát & Hiệu lực" icon={Calendar}>
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
-                            <div><label className={labelClass}>Phiên bản</label><input name="phien_ban" value={formData.phien_ban} onChange={handleChange} className={inputClass} placeholder="1.0" /></div>
+                            <div><label className={labelClass}>Phiên bản (Ver)</label><input name="phien_ban" value={formData.phien_ban} onChange={handleChange} className={inputClass} placeholder="1.0" /></div>
                             <div><label className={labelClass}>Lần ban hành</label><input type="number" min="0" name="lan_ban_hanh" value={formData.lan_ban_hanh} onChange={handleChange} className={inputClass} /></div>
                         </div>
-                        <div><label className={labelClass}>Ngày ban hành</label><input type="date" name="ngay_ban_hanh" value={formData.ngay_ban_hanh} onChange={handleChange} className={`${inputClass} dark:[color-scheme:dark]`} /></div>
-                        <div><label className={labelClass}>Ngày hiệu lực</label><input type="date" name="ngay_hieu_luc" value={formData.ngay_hieu_luc} onChange={handleChange} className={`${inputClass} dark:[color-scheme:dark]`} /></div>
                         
-                        <div className={`p-3 rounded-lg border transition-colors ${isReviewEnabled ? 'bg-blue-50/50 border-blue-200 dark:bg-blue-900/10 dark:border-blue-800' : 'bg-gray-50 dark:bg-slate-800 border-transparent'}`}>
-                            <label className="flex items-center justify-between cursor-pointer mb-2">
-                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2"><RefreshCw size={14}/> Định kỳ rà soát</span>
-                                <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={isReviewEnabled} onChange={toggleReview} />
+                        <div className="grid grid-cols-1 gap-3">
+                            <div><label className={labelClass}>Ngày ban hành</label><input type="date" name="ngay_ban_hanh" value={formData.ngay_ban_hanh} onChange={handleChange} className={`${inputClass} dark:[color-scheme:dark]`} /></div>
+                            <div><label className={labelClass}>Ngày hiệu lực</label><input type="date" name="ngay_hieu_luc" value={formData.ngay_hieu_luc} onChange={handleChange} className={`${inputClass} dark:[color-scheme:dark]`} /></div>
+                        </div>
+                        
+                        <div className={`p-4 rounded-xl border transition-all ${isReviewEnabled ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-800' : 'bg-gray-50 dark:bg-slate-800 border-transparent'}`}>
+                            <label className="flex items-center justify-between cursor-pointer mb-3">
+                                <span className={`text-sm font-bold flex items-center gap-2 ${isReviewEnabled ? 'text-orange-700 dark:text-orange-400' : 'text-gray-600 dark:text-gray-400'}`}><RefreshCw size={16}/> Định kỳ rà soát</span>
+                                <div className={`w-10 h-5 rounded-full relative transition-colors ${isReviewEnabled ? 'bg-orange-500' : 'bg-gray-300 dark:bg-slate-600'}`}>
+                                    <input type="checkbox" className="hidden" checked={isReviewEnabled} onChange={toggleReview} />
+                                    <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all shadow-sm ${isReviewEnabled ? 'left-6' : 'left-1'}`}></div>
+                                </div>
                             </label>
                             {isReviewEnabled && (
-                                <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
-                                    <div className="flex items-center gap-2"><input type="number" min="1" name="chu_ky_ra_soat" value={formData.chu_ky_ra_soat || ''} onChange={handleChange} className={inputClass} /><span className="text-xs text-gray-500 whitespace-nowrap">Tháng / lần</span></div>
-                                    <div><label className="text-[10px] text-gray-400 uppercase block mb-1">Dự kiến rà soát</label><input type="date" name="ngay_ra_soat_tiep_theo" value={formData.ngay_ra_soat_tiep_theo || ''} onChange={handleChange} className={`${inputClass} dark:[color-scheme:dark]`} /></div>
+                                <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                    <div className="flex items-center gap-2">
+                                        <input type="number" min="1" name="chu_ky_ra_soat" value={formData.chu_ky_ra_soat || ''} onChange={handleChange} className="w-full h-9 px-3 rounded-lg border border-orange-300 dark:border-orange-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-orange-500/20 outline-none text-sm" placeholder="Số tháng" />
+                                        <span className="text-xs text-orange-600 dark:text-orange-400 whitespace-nowrap font-medium">Tháng/lần</span>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] text-orange-600 dark:text-orange-400 uppercase font-bold block mb-1">Ngày rà soát tiếp theo</label>
+                                        <input type="date" name="ngay_ra_soat_tiep_theo" value={formData.ngay_ra_soat_tiep_theo || ''} onChange={handleChange} className="w-full h-9 px-3 rounded-lg border border-orange-300 dark:border-orange-700 bg-white dark:bg-slate-900 outline-none text-sm dark:[color-scheme:dark]" />
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
                 </Section>
 
-                {/* 5. Responsibility */}
                 <Section title="Trách nhiệm" icon={UserCheck}>
                     <div className="space-y-4">
                         <div><label className={labelClass}>Người soạn thảo</label><SearchableSelect options={drafterOptions} value={formData.id_nguoi_soan_thao} onChange={(val) => handleSelectChange('id_nguoi_soan_thao', val)} placeholder="-- Chọn nhân sự --" /></div>
