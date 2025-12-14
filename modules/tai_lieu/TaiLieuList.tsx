@@ -415,43 +415,42 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                    <div className="flex flex-col h-full overflow-hidden relative bg-gray-50 dark:bg-slate-950">
                      
                      {/* --- 1. STICKY HEADER --- */}
-                     <div className="flex flex-col border-b border-gray-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shrink-0 z-20">
-                        <div className="flex items-center justify-between px-6 py-4">
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm">
-                                    <FileText size={20} />
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">{selectedDoc.ten_tai_lieu}</h2>
-                                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
-                                        <span className="font-mono font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 px-1.5 rounded">{selectedDoc.ma_tai_lieu}</span>
-                                        <span>•</span>
-                                        <span className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 px-1.5 rounded text-xs font-semibold">v{selectedDoc.phien_ban}</span>
-                                        <span>•</span>
-                                        <Badge status={selectedDoc.trang_thai} />
-                                    </div>
+                     {/* UPDATED: Fully responsive, sticky, and safe from overlap */}
+                     <div className="sticky top-0 z-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shrink-0 shadow-sm">
+                        <div className="flex items-center gap-3 min-w-0 flex-1 w-full sm:w-auto">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm shrink-0">
+                                <FileText size={20} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight truncate pr-2" title={selectedDoc.ten_tai_lieu}>{selectedDoc.ten_tai_lieu}</h2>
+                                <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mt-0.5">
+                                    <span className="font-mono font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 px-1.5 rounded border border-gray-200 dark:border-slate-700 text-xs">{selectedDoc.ma_tai_lieu}</span>
+                                    <span className="text-xs">•</span>
+                                    <span className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 px-1.5 rounded text-xs font-semibold border border-blue-100 dark:border-blue-800">v{selectedDoc.phien_ban}</span>
+                                    <span className="text-xs hidden sm:inline">•</span>
+                                    <Badge status={selectedDoc.trang_thai} />
                                 </div>
                             </div>
-                            
-                            <div className="flex items-center gap-2">
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => setShowHistoryModal(true)} 
-                                    className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
-                                    title="Xem lịch sử"
-                                >
-                                    <History size={18} />
-                                </Button>
-                                <Button variant="ghost" size="sm" onClick={handleCloseDrawer} className="text-gray-400 hover:text-red-500">
-                                    <X size={20} />
-                                </Button>
-                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setShowHistoryModal(true)} 
+                                className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                                title="Xem lịch sử"
+                            >
+                                <History size={18} />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={handleCloseDrawer} className="text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <X size={20} />
+                            </Button>
                         </div>
                      </div>
 
                      {/* --- 2. SCROLLABLE CONTENT --- */}
-                     <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24">
+                     <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 custom-scrollbar">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
                            
                            {/* --- LEFT COLUMN (MAIN CONTENT 66%) --- */}

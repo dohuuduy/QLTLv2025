@@ -210,11 +210,12 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
         <div className="fixed inset-0 z-[70] flex justify-end">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)} />
           <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2 truncate">
-                    <Layers className="text-primary" /> {editingItem ? 'Cập nhật danh mục' : 'Thêm danh mục mới'}
+            {/* STICKY HEADER */}
+            <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50/95 dark:bg-slate-800/95 backdrop-blur-sm shrink-0">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2 truncate pr-2">
+                    <Layers className="text-primary shrink-0" /> <span className="truncate">{editingItem ? 'Cập nhật danh mục' : 'Thêm danh mục mới'}</span>
                 </h2>
-                <Button variant="ghost" size="icon" onClick={() => setIsDrawerOpen(false)} className="shrink-0"><X size={20} /></Button>
+                <Button variant="ghost" size="icon" onClick={() => setIsDrawerOpen(false)} className="shrink-0 self-end sm:self-auto"><X size={20} /></Button>
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -239,7 +240,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
                 </div>
               </div>
             </div>
-            <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 sticky bottom-0 flex justify-end gap-3">
+            <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 sticky bottom-0 z-10 flex justify-end gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                <Button variant="ghost" onClick={() => setIsDrawerOpen(false)}>Hủy bỏ</Button>
                <Button onClick={handleSave} leftIcon={<Save size={16} />} isLoading={isLoading}>Lưu thông tin</Button>
             </div>

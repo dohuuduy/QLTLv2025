@@ -161,12 +161,13 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
             <div className="fixed inset-0 z-[70] flex justify-end">
                 <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)} />
                 <div className="w-full md:max-w-2xl bg-white dark:bg-slate-900 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
-                        <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2 truncate">
-                            <Layers className="text-primary" /> 
-                            {editingPlan.id ? 'Cập nhật kế hoạch' : 'Lập kế hoạch mới'}
+                    {/* STICKY HEADER */}
+                    <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-6 border-b border-gray-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shrink-0">
+                        <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2 truncate pr-2">
+                            <Layers className="text-primary shrink-0" /> 
+                            <span className="truncate">{editingPlan.id ? 'Cập nhật kế hoạch' : 'Lập kế hoạch mới'}</span>
                         </h2>
-                        <Button variant="ghost" size="icon" onClick={() => setIsDrawerOpen(false)} className="shrink-0"><X size={20} /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setIsDrawerOpen(false)} className="shrink-0 self-end sm:self-auto"><X size={20} /></Button>
                     </div>
                     
                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -192,7 +193,7 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
                             <div><label className={labelClass}>Phạm vi đánh giá</label><div className="relative"><MapPin size={16} className="absolute left-3 top-3 text-gray-400"/><textarea className="w-full p-2 pl-9 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm min-h-[80px]" placeholder="Các phòng ban, quy trình liên quan..." value={editingPlan.pham_vi || ''} onChange={(e) => setEditingPlan({...editingPlan, pham_vi: e.target.value})}/></div></div>
                         </div>
                     </div>
-                    <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 sticky bottom-0 flex justify-end gap-3">
+                    <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 sticky bottom-0 z-10 flex justify-end gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                         <Button variant="ghost" onClick={() => setIsDrawerOpen(false)}>Hủy bỏ</Button>
                         <Button onClick={handleSave} leftIcon={<Save size={16} />} isLoading={isLoading}>Lưu kế hoạch</Button>
                     </div>

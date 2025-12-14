@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { X, Save, Info, Calendar, UserCheck, FileType, Check, Paperclip, Trash2, Plus, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, GitBranch, Clock, AlertCircle, Lock, Unlock, Hash, ExternalLink, Eye, Layers, Tag, Bookmark } from 'lucide-react';
+import { Save, Info, Calendar, UserCheck, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, Lock, Unlock, Layers, Tag } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -240,20 +240,25 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
   return (
     <div className="flex flex-col h-full bg-gray-50/50 dark:bg-slate-950">
-      {/* Header - Improved Responsiveness */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-20 shrink-0">
-        <div className="flex flex-col min-w-0 flex-1">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate" title={initialData ? initialData.ten_tai_lieu : 'Tạo mới'}>
-            {initialData ? initialData.ten_tai_lieu : 'Soạn thảo tài liệu mới'}
+      {/* 
+          --- RESPONSIVE STICKY HEADER --- 
+          - Mobile: Flex-col to allow title wrapping and buttons below
+          - Desktop: Flex-row for standard layout
+          - Sticky & Z-index: Ensures it stays on top while scrolling form
+      */}
+      <div className="sticky top-0 z-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 md:p-6 border-b border-gray-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shrink-0 shadow-sm">
+        <div className="flex flex-col min-w-0 flex-1 w-full sm:w-auto">
+            <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white truncate pr-2" title={initialData ? initialData.ten_tai_lieu : 'Tạo mới'}>
+                {initialData ? initialData.ten_tai_lieu : 'Soạn thảo tài liệu mới'}
             </h2>
-            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mt-1">
                 <span>{initialData ? 'Cập nhật thông tin' : 'Điền thông tin bên dưới'}</span>
-                {initialData && <span className="bg-blue-100 text-blue-700 px-1.5 rounded font-mono">v{initialData.phien_ban}</span>}
+                {initialData && <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-1.5 py-0.5 rounded font-mono border border-blue-200 dark:border-blue-800">v{initialData.phien_ban}</span>}
             </div>
         </div>
         <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-end">
-            <Button variant="ghost" onClick={onCancel}>Hủy bỏ</Button>
-            <Button onClick={handleSubmit} leftIcon={<Save size={16} />}>Lưu lại</Button>
+            <Button variant="ghost" onClick={onCancel} className="flex-1 sm:flex-none justify-center">Hủy bỏ</Button>
+            <Button onClick={handleSubmit} leftIcon={<Save size={16} />} className="flex-1 sm:flex-none justify-center">Lưu lại</Button>
         </div>
       </div>
 
