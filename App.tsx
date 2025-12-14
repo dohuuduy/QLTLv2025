@@ -243,25 +243,34 @@ const AppContent: React.FC = () => {
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans">
       
-      {/* Sidebar Desktop - Z-INDEX 40 - SHRINK-0 ADDED TO PREVENT SQUASHING */}
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} hidden md:flex flex-col bg-slate-900 text-slate-200 transition-all duration-300 shadow-xl z-40 border-r border-slate-800 shrink-0 relative`}>
-        <div className="h-16 flex items-center justify-center border-b border-slate-800/50 bg-slate-950/20">
-           {isSidebarOpen ? <span className="font-bold text-xl tracking-tight text-white px-4 truncate">{APP_NAME}</span> : <span className="font-bold text-xl text-white">ISO</span>}
+      {/* Sidebar Desktop - Strictly Flex Item, shrink-0 to maintain width */}
+      <aside 
+        className={`
+          hidden md:flex flex-col 
+          ${isSidebarOpen ? 'w-64' : 'w-20'} 
+          bg-slate-900 text-slate-200 
+          transition-[width] duration-300 ease-in-out 
+          shadow-xl z-40 border-r border-slate-800 
+          shrink-0
+        `}
+      >
+        <div className="h-16 flex items-center justify-center border-b border-slate-800/50 bg-slate-950/20 shrink-0">
+           {isSidebarOpen ? <span className="font-bold text-xl tracking-tight text-white px-4 truncate animate-in fade-in">{APP_NAME}</span> : <span className="font-bold text-xl text-white">ISO</span>}
         </div>
         
-        <nav className="flex-1 py-6 px-3 overflow-y-auto space-y-1">
+        <nav className="flex-1 py-6 px-3 overflow-y-auto overflow-x-hidden space-y-1">
             {MENU_ITEMS.map((item) => (
               <button 
                 key={item.path}
                 onClick={() => setActiveTab(item.path)} 
-                className={`w-full flex items-center p-2.5 rounded-md transition-all duration-200 group
+                className={`w-full flex items-center p-2.5 rounded-md transition-all duration-200 group whitespace-nowrap
                   ${activeTab === item.path 
                     ? 'bg-primary text-primary-foreground shadow-md font-medium' 
                     : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'
                   }`}
               >
                   <item.icon size={20} className={`min-w-[20px] transition-transform ${isSidebarOpen ? '' : 'mx-auto'}`} />
-                  {isSidebarOpen && <span className="ml-3 text-sm">{item.label}</span>}
+                  {isSidebarOpen && <span className="ml-3 text-sm opacity-100 transition-opacity duration-300">{item.label}</span>}
                   
                   {!isSidebarOpen && activeTab === item.path && (
                     <div className="absolute left-16 bg-popover text-popover-foreground px-2 py-1 rounded text-xs shadow-md border whitespace-nowrap z-50 animate-in fade-in slide-in-from-left-2 ml-2">
@@ -272,9 +281,9 @@ const AppContent: React.FC = () => {
             ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800 bg-slate-950/30">
+        <div className="p-4 border-t border-slate-800 bg-slate-950/30 shrink-0 overflow-hidden">
           <div className="flex items-center gap-3">
-             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-inner border border-white/10">
+             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-inner border border-white/10 shrink-0">
                {currentUser.ho_ten ? currentUser.ho_ten.charAt(0) : '?'}
              </div>
              {isSidebarOpen && (
@@ -295,7 +304,7 @@ const AppContent: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content Area - MIN-W-0 ADDED TO PREVENT FLEX OVERFLOW */}
+      {/* Main Content Area - Flex-1 takes remaining space, min-w-0 prevents flex overflow issues */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden bg-muted/20 relative min-w-0">
         {/* Header - Z-INDEX 30 */}
         <header className="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 md:px-6 z-30 transition-colors sticky top-0 shrink-0">
@@ -433,7 +442,7 @@ const AppContent: React.FC = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6 relative text-foreground">
+        <main className="flex-1 overflow-auto p-4 md:p-6 relative text-foreground w-full">
             <div className="max-w-[1600px] mx-auto h-full flex flex-col">
                 {renderContent()}
             </div>
