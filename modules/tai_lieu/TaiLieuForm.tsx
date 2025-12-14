@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { X, Save, Info, Calendar, UserCheck, FileType, Check, Paperclip, Trash2, Plus, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, GitBranch, Clock, AlertCircle, Lock, Unlock, Hash, ExternalLink, Eye } from 'lucide-react';
+import { X, Save, Info, Calendar, UserCheck, FileType, Check, Paperclip, Trash2, Plus, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, GitBranch, Clock, AlertCircle, Lock, Unlock, Hash, ExternalLink, Eye, Layers, Tag, Bookmark } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -98,7 +98,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
 
   useEffect(() => {
-    // Only calculate if review is enabled and we have valid inputs
     if (isReviewEnabled && formData.ngay_hieu_luc && formData.chu_ky_ra_soat) {
         try {
             const hieuLucDate = new Date(formData.ngay_hieu_luc);
@@ -146,10 +145,8 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
       const newState = !isReviewEnabled;
       setIsReviewEnabled(newState);
       if (!newState) {
-          // Turning OFF: Reset cycle
           setFormData(prev => ({ ...prev, chu_ky_ra_soat: 0, ngay_ra_soat_tiep_theo: '' }));
       } else {
-          // Turning ON: Default to 12 months if not set
           setFormData(prev => ({ ...prev, chu_ky_ra_soat: prev.chu_ky_ra_soat || 12 }));
       }
   };
@@ -178,11 +175,8 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
       dialog.alert("Vui lòng dán đường dẫn (Link) vào ô trống trước khi chọn loại file!", { type: 'warning' });
       return;
     }
-    
-    // Auto-correct type based on extension if possible
     const detectedType = detectTypeFromUrl(urlInput);
     const finalType = detectedType !== 'link' ? detectedType : selectedType;
-
     const name = getFileNameFromUrl(urlInput);
     const file: DinhKem = {
       id: `file_${Date.now()}`,
@@ -205,452 +199,201 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
         dialog.alert("Vui lòng nhập Mã và Tên tài liệu!", { type: 'warning' });
         return;
     }
-
-    // Clean data before saving
     const cleanData = { ...formData };
-    
-    // Convert empty strings to null for DATE fields to prevent Supabase 400 error
     if (cleanData.ngay_ra_soat_tiep_theo === '') cleanData.ngay_ra_soat_tiep_theo = null as any;
     if (cleanData.ngay_ban_hanh === '') cleanData.ngay_ban_hanh = null as any;
     if (cleanData.ngay_hieu_luc === '') cleanData.ngay_hieu_luc = null as any;
-
     onSave(cleanData);
   };
 
   const getFileTypeConfig = (type: string) => {
     switch(type) {
-      case 'pdf': 
-        return { 
-            icon: <FileType size={20} strokeWidth={1.5} />, 
-            color: 'text-red-600 dark:text-red-400', 
-            bg: 'bg-red-50 dark:bg-red-900/20',
-            border: 'border-red-100 dark:border-red-900/30'
-        };
-      case 'doc': 
-        return { 
-            icon: <FileText size={20} strokeWidth={1.5} />, 
-            color: 'text-blue-600 dark:text-blue-400', 
-            bg: 'bg-blue-50 dark:bg-blue-900/20',
-            border: 'border-blue-100 dark:border-blue-900/30'
-        };
-      case 'excel': 
-        return { 
-            icon: <FileSpreadsheet size={20} strokeWidth={1.5} />, 
-            color: 'text-emerald-600 dark:text-emerald-400', 
-            bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-            border: 'border-emerald-100 dark:border-emerald-900/30'
-        };
-      case 'link': 
-        return { 
-            icon: <LinkIcon size={20} strokeWidth={1.5} />, 
-            color: 'text-indigo-600 dark:text-indigo-400', 
-            bg: 'bg-indigo-50 dark:bg-indigo-900/20',
-            border: 'border-indigo-100 dark:border-indigo-900/30'
-        };
-      default: 
-        return { 
-            icon: <File size={20} strokeWidth={1.5} />, 
-            color: 'text-slate-600 dark:text-slate-400', 
-            bg: 'bg-slate-100 dark:bg-slate-800',
-            border: 'border-slate-200 dark:border-slate-700'
-        };
+      case 'pdf': return { icon: <FileType size={20} strokeWidth={1.5} />, color: 'text-red-600', bg: 'bg-red-50' };
+      case 'doc': return { icon: <FileText size={20} strokeWidth={1.5} />, color: 'text-blue-600', bg: 'bg-blue-50' };
+      case 'excel': return { icon: <FileSpreadsheet size={20} strokeWidth={1.5} />, color: 'text-emerald-600', bg: 'bg-emerald-50' };
+      case 'link': return { icon: <LinkIcon size={20} strokeWidth={1.5} />, color: 'text-indigo-600', bg: 'bg-indigo-50' };
+      default: return { icon: <File size={20} strokeWidth={1.5} />, color: 'text-slate-600', bg: 'bg-slate-100' };
     }
   };
 
   const loaiTaiLieuOptions = masterData.loaiTaiLieu.map(i => ({ value: i.ten, label: i.ten }));
   const linhVucOptions = masterData.linhVuc.map(i => ({ value: i.ten, label: i.ten }));
   
-  // Update to use ID as value
-  const mapUserToOption = (u: NhanSu) => ({
-      value: u.id,
-      label: u.ho_ten,
-      subLabel: u.chuc_vu
-  });
+  const mapUserToOption = (u: NhanSu) => ({ value: u.id, label: u.ho_ten, subLabel: u.chuc_vu });
+  const drafterOptions = masterData.nhanSu.filter(u => u.roles.includes('SOAN_THAO') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
+  const reviewerOptions = masterData.nhanSu.filter(u => u.roles.includes('XEM_XET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
+  const approverOptions = masterData.nhanSu.filter(u => u.roles.includes('PHE_DUYET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
 
-  const drafterOptions = masterData.nhanSu
-      .filter(u => u.roles.includes('SOAN_THAO') || u.roles.includes('QUAN_TRI'))
-      .map(mapUserToOption);
-
-  const reviewerOptions = masterData.nhanSu
-      .filter(u => u.roles.includes('XEM_XET') || u.roles.includes('QUAN_TRI'))
-      .map(mapUserToOption);
-
-  const approverOptions = masterData.nhanSu
-      .filter(u => u.roles.includes('PHE_DUYET') || u.roles.includes('QUAN_TRI'))
-      .map(mapUserToOption);
-
-  const inputClass = "w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:focus:ring-primary/40 outline-none transition-all placeholder:text-gray-400 text-sm";
-  const textareaClass = "w-full p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:focus:ring-primary/40 outline-none transition-all placeholder:text-gray-400 text-sm";
-  const labelClass = "text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1.5 block";
-  const sectionTitleClass = "text-base font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2";
+  const inputClass = "w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-gray-400 text-sm";
+  const textareaClass = "w-full p-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-gray-400 text-sm";
+  const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5 block";
+  
+  // Section Wrapper
+  const Section = ({ title, icon: Icon, children, className = "" }: any) => (
+      <div className={`bg-white dark:bg-slate-900 p-5 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm ${className}`}>
+          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2 border-b border-gray-50 dark:border-slate-800/50 pb-2">
+              <Icon size={16} className="text-blue-500" /> {title}
+          </h3>
+          {children}
+      </div>
+  );
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-950">
-      <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-100 dark:border-slate-800">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white truncate pr-4" title={initialData ? initialData.ten_tai_lieu : 'Thêm tài liệu mới'}>
-          {initialData ? initialData.ten_tai_lieu : 'Thêm tài liệu mới'}
-        </h2>
-        <Button variant="ghost" size="icon" onClick={onCancel}>
-          <X size={20} />
-        </Button>
+    <div className="flex flex-col h-full bg-gray-50/50 dark:bg-slate-950">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-20">
+        <div className="flex flex-col">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate max-w-md" title={initialData ? initialData.ten_tai_lieu : 'Tạo mới'}>
+            {initialData ? initialData.ten_tai_lieu : 'Soạn thảo tài liệu mới'}
+            </h2>
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span>{initialData ? 'Cập nhật thông tin' : 'Điền thông tin bên dưới'}</span>
+                {initialData && <span className="bg-blue-100 text-blue-700 px-1.5 rounded font-mono">v{initialData.phien_ban}</span>}
+            </div>
+        </div>
+        <div className="flex gap-2">
+            <Button variant="ghost" onClick={onCancel}>Hủy bỏ</Button>
+            <Button onClick={handleSubmit} leftIcon={<Save size={16} />}>Lưu lại</Button>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-8">
-        
-        {/* Nhóm 1: Thông tin định danh */}
-        <div>
-          <h3 className={sectionTitleClass}>
-            <FileType size={18} className="text-blue-500" /> Thông tin chung
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2 md:col-span-2">
-              <label className={labelClass}>Tên tài liệu <span className="text-red-500">*</span></label>
-              <input
-                required
-                name="ten_tai_lieu"
-                value={formData.ten_tai_lieu}
-                onChange={handleChange}
-                className={inputClass}
-                placeholder="Nhập tên đầy đủ của tài liệu..."
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             
-             <div className="space-y-2">
-              <label className={labelClass}><span className="flex items-center gap-1"><GitBranch size={12}/> Thuộc tài liệu (Cha)</span></label>
-              <SearchableSelect
-                 options={availableParents}
-                 value={formData.tai_lieu_cha_id}
-                 onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)}
-                 placeholder="-- Không có (Tài liệu gốc) --"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className={labelClass}>Loại tài liệu</label>
-              <SearchableSelect
-                 options={loaiTaiLieuOptions}
-                 value={formData.loai_tai_lieu}
-                 onChange={(val) => handleSelectChange('loai_tai_lieu', val)}
-                 placeholder="-- Chọn loại --"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className={labelClass}>Mã tài liệu <span className="text-red-500">*</span></label>
-              <div className="relative">
-                <input
-                    required
-                    name="ma_tai_lieu"
-                    value={formData.ma_tai_lieu}
-                    onChange={handleChange}
-                    className={`${inputClass} pr-10 ${isCodeLocked ? 'bg-gray-100 dark:bg-slate-800 text-gray-500 cursor-not-allowed' : ''}`}
-                    placeholder="VD: QT-NS-01"
-                    readOnly={isCodeLocked}
-                />
-                <button 
-                   type="button"
-                   onClick={() => setIsCodeLocked(!isCodeLocked)}
-                   className="absolute right-2 top-2 p-1 text-gray-400 hover:text-blue-500 transition-colors"
-                   title={isCodeLocked ? "Mở khóa để sửa thủ công" : "Khóa để sinh mã tự động"}
-                >
-                    {isCodeLocked ? <Lock size={16} /> : <Unlock size={16} />}
-                </button>
-              </div>
-              {isCodeLocked && formData.tai_lieu_cha_id && (
-                  <p className="text-[10px] text-blue-500 flex items-center gap-1 mt-1">
-                      <Hash size={10} /> Đang tự động sinh mã theo quy tắc cha-con
-                  </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className={labelClass}>Thứ tự sắp xếp</label>
-              <input
-                type="number"
-                name="thu_tu"
-                value={formData.thu_tu}
-                onChange={handleChange}
-                className={inputClass}
-                placeholder="0"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className={labelClass}>Lĩnh vực</label>
-              <SearchableSelect
-                 options={linhVucOptions}
-                 value={formData.linh_vuc}
-                 onChange={(val) => handleSelectChange('linh_vuc', val)}
-                 placeholder="-- Chọn lĩnh vực --"
-              />
-            </div>
-
-             <div className="space-y-2 md:col-span-2">
-              <label className={labelClass}>Tiêu chuẩn áp dụng (Chọn nhiều)</label>
-              <div className="flex flex-wrap gap-2">
-                {masterData.tieuChuan.map(item => {
-                  const isSelected = formData.tieu_chuan?.includes(item.ten);
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => toggleTieuChuan(item.ten)}
-                      className={`
-                        flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-all
-                        ${isSelected 
-                          ? 'bg-primary text-primary-foreground border-primary shadow-sm' 
-                          : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'
-                        }
-                      `}
-                    >
-                      {isSelected ? <Check size={14} className="stroke-[3]" /> : <div className="w-3.5 h-3.5" />}
-                      {item.ten}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Nhóm 2: Phiên bản & Thời gian */}
-        <div>
-          <h3 className={sectionTitleClass}>
-            <Calendar size={18} className="text-green-500" /> Phiên bản & Thời gian
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="space-y-2">
-              <label className={labelClass}>Phiên bản (Ver)</label>
-              <input
-                name="phien_ban"
-                value={formData.phien_ban}
-                onChange={handleChange}
-                className={inputClass}
-                placeholder="VD: 1.0"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className={labelClass}>Lần ban hành</label>
-              <input
-                type="number"
-                min="0"
-                name="lan_ban_hanh"
-                value={formData.lan_ban_hanh}
-                onChange={handleChange}
-                className={inputClass}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className={labelClass}>Ngày ban hành</label>
-              <input
-                type="date"
-                name="ngay_ban_hanh"
-                value={formData.ngay_ban_hanh}
-                onChange={handleChange}
-                className={`${inputClass} dark:[color-scheme:dark]`}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className={labelClass}>Ngày hiệu lực</label>
-              <input
-                type="date"
-                name="ngay_hieu_luc"
-                value={formData.ngay_hieu_luc}
-                onChange={handleChange}
-                className={`${inputClass} dark:[color-scheme:dark]`}
-              />
-            </div>
-            
-            {/* New Design: Kiểm soát định kỳ (Có Toggle) */}
-            <div className="col-span-1 md:col-span-4 mt-2">
-               <div className={`rounded-xl border transition-colors ${isReviewEnabled ? 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800' : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 border-dashed'}`}>
-                  <div className="p-4 flex items-center justify-between">
-                     <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg border ${isReviewEnabled ? 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-slate-800 border-transparent text-gray-400'}`}>
-                           <RefreshCw size={18} />
+            {/* --- LEFT COLUMN: MAIN CONTENT (66%) --- */}
+            <div className="lg:col-span-2 space-y-6">
+                
+                {/* 1. Basic Info */}
+                <Section title="Thông tin định danh" icon={FileText}>
+                    <div className="space-y-4">
+                        <div>
+                            <label className={labelClass}>Tên tài liệu <span className="text-red-500">*</span></label>
+                            <input required name="ten_tai_lieu" value={formData.ten_tai_lieu} onChange={handleChange} className={inputClass} placeholder="VD: Quy trình kiểm soát chất lượng..." autoFocus />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className={labelClass}>Mã tài liệu <span className="text-red-500">*</span></label>
+                                <div className="relative">
+                                    <input required name="ma_tai_lieu" value={formData.ma_tai_lieu} onChange={handleChange} className={`${inputClass} pr-9 font-mono font-bold text-blue-700 dark:text-blue-400 ${isCodeLocked ? 'bg-gray-50 dark:bg-slate-800 text-gray-500 cursor-not-allowed' : ''}`} placeholder="Auto-gen or Type..." readOnly={isCodeLocked} />
+                                    <button type="button" onClick={() => setIsCodeLocked(!isCodeLocked)} className="absolute right-2 top-2 text-gray-400 hover:text-blue-500 transition-colors" title={isCodeLocked ? "Mở khóa sửa thủ công" : "Khóa để sinh mã tự động"}>
+                                        {isCodeLocked ? <Lock size={14} /> : <Unlock size={14} />}
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label className={labelClass}>Tài liệu cha (Nếu có)</label>
+                                <SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} placeholder="-- Chọn tài liệu gốc --" />
+                            </div>
                         </div>
                         <div>
-                           <h4 className={`text-sm font-bold ${isReviewEnabled ? 'text-gray-800 dark:text-gray-100' : 'text-gray-500'}`}>Kiểm soát định kỳ</h4>
-                           <p className="text-[11px] text-gray-500">Thiết lập thời gian nhắc nhở rà soát tài liệu</p>
+                            <label className={labelClass}>Mô tả tóm tắt</label>
+                            <textarea name="mo_ta_tom_tat" value={formData.mo_ta_tom_tat} onChange={handleChange} className={`${textareaClass} min-h-[120px]`} placeholder="Mô tả phạm vi áp dụng, mục đích của tài liệu..." />
                         </div>
-                     </div>
-                     
-                     {/* Toggle Switch */}
-                     <label className="relative inline-flex items-center cursor-pointer" title={isReviewEnabled ? "Tắt kiểm soát định kỳ" : "Bật kiểm soát định kỳ"}>
-                        <input type="checkbox" className="sr-only peer" checked={isReviewEnabled} onChange={toggleReview} />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                     </label>
-                  </div>
+                    </div>
+                </Section>
 
-                  {isReviewEnabled && (
-                      <div className="px-4 pb-4 pt-0 animate-in slide-in-from-top-2 fade-in duration-200">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200 dark:border-slate-700">
-                              <div>
-                                  <label className={labelClass}>Chu kỳ rà soát (Tháng)</label>
-                                  <div className="flex items-center gap-2">
-                                      <input
-                                          type="number"
-                                          min="1"
-                                          name="chu_ky_ra_soat"
-                                          value={formData.chu_ky_ra_soat || ''}
-                                          onChange={handleChange}
-                                          className={inputClass}
-                                      />
-                                      <span className="text-sm text-gray-500 whitespace-nowrap">Tháng</span>
-                                  </div>
-                              </div>
-                              <div>
-                                  <label className={labelClass}>Ngày rà soát tiếp theo</label>
-                                  <input
-                                      type="date"
-                                      name="ngay_ra_soat_tiep_theo"
-                                      value={formData.ngay_ra_soat_tiep_theo || ''}
-                                      onChange={handleChange}
-                                      className={`${inputClass} dark:[color-scheme:dark]`}
-                                  />
-                              </div>
-                          </div>
-                      </div>
-                  )}
-               </div>
-            </div>
-          </div>
-        </div>
+                {/* 2. Attachments */}
+                <Section title="Nội dung & Đính kèm" icon={Paperclip}>
+                    <div className="space-y-4">
+                        <div className="flex gap-2">
+                            <input value={urlInput} onChange={(e) => setUrlInput(e.target.value)} className={inputClass} placeholder="Dán đường dẫn (Google Drive, SharePoint...) vào đây" />
+                            <div className="flex gap-1 shrink-0">
+                                <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('pdf')}><FileType size={14} className="text-red-600"/> PDF</Button>
+                                <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('doc')}><FileText size={14} className="text-blue-600"/> Word</Button>
+                                <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('excel')}><FileSpreadsheet size={14} className="text-green-600"/> Excel</Button>
+                            </div>
+                        </div>
 
-        {/* Nhóm 3: Nội dung & Đính kèm */}
-        <div>
-          <h3 className={sectionTitleClass}>
-            <Paperclip size={18} className="text-purple-500" /> Nội dung & Đính kèm
-          </h3>
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <label className={labelClass}>Mô tả tóm tắt nội dung</label>
-              <textarea
-                name="mo_ta_tom_tat"
-                value={formData.mo_ta_tom_tat}
-                onChange={handleChange}
-                className={`${textareaClass} min-h-[100px]`}
-                placeholder="Tóm tắt phạm vi, mục đích của tài liệu..."
-              />
+                        {formData.dinh_kem && formData.dinh_kem.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-2">
+                                {formData.dinh_kem.map(file => {
+                                    const config = getFileTypeConfig(file.loai);
+                                    return (
+                                        <div key={file.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/30 group hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
+                                            <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${config.bg} ${config.color}`}>{config.icon}</div>
+                                            <div className="flex-1 min-w-0">
+                                                <a href={file.url} target="_blank" rel="noreferrer" className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate hover:text-blue-600 block">{file.ten_file}</a>
+                                                <div className="text-[10px] text-gray-400">{format(new Date(file.ngay_upload), 'dd/MM/yyyy HH:mm')}</div>
+                                            </div>
+                                            <button type="button" onClick={() => removeFile(file.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-lg text-gray-400 text-sm">Chưa có file đính kèm</div>
+                        )}
+                    </div>
+                </Section>
             </div>
 
-            <div className="space-y-2">
-              <label className={labelClass}>Link tài liệu đính kèm (PDF/Word/Excel)</label>
-              <div className="flex gap-2">
-                <input
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  className={inputClass}
-                  placeholder="Dán đường dẫn (URL) tài liệu vào đây..."
-                />
-              </div>
-              <div className="flex gap-2 mt-2">
-                 <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('pdf')}><FileType size={14} className="mr-1 text-red-600"/> PDF</Button>
-                 <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('doc')}><FileText size={14} className="mr-1 text-blue-600"/> Word</Button>
-                 <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('excel')}><FileSpreadsheet size={14} className="mr-1 text-green-600"/> Excel</Button>
-                 <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('link')}><LinkIcon size={14} className="mr-1"/> Link Khác</Button>
-              </div>
-
-              {formData.dinh_kem && formData.dinh_kem.length > 0 && (
-                <div className="grid grid-cols-1 gap-3 mt-4">
-                  {formData.dinh_kem.map(file => {
-                    const config = getFileTypeConfig(file.loai);
-                    return (
-                      <div key={file.id} className="group flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-all">
-                        {/* Icon */}
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${config.bg} ${config.color}`}>
-                           {config.icon}
+            {/* --- RIGHT COLUMN: META DATA (33%) --- */}
+            <div className="space-y-6">
+                
+                {/* 3. Classification */}
+                <Section title="Phân loại" icon={Layers}>
+                    <div className="space-y-4">
+                        <div>
+                            <label className={labelClass}>Loại tài liệu</label>
+                            <SearchableSelect options={loaiTaiLieuOptions} value={formData.loai_tai_lieu} onChange={(val) => handleSelectChange('loai_tai_lieu', val)} placeholder="-- Chọn loại --" />
                         </div>
+                        <div>
+                            <label className={labelClass}>Lĩnh vực hoạt động</label>
+                            <SearchableSelect options={linhVucOptions} value={formData.linh_vuc} onChange={(val) => handleSelectChange('linh_vuc', val)} placeholder="-- Chọn lĩnh vực --" />
+                        </div>
+                        <div>
+                            <label className={labelClass}>Tiêu chuẩn ISO (Tag)</label>
+                            <div className="flex flex-wrap gap-2">
+                                {masterData.tieuChuan.map(item => {
+                                    const isSelected = formData.tieu_chuan?.includes(item.ten);
+                                    return (
+                                        <button key={item.id} type="button" onClick={() => toggleTieuChuan(item.ten)} className={`px-2 py-1 rounded text-xs border transition-all ${isSelected ? 'bg-blue-100 text-blue-700 border-blue-200 font-bold' : 'bg-white dark:bg-slate-800 text-gray-600 border-gray-200 hover:bg-gray-50'}`}>
+                                            {item.ten}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </Section>
+
+                {/* 4. Control Info */}
+                <Section title="Kiểm soát & Hiệu lực" icon={Calendar}>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div><label className={labelClass}>Phiên bản</label><input name="phien_ban" value={formData.phien_ban} onChange={handleChange} className={inputClass} placeholder="1.0" /></div>
+                            <div><label className={labelClass}>Lần ban hành</label><input type="number" min="0" name="lan_ban_hanh" value={formData.lan_ban_hanh} onChange={handleChange} className={inputClass} /></div>
+                        </div>
+                        <div><label className={labelClass}>Ngày ban hành</label><input type="date" name="ngay_ban_hanh" value={formData.ngay_ban_hanh} onChange={handleChange} className={`${inputClass} dark:[color-scheme:dark]`} /></div>
+                        <div><label className={labelClass}>Ngày hiệu lực</label><input type="date" name="ngay_hieu_luc" value={formData.ngay_hieu_luc} onChange={handleChange} className={`${inputClass} dark:[color-scheme:dark]`} /></div>
                         
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                           <a href={file.url} target="_blank" rel="noreferrer" className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate hover:text-blue-600 dark:hover:text-blue-400 block mb-0.5">
-                              {file.ten_file}
-                           </a>
-                           <div className="flex items-center gap-2 text-xs text-gray-400">
-                              <span className="uppercase font-bold">{file.loai}</span>
-                              <span>•</span>
-                              <span>{format(new Date(file.ngay_upload), 'dd/MM/yyyy HH:mm')}</span>
-                           </div>
+                        <div className={`p-3 rounded-lg border transition-colors ${isReviewEnabled ? 'bg-blue-50/50 border-blue-200 dark:bg-blue-900/10 dark:border-blue-800' : 'bg-gray-50 dark:bg-slate-800 border-transparent'}`}>
+                            <label className="flex items-center justify-between cursor-pointer mb-2">
+                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2"><RefreshCw size={14}/> Định kỳ rà soát</span>
+                                <input type="checkbox" className="accent-blue-600 w-4 h-4" checked={isReviewEnabled} onChange={toggleReview} />
+                            </label>
+                            {isReviewEnabled && (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+                                    <div className="flex items-center gap-2"><input type="number" min="1" name="chu_ky_ra_soat" value={formData.chu_ky_ra_soat || ''} onChange={handleChange} className={inputClass} /><span className="text-xs text-gray-500 whitespace-nowrap">Tháng / lần</span></div>
+                                    <div><label className="text-[10px] text-gray-400 uppercase block mb-1">Dự kiến rà soát</label><input type="date" name="ngay_ra_soat_tiep_theo" value={formData.ngay_ra_soat_tiep_theo || ''} onChange={handleChange} className={`${inputClass} dark:[color-scheme:dark]`} /></div>
+                                </div>
+                            )}
                         </div>
+                    </div>
+                </Section>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                           <a 
-                             href={file.url} 
-                             target="_blank" 
-                             rel="noreferrer"
-                             className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                             title="Mở liên kết"
-                           >
-                             <ExternalLink size={18} />
-                           </a>
-                           <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 mx-1"></div>
-                           <button 
-                             type="button"
-                             onClick={() => removeFile(file.id)}
-                             className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                             title="Xóa file"
-                           >
-                             <Trash2 size={18} />
-                           </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                {/* 5. Responsibility */}
+                <Section title="Trách nhiệm" icon={UserCheck}>
+                    <div className="space-y-4">
+                        <div><label className={labelClass}>Người soạn thảo</label><SearchableSelect options={drafterOptions} value={formData.id_nguoi_soan_thao} onChange={(val) => handleSelectChange('id_nguoi_soan_thao', val)} placeholder="-- Chọn nhân sự --" /></div>
+                        <div><label className={labelClass}>Người xem xét</label><SearchableSelect options={reviewerOptions} value={formData.id_nguoi_xem_xet} onChange={(val) => handleSelectChange('id_nguoi_xem_xet', val)} placeholder="-- Chọn nhân sự --" /></div>
+                        <div><label className={labelClass}>Người phê duyệt</label><SearchableSelect options={approverOptions} value={formData.id_nguoi_phe_duyet} onChange={(val) => handleSelectChange('id_nguoi_phe_duyet', val)} placeholder="-- Chọn nhân sự --" /></div>
+                    </div>
+                </Section>
+
             </div>
-          </div>
         </div>
-
-        {/* Nhóm 4: Trách nhiệm */}
-        <div>
-          <h3 className={sectionTitleClass}>
-            <UserCheck size={18} className="text-orange-500" /> Trách nhiệm
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2 space-y-2">
-              <label className={labelClass}>Người soạn thảo (Bộ phận sẽ tự động theo người soạn)</label>
-              <SearchableSelect
-                 options={drafterOptions}
-                 value={formData.id_nguoi_soan_thao}
-                 onChange={(val) => handleSelectChange('id_nguoi_soan_thao', val)}
-                 placeholder="-- Chọn người soạn --"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className={labelClass}>Người xem xét</label>
-              <SearchableSelect
-                 options={reviewerOptions}
-                 value={formData.id_nguoi_xem_xet}
-                 onChange={(val) => handleSelectChange('id_nguoi_xem_xet', val)}
-                 placeholder="-- Chọn người xem xét --"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className={labelClass}>Người phê duyệt</label>
-              <SearchableSelect
-                 options={approverOptions}
-                 value={formData.id_nguoi_phe_duyet}
-                 onChange={(val) => handleSelectChange('id_nguoi_phe_duyet', val)}
-                 placeholder="-- Chọn người duyệt --"
-              />
-            </div>
-          </div>
-        </div>
-
       </form>
-
-      <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 sticky bottom-0 flex justify-end gap-3">
-        <Button variant="ghost" onClick={onCancel}>Hủy bỏ</Button>
-        <Button onClick={handleSubmit} leftIcon={<Save size={16} />}>Lưu thông tin</Button>
-      </div>
     </div>
   );
 };

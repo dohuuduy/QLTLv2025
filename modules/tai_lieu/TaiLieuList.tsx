@@ -8,7 +8,7 @@ import { Badge } from '../../components/ui/Badge';
 import { TaiLieuForm } from './TaiLieuForm';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
 import { AIChatWidget } from '../../components/AIChatWidget';
-import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, Search, FileType, FileSpreadsheet, Lock, History, Hash, Calendar, Shield, UserCheck, Briefcase, Tag, RefreshCw, Paperclip, ExternalLink, Archive, Info } from 'lucide-react';
+import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, Search, FileType, FileSpreadsheet, Lock, History, Hash, Calendar, Shield, UserCheck, Briefcase, Tag, RefreshCw, Paperclip, ExternalLink, Archive, Info, LayoutDashboard } from 'lucide-react';
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 import { format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
@@ -400,7 +400,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" onClick={handleCloseDrawer}/>
            
            {/* Drawer starts below navbar with top border */}
-           <div className="w-full max-w-4xl bg-white dark:bg-slate-950 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
+           <div className="w-full max-w-7xl bg-white dark:bg-slate-950 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
               {viewMode === 'form' ? (
                  <TaiLieuForm 
                    initialData={selectedDoc} 
@@ -411,22 +411,24 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                  />
               ) : (
                  selectedDoc && (
-                   <div className="flex flex-col h-full overflow-hidden relative bg-white dark:bg-slate-950">
+                   <div className="flex flex-col h-full overflow-hidden relative bg-gray-50 dark:bg-slate-950">
                      
                      {/* --- 1. STICKY HEADER --- */}
-                     <div className="flex flex-col border-b border-gray-100 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shrink-0 z-20">
-                        
-                        {/* Top Bar: Identity & Actions */}
-                        <div className="flex items-center justify-between px-6 py-3 border-b border-gray-50 dark:border-slate-800/50">
+                     <div className="flex flex-col border-b border-gray-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shrink-0 z-20">
+                        <div className="flex items-center justify-between px-6 py-4">
                             <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg border border-blue-100 dark:border-blue-800/50">
-                                    <Hash size={16} className="opacity-70" />
-                                    <span className="font-mono font-bold text-lg tracking-tight">{selectedDoc.ma_tai_lieu}</span>
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm">
+                                    <FileText size={20} />
                                 </div>
-                                <span className="text-gray-300 dark:text-slate-700 text-xl font-light">|</span>
-                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 font-medium">
-                                    <span className="bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs font-mono border border-gray-200 dark:border-slate-700">v{selectedDoc.phien_ban}</span>
-                                    <Badge status={selectedDoc.trang_thai} />
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">{selectedDoc.ten_tai_lieu}</h2>
+                                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
+                                        <span className="font-mono font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 px-1.5 rounded">{selectedDoc.ma_tai_lieu}</span>
+                                        <span>•</span>
+                                        <span className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 px-1.5 rounded text-xs font-semibold">v{selectedDoc.phien_ban}</span>
+                                        <span>•</span>
+                                        <Badge status={selectedDoc.trang_thai} />
+                                    </div>
                                 </div>
                             </div>
                             
@@ -445,144 +447,83 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                 </Button>
                             </div>
                         </div>
-
-                        {/* Title Section */}
-                        <div className="px-6 py-5">
-                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-                                {selectedDoc.ten_tai_lieu}
-                            </h2>
-                        </div>
                      </div>
 
                      {/* --- 2. SCROLLABLE CONTENT --- */}
-                     <div className="flex-1 overflow-y-auto p-5 bg-gray-50/50 dark:bg-slate-950 pb-32">
-                        
-                        {/* Quick Stats Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm flex items-start gap-3">
-                                <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-lg shrink-0">
-                                    <FileText size={20} />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-500 uppercase font-bold mb-0.5">Loại tài liệu</p>
-                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 line-clamp-1" title={selectedDoc.loai_tai_lieu}>{selectedDoc.loai_tai_lieu}</p>
-                                </div>
-                            </div>
-                            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm flex items-start gap-3">
-                                <div className="p-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-lg shrink-0">
-                                    <Briefcase size={20} />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-500 uppercase font-bold mb-0.5">Bộ phận</p>
-                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 line-clamp-1" title={getDept(selectedDoc.id_nguoi_soan_thao)}>{getDept(selectedDoc.id_nguoi_soan_thao)}</p>
-                                </div>
-                            </div>
-                            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm flex items-start gap-3">
-                                <div className="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 rounded-lg shrink-0">
-                                    <Calendar size={20} />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-500 uppercase font-bold mb-0.5">Ngày hiệu lực</p>
-                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{selectedDoc.ngay_hieu_luc ? format(new Date(selectedDoc.ngay_hieu_luc), 'dd/MM/yyyy') : '---'}</p>
-                                </div>
-                            </div>
-                            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm flex items-start gap-3">
-                                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-lg shrink-0">
-                                    <GitMerge size={20} />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-500 uppercase font-bold mb-0.5">Lần ban hành</p>
-                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{String(selectedDoc.lan_ban_hanh).padStart(2, '0')}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                     <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
                            
-                           {/* --- LEFT COLUMN (MAIN) --- */}
-                           <div className="xl:col-span-2 space-y-6">
-                              
-                              {/* Description Section */}
-                              <div className="space-y-3">
-                                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide flex items-center gap-2">
+                           {/* --- LEFT COLUMN (MAIN CONTENT 66%) --- */}
+                           <div className="lg:col-span-2 space-y-6">
+                              {/* Content Card */}
+                              <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-6">
+                                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-3 mb-4">
                                       <Info size={16} className="text-blue-500"/> Nội dung tóm tắt
                                   </h3>
-                                  <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
-                                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm text-justify">
-                                          {selectedDoc.mo_ta_tom_tat || <span className="text-gray-400 italic">Chưa có mô tả chi tiết cho tài liệu này.</span>}
-                                      </p>
-                                      
-                                      {/* Tags/Standards */}
-                                      {selectedDoc.tieu_chuan && selectedDoc.tieu_chuan.length > 0 && (
-                                          <div className="mt-6 pt-4 border-t border-gray-100 dark:border-slate-800 flex flex-wrap gap-2">
-                                              {selectedDoc.tieu_chuan.map(t => (
-                                                  <span key={t} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-700">
-                                                      <Tag size={12} /> {t}
-                                                  </span>
-                                              ))}
-                                          </div>
-                                      )}
-                                  </div>
+                                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm text-justify whitespace-pre-wrap">
+                                      {selectedDoc.mo_ta_tom_tat || <span className="text-gray-400 italic">Chưa có mô tả chi tiết cho tài liệu này.</span>}
+                                  </p>
                               </div>
 
-                              {/* Attachments Section */}
-                              <div className="space-y-3">
-                                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide flex items-center gap-2">
+                              {/* Attachments Card */}
+                              <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-6">
+                                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-3 mb-4">
                                       <Paperclip size={16} className="text-orange-500"/> Tài liệu đính kèm
                                   </h3>
                                   {selectedDoc.dinh_kem && selectedDoc.dinh_kem.length > 0 ? (
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div className="grid grid-cols-1 gap-3">
                                           {selectedDoc.dinh_kem.map(file => {
                                               const isRestricted = (file.loai === 'doc' || file.loai === 'excel') && !isAdmin;
-                                              const icon = file.loai === 'pdf' ? <FileType className="text-red-500" size={24} /> : 
-                                                           file.loai === 'excel' ? <FileSpreadsheet className="text-emerald-500" size={24} /> :
-                                                           file.loai === 'doc' ? <FileText className="text-blue-500" size={24} /> :
-                                                           <File className="text-gray-400" size={24} />;
+                                              const icon = file.loai === 'pdf' ? <FileType className="text-red-500" size={20} /> : 
+                                                           file.loai === 'excel' ? <FileSpreadsheet className="text-emerald-500" size={20} /> :
+                                                           file.loai === 'doc' ? <FileText className="text-blue-500" size={20} /> :
+                                                           <File className="text-gray-400" size={20} />;
                                               
                                               return (
-                                                  <div key={file.id} className="group relative bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-700 transition-all flex items-start gap-4">
-                                                      <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg group-hover:scale-110 transition-transform">
-                                                          {icon}
-                                                      </div>
+                                                  <div key={file.id} className="group relative flex items-center gap-3 p-3 rounded-lg border border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:border-blue-200 dark:hover:border-blue-800 transition-all">
+                                                      <div className="shrink-0">{icon}</div>
                                                       <div className="flex-1 min-w-0">
-                                                          <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate mb-1" title={file.ten_file}>
-                                                              {file.ten_file}
-                                                          </p>
-                                                          <div className="flex items-center justify-between">
-                                                              <p className="text-xs text-gray-400">{format(new Date(file.ngay_upload), 'dd/MM/yyyy')}</p>
-                                                              {!isRestricted && (
-                                                                  <a 
-                                                                    href={file.url} 
-                                                                    target="_blank" 
-                                                                    rel="noreferrer"
-                                                                    className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                                                                  >
-                                                                      Xem file <ExternalLink size={10} />
-                                                                  </a>
-                                                              )}
+                                                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate" title={file.ten_file}>{file.ten_file}</p>
+                                                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                                                              <span>{format(new Date(file.ngay_upload), 'dd/MM/yyyy HH:mm')}</span>
+                                                              {isRestricted && <span className="text-amber-500 flex items-center gap-1"><Lock size={10} /> Protected</span>}
                                                           </div>
-                                                          {isRestricted && (
-                                                              <div className="mt-2 flex items-center gap-1.5 text-amber-600 bg-amber-50 dark:bg-amber-900/10 px-2 py-1 rounded text-[10px] w-fit">
-                                                                  <Lock size={10} /> <span>Chỉ xem (Không tải)</span>
-                                                              </div>
-                                                          )}
                                                       </div>
+                                                      {!isRestricted && (
+                                                          <a href={file.url} target="_blank" rel="noreferrer" className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-white dark:hover:bg-slate-700 transition-colors" title="Mở file">
+                                                              <ExternalLink size={16} />
+                                                          </a>
+                                                      )}
                                                   </div>
                                               );
                                           })}
                                       </div>
                                   ) : (
-                                      <div className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex flex-col items-center justify-center text-gray-400">
-                                          <File size={32} className="mb-2 opacity-50" />
-                                          <p className="text-sm">Không có file đính kèm nào.</p>
-                                      </div>
+                                      <div className="text-center py-8 text-gray-400 text-sm bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-dashed border-gray-200 dark:border-slate-700">Không có file đính kèm</div>
                                   )}
                               </div>
                            </div>
 
-                           {/* --- RIGHT COLUMN (SIDEBAR) --- */}
+                           {/* --- RIGHT COLUMN (SIDEBAR 33%) --- */}
                            <div className="space-y-6">
                                
+                               {/* Meta Info Card */}
+                               <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                   <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
+                                       <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                           <LayoutDashboard size={16} className="text-purple-500" /> Thông tin chung
+                                       </h4>
+                                   </div>
+                                   <div className="p-4 space-y-4">
+                                       <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Loại tài liệu</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedDoc.loai_tai_lieu}</p></div>
+                                       <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Lĩnh vực</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedDoc.linh_vuc || '---'}</p></div>
+                                       <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Bộ phận sở hữu</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getDept(selectedDoc.id_nguoi_soan_thao)}</p></div>
+                                       {selectedDoc.tieu_chuan && selectedDoc.tieu_chuan.length > 0 && (
+                                           <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Tiêu chuẩn áp dụng</p><div className="flex flex-wrap gap-1.5">{selectedDoc.tieu_chuan.map(t => (<span key={t} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"><Tag size={10} /> {t}</span>))}</div></div>
+                                       )}
+                                   </div>
+                               </div>
+
                                {/* Control Card */}
                                <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
                                    <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
@@ -591,29 +532,39 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                        </h4>
                                    </div>
                                    <div className="p-4 space-y-4">
-                                       <div>
-                                           <p className="text-xs text-gray-500 uppercase font-bold mb-1">Ngày ban hành</p>
-                                           <p className="text-sm font-medium">{selectedDoc.ngay_ban_hanh ? format(new Date(selectedDoc.ngay_ban_hanh), 'dd/MM/yyyy') : '---'}</p>
-                                       </div>
-                                       <div>
-                                           <p className="text-xs text-gray-500 uppercase font-bold mb-1">Ngày hiệu lực</p>
-                                           <p className="text-sm font-medium">{selectedDoc.ngay_hieu_luc ? format(new Date(selectedDoc.ngay_hieu_luc), 'dd/MM/yyyy') : '---'}</p>
+                                       <div className="grid grid-cols-2 gap-4">
+                                           <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Ngày ban hành</p><p className="text-sm font-medium">{selectedDoc.ngay_ban_hanh ? format(new Date(selectedDoc.ngay_ban_hanh), 'dd/MM/yyyy') : '---'}</p></div>
+                                           <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Ngày hiệu lực</p><p className="text-sm font-medium">{selectedDoc.ngay_hieu_luc ? format(new Date(selectedDoc.ngay_hieu_luc), 'dd/MM/yyyy') : '---'}</p></div>
                                        </div>
                                        {selectedDoc.ngay_ra_soat_tiep_theo && (
                                            <div className="pt-3 border-t border-gray-100 dark:border-slate-800">
-                                               <p className="text-xs text-orange-600 dark:text-orange-400 uppercase font-bold mb-1 flex items-center gap-1">
-                                                   <RefreshCw size={12} /> Rà soát tiếp theo
-                                               </p>
-                                               <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                                   {format(new Date(selectedDoc.ngay_ra_soat_tiep_theo), 'dd/MM/yyyy')}
-                                               </p>
-                                               <p className="text-[10px] text-gray-400 mt-0.5">Chu kỳ: {selectedDoc.chu_ky_ra_soat} tháng</p>
+                                               <p className="text-xs text-orange-600 dark:text-orange-400 uppercase font-bold mb-1 flex items-center gap-1"><RefreshCw size={12} /> Rà soát tiếp theo</p>
+                                               <div className="flex items-center justify-between">
+                                                   <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{format(new Date(selectedDoc.ngay_ra_soat_tiep_theo), 'dd/MM/yyyy')}</p>
+                                                   <span className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-100">{selectedDoc.chu_ky_ra_soat} tháng</span>
+                                               </div>
                                            </div>
                                        )}
                                    </div>
                                </div>
 
-                               {/* Related Records (Moved Up) */}
+                               {/* Responsibilities Card */}
+                               <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                   <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
+                                       <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                           <UserCheck size={16} className="text-blue-500" /> Trách nhiệm
+                                       </h4>
+                                   </div>
+                                   <div className="p-4 space-y-3">
+                                       <div className="flex items-center justify-between text-sm"><span className="text-gray-500 text-xs uppercase font-semibold">Soạn thảo</span><span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.id_nguoi_soan_thao)}</span></div>
+                                       <div className="w-full h-px bg-gray-100 dark:bg-slate-800"></div>
+                                       <div className="flex items-center justify-between text-sm"><span className="text-gray-500 text-xs uppercase font-semibold">Xem xét</span><span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.id_nguoi_xem_xet)}</span></div>
+                                       <div className="w-full h-px bg-gray-100 dark:bg-slate-800"></div>
+                                       <div className="flex items-center justify-between text-sm"><span className="text-gray-500 text-xs uppercase font-semibold">Phê duyệt</span><span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.id_nguoi_phe_duyet)}</span></div>
+                                   </div>
+                               </div>
+
+                               {/* Related Records */}
                                <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
                                    <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
                                        <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
@@ -634,31 +585,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                               ))}
                                            </div>
                                        ) : <p className="text-xs text-gray-400 italic text-center py-2">Chưa có hồ sơ phát sinh.</p>}
-                                   </div>
-                               </div>
-
-                               {/* Responsibilities Card (Moved Down & Simplified) */}
-                               <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                                   <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
-                                       <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                                           <UserCheck size={16} className="text-blue-500" /> Trách nhiệm
-                                       </h4>
-                                   </div>
-                                   <div className="p-4 space-y-3">
-                                       <div className="flex items-center justify-between text-sm">
-                                           <span className="text-gray-500 text-xs uppercase font-semibold">Soạn thảo</span>
-                                           <span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.id_nguoi_soan_thao)}</span>
-                                       </div>
-                                       <div className="w-full h-px bg-gray-100 dark:bg-slate-800"></div>
-                                       <div className="flex items-center justify-between text-sm">
-                                           <span className="text-gray-500 text-xs uppercase font-semibold">Xem xét</span>
-                                           <span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.id_nguoi_xem_xet)}</span>
-                                       </div>
-                                       <div className="w-full h-px bg-gray-100 dark:bg-slate-800"></div>
-                                       <div className="flex items-center justify-between text-sm">
-                                           <span className="text-gray-500 text-xs uppercase font-semibold">Phê duyệt</span>
-                                           <span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.id_nguoi_phe_duyet)}</span>
-                                       </div>
                                    </div>
                                </div>
 
