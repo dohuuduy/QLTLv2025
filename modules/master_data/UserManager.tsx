@@ -183,7 +183,13 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
         <div className="fixed inset-0 z-[70] flex justify-end">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={() => setViewMode('list')} />
           <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800"><h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2"><User className="text-primary" /> {editingUser.id ? 'Cập nhật nhân sự' : 'Thêm nhân sự mới'}</h2><Button variant="ghost" size="icon" onClick={() => setViewMode('list')}><X size={20} /></Button></div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-6 border-b border-gray-100 dark:border-slate-800">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2 truncate">
+                    <User className="text-primary" /> {editingUser.id ? 'Cập nhật nhân sự' : 'Thêm nhân sự mới'}
+                </h2>
+                <Button variant="ghost" size="icon" onClick={() => setViewMode('list')} className="shrink-0"><X size={20} /></Button>
+            </div>
+            
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               
               {/* Account Info Section */}

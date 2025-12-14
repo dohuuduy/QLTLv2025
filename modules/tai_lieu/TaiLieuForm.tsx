@@ -240,18 +240,18 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
   return (
     <div className="flex flex-col h-full bg-gray-50/50 dark:bg-slate-950">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-20">
-        <div className="flex flex-col">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate max-w-md" title={initialData ? initialData.ten_tai_lieu : 'Tạo mới'}>
+      {/* Header - Improved Responsiveness */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-20 shrink-0">
+        <div className="flex flex-col min-w-0 flex-1">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate" title={initialData ? initialData.ten_tai_lieu : 'Tạo mới'}>
             {initialData ? initialData.ten_tai_lieu : 'Soạn thảo tài liệu mới'}
             </h2>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                 <span>{initialData ? 'Cập nhật thông tin' : 'Điền thông tin bên dưới'}</span>
                 {initialData && <span className="bg-blue-100 text-blue-700 px-1.5 rounded font-mono">v{initialData.phien_ban}</span>}
             </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-end">
             <Button variant="ghost" onClick={onCancel}>Hủy bỏ</Button>
             <Button onClick={handleSubmit} leftIcon={<Save size={16} />}>Lưu lại</Button>
         </div>
@@ -295,9 +295,9 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                 {/* 2. Attachments */}
                 <Section title="Nội dung & Đính kèm" icon={Paperclip}>
                     <div className="space-y-4">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-col sm:flex-row">
                             <input value={urlInput} onChange={(e) => setUrlInput(e.target.value)} className={inputClass} placeholder="Dán đường dẫn (Google Drive, SharePoint...) vào đây" />
-                            <div className="flex gap-1 shrink-0">
+                            <div className="flex gap-1 shrink-0 justify-end">
                                 <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('pdf')}><FileType size={14} className="text-red-600"/> PDF</Button>
                                 <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('doc')}><FileText size={14} className="text-blue-600"/> Word</Button>
                                 <Button type="button" size="sm" variant="secondary" onClick={() => handleAddFile('excel')}><FileSpreadsheet size={14} className="text-green-600"/> Excel</Button>

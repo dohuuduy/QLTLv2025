@@ -243,7 +243,7 @@ const AppContent: React.FC = () => {
   return (
     <div className="flex h-screen w-full bg-background text-foreground overflow-hidden font-sans">
       
-      {/* Sidebar Desktop - Strictly Flex-None to prevent shrinking */}
+      {/* Sidebar Desktop - Strictly Flex-None (Khóa cứng kích thước, không co giãn theo flex) */}
       <aside 
         className={`
           hidden md:flex flex-col flex-none
@@ -304,7 +304,7 @@ const AppContent: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content Area - Flex-1 takes remaining space, min-w-0 prevents flex overflow issues */}
+      {/* Main Content Area - Flex-1 (Tự động chiếm phần còn lại), min-w-0 (Ngăn tràn flex) */}
       <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden bg-muted/20 relative">
         {/* Header - Z-INDEX 30 */}
         <header className="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 md:px-6 z-30 transition-colors sticky top-0 shrink-0">
