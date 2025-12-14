@@ -292,8 +292,8 @@ export const MOCK_HO_SO: HoSo[] = [
     ma_ho_so: 'HS-T01-2024',
     tieu_de: 'Biên bản họp xem xét lãnh đạo Q1/2024',
     ma_tai_lieu_lien_quan: 'QT-QL-01',
-    phong_ban: 'Ban Giám Đốc',
-    nguoi_tao: 'Nguyễn Văn A',
+    id_phong_ban: '1', // Ban Giám Đốc (ID)
+    id_nguoi_tao: 'NS001', // Nguyễn Văn A
     ngay_tao: '2024-03-30',
     vi_tri_luu_tru: 'Tủ 01 - Ngăn 02 (Bản cứng)',
     dang_luu_tru: 'BAN_CUNG',
@@ -307,8 +307,8 @@ export const MOCK_HO_SO: HoSo[] = [
     ma_ho_so: 'HS-KT-2022-05',
     tieu_de: 'Chứng từ kế toán tháng 05/2022',
     ma_tai_lieu_lien_quan: 'QT-TC-02',
-    phong_ban: 'Phòng Kế Toán',
-    nguoi_tao: 'Phạm Thị E',
+    id_phong_ban: '3', // Phòng Kế Toán
+    id_nguoi_tao: 'NS003', // Lê Văn C (Giả sử)
     ngay_tao: '2022-05-31',
     vi_tri_luu_tru: 'Kho lưu trữ 2',
     dang_luu_tru: 'BAN_CUNG',
@@ -320,8 +320,8 @@ export const MOCK_HO_SO: HoSo[] = [
     id: 'HS003',
     ma_ho_so: 'HS-NS-OLD-2018',
     tieu_de: 'Hồ sơ nhân viên đã nghỉ việc 2018',
-    phong_ban: 'Phòng HCNS',
-    nguoi_tao: 'Admin',
+    id_phong_ban: '2', // Phòng HCNS
+    id_nguoi_tao: 'NS002', // Trần Thị B (Giả sử Admin cũ)
     ngay_tao: '2018-12-31',
     vi_tri_luu_tru: 'Kho số hóa',
     dang_luu_tru: 'BAN_MEM',

@@ -15,9 +15,10 @@ interface ChartContainerProps {
   className?: string;
 }
 
-// FIX: ChartContainer uses explicit pixel dimensions to prevent Recharts rendering issues (width -1)
+// FIX: Improved ChartContainer to handle initial rendering race conditions for Recharts
 const ChartContainer = ({ children, height = 300, className = "" }: ChartContainerProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    // Initialize with 0 to prevent rendering children until measured
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
     useEffect(() => {
@@ -26,25 +27,28 @@ const ChartContainer = ({ children, height = 300, className = "" }: ChartContain
 
         const updateDimensions = () => {
             if (element) {
-                const { clientWidth, clientHeight } = element;
-                // Only update if dimensions represent a valid visible area and have changed
-                if (clientWidth > 0 && clientHeight > 0) {
+                // Get computed styles or client rects to ensure we have real space
+                const rect = element.getBoundingClientRect();
+                const width = Math.floor(rect.width);
+                const h = Math.floor(rect.height);
+
+                if (width > 0 && h > 0) {
                     setDimensions(prev => {
-                        if (prev.width === clientWidth && prev.height === clientHeight) return prev;
-                        return { width: clientWidth, height: clientHeight };
+                        if (prev.width === width && prev.height === h) return prev;
+                        return { width, height: h };
                     });
                 }
             }
         };
 
+        // Initial check immediately
+        updateDimensions();
+
         const observer = new ResizeObserver(() => {
-            // Use requestAnimationFrame to throttle updates and sync with render cycle
-            // This also helps avoid "ResizeObserver loop limit exceeded"
             window.requestAnimationFrame(updateDimensions);
         });
 
         observer.observe(element);
-        updateDimensions(); // Initial check
 
         return () => {
             observer.disconnect();
@@ -57,12 +61,11 @@ const ChartContainer = ({ children, height = 300, className = "" }: ChartContain
         <div 
             ref={containerRef} 
             className={`w-full relative ${className}`}
-            style={{ height: styleHeight, minHeight: 0, minWidth: 0 }}
+            style={{ height: styleHeight, minHeight: '200px', overflow: 'hidden' }}
         >
             {dimensions.width > 0 && dimensions.height > 0 ? (
-                // Explicitly set pixel width/height for the inner wrapper
-                // This ensures ResponsiveContainer (width="100%") calculates correctly
-                <div style={{ width: dimensions.width, height: dimensions.height, overflow: 'hidden' }}>
+                // Explicitly set pixel dimensions for the wrapper DIV
+                <div style={{ width: dimensions.width, height: dimensions.height }}>
                     {children}
                 </div>
             ) : (

@@ -83,8 +83,8 @@ export interface HoSo {
   tieu_de: string;        // Tên hồ sơ (VD: Biên bản họp ISO tháng 10)
   ma_tai_lieu_lien_quan?: string; // Link đến Tài liệu quy trình (VD: theo QT-NS-01)
   
-  phong_ban: string;      // Bộ phận sở hữu
-  nguoi_tao: string;
+  id_phong_ban: string;      // Bộ phận sở hữu (ID)
+  id_nguoi_tao: string;      // Người tạo (ID)
   ngay_tao: string;       // Ngày ghi nhận hồ sơ
 
   vi_tri_luu_tru: string; // Kho, Tủ số 1, Link Drive...
