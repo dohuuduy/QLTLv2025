@@ -53,7 +53,6 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         cancelLabel: options.cancelLabel || 'Hủy bỏ',
         onConfirm: () => resolve(true),
       });
-      // Monkey patch onClose for cancel in Component
     });
   }, []);
 
@@ -62,7 +61,7 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   return (
-    <DialogContext.Provider value={{ alert, confirm }}>
+    <DialogContext value={{ alert, confirm }}>
       {children}
       <AlertDialog
         isOpen={dialog.isOpen}
@@ -74,7 +73,7 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         confirmLabel={dialog.confirmLabel}
         cancelLabel={dialog.cancelLabel}
       />
-    </DialogContext.Provider>
+    </DialogContext>
   );
 };
 

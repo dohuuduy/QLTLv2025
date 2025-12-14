@@ -16,40 +16,47 @@ export const signOut = async () => {
   return await supabase.auth.signOut();
 };
 
-// NEW: Hàm tạo user mới (Client-side creation)
 export const signUpNewUser = async (email: string, password: string, metaData: any) => {
-    const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-            data: metaData
-        }
-    });
-    return { data, error };
+    try {
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: metaData
+            }
+        });
+        return { data, error };
+    } catch (e: any) {
+        return { data: { user: null, session: null }, error: { message: e.message } };
+    }
 };
 
 export const getCurrentSession = async () => {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  return { session, error };
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    // Safety check: data might be null if service is down, preventing crash on destructuring
+    return { session: data?.session || null, error };
+  } catch (error) {
+    console.warn("Auth Session Error:", error);
+    return { session: null, error };
+  }
 };
 
-// NEW: Kiểm tra xem hệ thống đã có ADMIN nào chưa (Thay vì chỉ check có user)
 export const checkSystemHasAdmin = async (): Promise<boolean> => {
     try {
-        // Kiểm tra xem có bản ghi nào trong bảng nhan_su mà cột 'quyen' chứa 'QUAN_TRI'
-        // Lưu ý: Cột 'quyen' trong DB tương ứng với 'roles'
         const { count, error } = await supabase
             .from('nhan_su')
             .select('*', { count: 'exact', head: true })
             .contains('quyen', ['QUAN_TRI']);
         
         if (error) {
-             console.warn("Check Admin Error (using Mock):", error.message);
-             return false; 
+             console.warn("⚠️ Check Admin Error (Using Mock Mode - Defaulting to TRUE to disable setup):", error.message);
+             // Return true to be safe and avoid showing Setup Screen if DB is just unreachable but exists
+             return true; 
         }
         return (count || 0) > 0;
     } catch (e) {
-        return false;
+        return true; // Fail safe
     }
 };
 
@@ -65,7 +72,6 @@ const mapCategoryToItem = (record: any): DanhMucItem => ({
   ...(record.cai_dat || {})
 });
 
-// Ngược lại: Từ App Item -> DB Record
 const mapItemToCategoryPayload = (item: DanhMucItem, type: string) => ({
     id: item.id,
     loai: type,
@@ -82,15 +88,14 @@ const mapItemToCategoryPayload = (item: DanhMucItem, type: string) => ({
 
 const mapProfileToUser = (record: any, depts: DanhMucItem[], positions: DanhMucItem[]): NhanSu => {
   const deptName = depts.find(d => d.id === record.id_phong_ban)?.ten || '';
-  // Mapping ID -> Name cho chức vụ. Nếu không tìm thấy ID, fallback về record.chuc_vu (cho dữ liệu cũ) hoặc rỗng
   const posName = positions.find(p => p.id === record.id_chuc_vu)?.ten || record.chuc_vu || '';
   
   return {
     id: record.id,
     ho_ten: record.ho_ten,
     email: record.email || '',
-    chuc_vu: posName, // Frontend dùng Tên
-    phong_ban: deptName, // Frontend dùng Tên
+    chuc_vu: posName,
+    phong_ban: deptName,
     roles: record.quyen || [],
     thu_tu: record.thu_tu || 0,
     avatar: record.anh_dai_dien
@@ -98,20 +103,15 @@ const mapProfileToUser = (record: any, depts: DanhMucItem[], positions: DanhMucI
 };
 
 const mapUserToProfilePayload = (user: NhanSu, depts: DanhMucItem[], positions: DanhMucItem[]) => {
-    // Tìm ID phòng ban từ tên (Mapping ngược)
     const deptId = depts.find(d => d.ten === user.phong_ban)?.id || null;
-    // Tìm ID chức vụ từ tên (Mapping ngược)
     const posId = positions.find(p => p.ten === user.chuc_vu)?.id || null;
 
     return {
         id: user.id,
         ho_ten: user.ho_ten,
         email: user.email,
-        // Lưu ID vào DB
         id_chuc_vu: posId,
         id_phong_ban: deptId,
-        // Giữ lại chuc_vu dạng text nếu muốn backward compatibility, nhưng tốt nhất nên bỏ dần
-        // chuc_vu: user.chuc_vu, 
         quyen: user.roles,
         thu_tu: user.thu_tu,
         anh_dai_dien: user.avatar
@@ -125,15 +125,14 @@ const sortByOrder = (a: any, b: any) => (a.thu_tu || 0) - (b.thu_tu || 0);
 export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> => {
   try {
     const { data: categoriesData, error: catError } = await supabase.from('danh_muc').select('*');
-    // Nếu bảng chưa tồn tại hoặc lỗi connection, trả về null để App dùng Mock Data
     if (catError) {
-        console.warn("⚠️ Không thể tải danh mục (sẽ dùng Mock Data):", catError.message);
+        console.warn("⚠️ Failed to load Categories (Returning NULL to trigger Mock Data):", catError.message);
         return null; 
     }
 
     const { data: profilesData, error: profError } = await supabase.from('nhan_su').select('*');
     if (profError) {
-        console.warn("⚠️ Không thể tải nhân sự (sẽ dùng Mock Data):", profError.message);
+        console.warn("⚠️ Failed to load Profiles (Returning NULL to trigger Mock Data):", profError.message);
         return null;
     }
 
@@ -151,9 +150,9 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
     const loaiDanhGia = sortIt(categories.filter((c: any) => c.loai === 'LOAI_AUDIT').map(mapCategoryToItem));
     const auditors = sortIt(categories.filter((c: any) => c.loai === 'AUDITOR').map(mapCategoryToItem));
 
-    // Pass chucVu list to mapper
     const nhanSu = profiles.map((p: any) => mapProfileToUser(p, boPhan, chucVu));
 
+    // If tables are empty (first run), return null to use initial constants
     if (categories.length === 0 && profiles.length === 0) return null;
 
     return {
@@ -168,57 +167,33 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
       loaiDanhGia: loaiDanhGia.length ? loaiDanhGia : INITIAL_MASTER_DATA.loaiDanhGia,
     };
   } catch (error: any) {
-    console.warn("⚠️ Exception tải Master Data:", error);
+    console.warn("⚠️ Critical Exception in fetchMasterDataFromDB:", error);
     return null;
   }
 };
 
-// CRUD Danh Mục
 export const upsertCategory = async (item: DanhMucItem, type: string) => {
     const payload = mapItemToCategoryPayload(item, type);
     const { error } = await supabase.from('danh_muc').upsert(payload);
-    if (error) {
-        console.error('Lỗi lưu danh mục:', error);
-        throw error;
-    }
+    if (error) { console.error('Upsert Category Error:', error); throw error; }
 };
 
 export const deleteCategory = async (id: string) => {
     const { error } = await supabase.from('danh_muc').delete().eq('id', id);
-    if (error) {
-        console.error('Lỗi xóa danh mục:', error);
-        throw error;
-    }
+    if (error) throw error;
 };
 
-// CRUD Nhân Sự
 export const upsertProfile = async (user: NhanSu, allDepts: DanhMucItem[], allPositions: DanhMucItem[]) => {
-    // 1. Cập nhật Database (Bảng nhan_su) - Mapping Name to ID
     const payload = mapUserToProfilePayload(user, allDepts, allPositions);
     const { error } = await supabase.from('nhan_su').upsert(payload);
-    if (error) {
-        console.error('Lỗi lưu nhân sự:', error);
-        throw error;
-    }
+    if (error) { console.error('Upsert Profile Error:', error); throw error; }
 
-    // 2. Đồng bộ Auth Metadata (Nếu đang cập nhật chính mình)
-    // Client SDK chỉ cho phép update user metadata của CHÍNH USER ĐANG LOGIN.
     try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user.id === user.id) {
-            const { error: authError } = await supabase.auth.updateUser({
-                data: { full_name: user.ho_ten }
-            });
-            
-            if (authError) {
-                console.warn("Lỗi đồng bộ tên sang Auth:", authError.message);
-            } else {
-                console.log("✅ Đã đồng bộ tên sang Auth Metadata");
-            }
+            await supabase.auth.updateUser({ data: { full_name: user.ho_ten } });
         }
-    } catch (e) {
-        console.warn("Không thể đồng bộ Auth Metadata (có thể do lỗi mạng hoặc permission):", e);
-    }
+    } catch (e) {}
 };
 
 export const deleteProfile = async (id: string) => {
@@ -226,27 +201,19 @@ export const deleteProfile = async (id: string) => {
     if (error) throw error;
 };
 
-// --- 2. TAI LIEU (DOCUMENTS) ---
+// --- DOCS ---
 
 export const fetchDocumentsFromDB = async (): Promise<TaiLieu[] | null> => {
     try {
         const { data, error } = await supabase.from('tai_lieu').select('*').order('ngay_tao', { ascending: false });
-        if (error) {
-            console.warn("⚠️ Lỗi tải Tài liệu (Dùng Mock):", error.message);
-            return null;
-        }
+        if (error) { console.warn("Fetch Docs Error:", error.message); return null; }
         return data as TaiLieu[];
-    } catch (error) {
-        return null;
-    }
+    } catch { return null; }
 };
 
 export const upsertDocument = async (doc: TaiLieu) => {
     const { error } = await supabase.from('tai_lieu').upsert(doc);
-    if (error) {
-        console.error('Lỗi lưu tài liệu:', error);
-        throw error;
-    }
+    if (error) throw error;
 };
 
 export const deleteDocument = async (id: string) => {
@@ -254,27 +221,19 @@ export const deleteDocument = async (id: string) => {
     if (error) throw error;
 };
 
-// --- 3. HO SO (RECORDS) ---
+// --- RECORDS ---
 
 export const fetchRecordsFromDB = async (): Promise<HoSo[] | null> => {
     try {
         const { data, error } = await supabase.from('ho_so').select('*').order('ngay_tao', { ascending: false });
-        if (error) {
-             console.warn("⚠️ Lỗi tải Hồ sơ (Dùng Mock):", error.message);
-             return null;
-        }
+        if (error) { console.warn("Fetch Records Error:", error.message); return null; }
         return data as HoSo[];
-    } catch (error) {
-        return null;
-    }
+    } catch { return null; }
 };
 
 export const upsertRecord = async (rec: HoSo) => {
     const { error } = await supabase.from('ho_so').upsert(rec);
-    if (error) {
-        console.error('Lỗi lưu hồ sơ:', error);
-        throw error;
-    }
+    if (error) throw error;
 };
 
 export const deleteRecord = async (id: string) => {
@@ -282,27 +241,19 @@ export const deleteRecord = async (id: string) => {
     if (error) throw error;
 };
 
-// --- 4. AUDIT PLANS ---
+// --- AUDIT ---
 
 export const fetchAuditPlansFromDB = async (): Promise<KeHoachDanhGia[] | null> => {
     try {
         const { data, error } = await supabase.from('ke_hoach_danh_gia').select('*').order('ngay_tao', { ascending: false });
-        if (error) {
-             console.warn("⚠️ Lỗi tải Kế hoạch Audit (Dùng Mock):", error.message);
-             return null;
-        }
+        if (error) { console.warn("Fetch Audit Error:", error.message); return null; }
         return data as KeHoachDanhGia[];
-    } catch (error) {
-        return null;
-    }
+    } catch { return null; }
 };
 
 export const upsertAuditPlan = async (plan: KeHoachDanhGia) => {
     const { error } = await supabase.from('ke_hoach_danh_gia').upsert(plan);
-    if (error) {
-        console.error('Lỗi lưu kế hoạch:', error);
-        throw error;
-    }
+    if (error) throw error;
 };
 
 export const deleteAuditPlan = async (id: string) => {

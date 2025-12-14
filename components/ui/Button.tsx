@@ -1,4 +1,5 @@
-import React, { forwardRef } from 'react';
+
+import React from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -6,9 +7,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg' | 'icon';
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ 
+export const Button: React.FC<ButtonProps> = ({ 
   children, 
   variant = 'primary', 
   size = 'md', 
@@ -16,9 +18,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
   leftIcon,
   className = '', 
   disabled,
+  ref,
   ...props 
-}, ref) => {
-  // Base styles: Focus ring, transition, font weight, flex layout
+}) => {
   const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] ring-offset-background select-none";
   
   const variants = {
@@ -49,6 +51,4 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
       {children}
     </button>
   );
-});
-
-Button.displayName = "Button";
+};

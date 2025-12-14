@@ -157,7 +157,6 @@
         --ring: 224.3 76.3% 48%;
       }
 
-      /* High Contrast Mode (Windows) Overrides */
       @media (forced-colors: active) {
         :root {
           --primary: CanvasText;
@@ -183,7 +182,6 @@
         -webkit-font-smoothing: antialiased;
       }
 
-      /* Modern Scrollbar */
       ::-webkit-scrollbar {
         width: 6px;
         height: 6px;
@@ -199,7 +197,6 @@
         background: hsl(var(--muted-foreground) / 0.5); 
       }
 
-      /* Animations */
       .animate-in { animation: enter 0.2s ease-out; --tw-enter-opacity: initial; --tw-enter-scale: initial; --tw-enter-rotate: initial; --tw-enter-translate-x: initial; --tw-enter-translate-y: initial; }
       .fade-in { --tw-enter-opacity: 0; }
       .zoom-in-95 { --tw-enter-scale: 0.95; }
@@ -211,15 +208,33 @@
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
     </style>
+    
+    <script>
+      window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Global Error:", message, source, lineno, colno, error);
+        const root = document.getElementById('root');
+        if (root && root.innerHTML.trim() === '') {
+           document.body.innerHTML = `
+             <div style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f8fafc; color: #334155; padding: 20px; text-align: center;">
+               <h1 style="font-size: 24px; color: #ef4444; margin-bottom: 10px;">Lỗi khởi động ứng dụng</h1>
+               <p style="margin-bottom: 20px;">Không thể tải thư viện React. Vui lòng kiểm tra kết nối mạng.</p>
+               <pre style="background: #e2e8f0; padding: 15px; border-radius: 8px; overflow: auto; max-width: 800px; text-align: left; font-size: 12px; color: #b91c1c;">${message}\nAt: ${source}:${lineno}</pre>
+               <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Tải lại trang</button>
+             </div>
+           `;
+        }
+      };
+    </script>
+
     <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.3.1",
-    "react-dom": "https://esm.sh/react-dom@18.3.1",
-    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "lucide-react": "https://esm.sh/lucide-react@0.469.0?external=react",
     "recharts": "https://esm.sh/recharts@2.15.0?external=react,react-dom",
-    "@google/genai": "https://esm.sh/@google/genai@0.1.0",
+    "@google/genai": "https://esm.sh/@google/genai",
     "xlsx": "https://esm.sh/xlsx@0.18.5",
     "date-fns": "https://esm.sh/date-fns@4.1.0",
     "lunar-javascript": "https://esm.sh/lunar-javascript@1.7.7",
