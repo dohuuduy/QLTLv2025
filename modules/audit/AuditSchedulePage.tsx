@@ -92,7 +92,7 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
           ...editingPlan,
           id: editingPlan.id || `KH${Date.now()}`,
           ngay_tao: editingPlan.ngay_tao || new Date().toISOString(),
-          nguoi_tao: editingPlan.nguoi_tao || currentUser.ho_ten,
+          id_nguoi_tao: editingPlan.id_nguoi_tao || currentUser.id,
           danh_sach_phien: editingPlan.danh_sach_phien || []
       } as KeHoachDanhGia;
 

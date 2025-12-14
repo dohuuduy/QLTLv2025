@@ -344,7 +344,7 @@ export const MOCK_KE_HOACH_AUDIT: KeHoachDanhGia[] = [
     thoi_gian_du_kien_end: '2024-10-30',
     muc_tieu: 'Kiểm tra sự tuân thủ quy trình ISO 9001:2015 tại các phòng ban khối Văn phòng.',
     pham_vi: 'Phòng HCNS, Kế toán, Kinh doanh',
-    nguoi_tao: 'Nguyễn Văn Kiểm (Lead)',
+    id_nguoi_tao: 'NS001', // Changed to ID
     ngay_tao: '2024-10-01',
     trang_thai: 'dang_thuc_hien',
     danh_sach_phien: [

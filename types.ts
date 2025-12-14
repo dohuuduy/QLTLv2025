@@ -165,7 +165,7 @@ export interface KeHoachDanhGia {
   
   danh_sach_phien: PhienDanhGia[];
   
-  nguoi_tao: string;
+  id_nguoi_tao: string; // Changed from nguoi_tao
   ngay_tao: string;
   trang_thai: TrangThaiKeHoach;
 }
