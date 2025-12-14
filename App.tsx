@@ -223,62 +223,72 @@ const AppContent: React.FC = () => {
       case 'approvals': return <ApprovalsPage currentUser={currentUser} documents={documents} onUpdate={setDocuments} masterData={masterData} />;
       case 'master-data': return <MasterDataLayout data={masterData} onUpdate={setMasterData} />;
       case 'settings': return <SettingsPage masterData={masterData} documents={documents} records={records} auditPlans={auditPlans} onRestore={handleRestoreSystem} />;
-      default: return <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">Tính năng đang phát triển...</div>;
+      default: return <div className="flex items-center justify-center h-full text-muted-foreground">Tính năng đang phát triển...</div>;
     }
   };
 
   const getNotiIcon = (type: string) => {
     switch(type) {
-      case 'success': return <CheckCircle size={16} className="text-green-500" />;
-      case 'warning': return <AlertTriangle size={16} className="text-orange-500" />;
-      case 'error': return <AlertTriangle size={16} className="text-red-500" />;
+      case 'success': return <CheckCircle size={16} className="text-emerald-500" />;
+      case 'warning': return <AlertTriangle size={16} className="text-amber-500" />;
+      case 'error': return <AlertTriangle size={16} className="text-rose-500" />;
       default: return <Info size={16} className="text-blue-500" />;
     }
   };
 
   // --- RENDER LOGIN IF NOT AUTHENTICATED ---
-  if (isCheckingAuth) return <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (isCheckingAuth) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
   if (!session) return <LoginPage />;
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-slate-950 text-foreground overflow-hidden transition-colors duration-300">
+    <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans">
       
-      {/* Sidebar Desktop - Z-INDEX 40 (Lower than Drawer z-50) */}
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} hidden md:flex flex-col bg-slate-900 dark:bg-slate-900 text-slate-100 transition-all duration-300 shadow-xl z-40 border-r border-slate-800`}>
-        <div className="h-16 flex items-center justify-center border-b border-slate-800">
-           {isSidebarOpen ? <span className="font-bold text-xl tracking-wider truncate px-4">{APP_NAME}</span> : <span className="font-bold text-xl">ISO</span>}
+      {/* Sidebar Desktop - Z-INDEX 40 */}
+      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} hidden md:flex flex-col bg-slate-900 text-slate-200 transition-all duration-300 shadow-xl z-40 border-r border-slate-800`}>
+        <div className="h-16 flex items-center justify-center border-b border-slate-800/50 bg-slate-950/20">
+           {isSidebarOpen ? <span className="font-bold text-xl tracking-tight text-white px-4 truncate">{APP_NAME}</span> : <span className="font-bold text-xl text-white">ISO</span>}
         </div>
         
-        <nav className="flex-1 py-4 overflow-y-auto">
-          <ul className="space-y-1 px-2">
+        <nav className="flex-1 py-6 px-3 overflow-y-auto space-y-1">
             {MENU_ITEMS.map((item) => (
-              <li key={item.path}>
-                <button onClick={() => setActiveTab(item.path)} className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeTab === item.path ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800 text-slate-400 hover:text-white'}`}>
-                  <item.icon size={20} className="min-w-[20px]" />
-                  {isSidebarOpen && <span className="ml-3 font-medium">{item.label}</span>}
-                </button>
-              </li>
+              <button 
+                key={item.path}
+                onClick={() => setActiveTab(item.path)} 
+                className={`w-full flex items-center p-2.5 rounded-md transition-all duration-200 group
+                  ${activeTab === item.path 
+                    ? 'bg-primary text-primary-foreground shadow-md font-medium' 
+                    : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'
+                  }`}
+              >
+                  <item.icon size={20} className={`min-w-[20px] transition-transform ${isSidebarOpen ? '' : 'mx-auto'}`} />
+                  {isSidebarOpen && <span className="ml-3 text-sm">{item.label}</span>}
+                  
+                  {!isSidebarOpen && activeTab === item.path && (
+                    <div className="absolute left-16 bg-popover text-popover-foreground px-2 py-1 rounded text-xs shadow-md border whitespace-nowrap z-50 animate-in fade-in slide-in-from-left-2 ml-2">
+                        {item.label}
+                    </div>
+                  )}
+              </button>
             ))}
-          </ul>
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-slate-800 bg-slate-950/30">
           <div className="flex items-center gap-3">
-             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center font-bold text-white text-xs">{currentUser.ho_ten ? currentUser.ho_ten.charAt(0) : '?'}</div>
+             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-inner border border-white/10">
+               {currentUser.ho_ten ? currentUser.ho_ten.charAt(0) : '?'}
+             </div>
              {isSidebarOpen && (
                <div className="overflow-hidden">
-                 <p className="text-sm font-medium truncate">{currentUser.ho_ten}</p>
-                 <p className="text-xs text-slate-400 truncate">{currentUser.email}</p>
+                 <p className="text-sm font-medium text-slate-200 truncate">{currentUser.ho_ten}</p>
+                 <p className="text-xs text-slate-500 truncate">{currentUser.email}</p>
                </div>
              )}
           </div>
           {isSidebarOpen && (
-             <div className="mt-3 flex flex-col gap-1">
-               <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500">
-                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-500'}`}></div>{isConnected ? 'Connected' : 'Offline'}
-               </div>
-               <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500">
-                  <div className={`w-2 h-2 rounded-full ${isAiEnabled ? 'bg-blue-500' : 'bg-gray-500'}`}></div>{isAiEnabled ? 'AI Ready' : 'No AI Key'}
+             <div className="mt-4 flex flex-col gap-2">
+               <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                  <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-600'}`}></div>
+                  {isConnected ? 'System Online' : 'Offline'}
                </div>
              </div>
            )}
@@ -286,24 +296,24 @@ const AppContent: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-muted/20">
         {/* Header - Z-INDEX 30 */}
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-3 md:px-6 shadow-sm z-30 transition-colors relative">
+        <header className="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 md:px-6 z-30 transition-colors sticky top-0">
           {/* Left: Mobile Menu & Title */}
-          <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-             <button className="md:hidden p-2 -ml-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg" onClick={() => setMobileMenuOpen(true)}>
-                <Menu size={24} />
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+             <button className="md:hidden p-2 -ml-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md" onClick={() => setMobileMenuOpen(true)}>
+                <Menu size={20} />
              </button>
-             <button className="hidden md:block p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg" onClick={() => setSidebarOpen(!isSidebarOpen)}>
+             <button className="hidden md:flex p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md transition-colors" onClick={() => setSidebarOpen(!isSidebarOpen)}>
                 <Menu size={20} />
              </button>
              
-             {/* Title - Visible on Mobile now */}
-             <div className="flex flex-col border-l-0 md:border-l border-gray-200 dark:border-slate-700 md:pl-4 min-w-0">
-                <h1 className="text-sm md:text-base font-bold text-gray-800 dark:text-gray-100 leading-none truncate pr-2">
+             {/* Title */}
+             <div className="flex flex-col border-l border-border pl-4 min-w-0">
+                <h1 className="text-base font-semibold text-foreground leading-none truncate">
                     {getPageTitle()}
                 </h1>
-                <span className="hidden md:block text-xs text-gray-500 dark:text-gray-400 mt-1 truncate max-w-md">
+                <span className="hidden md:block text-xs text-muted-foreground mt-1 truncate">
                     {getPageDescription()}
                 </span>
              </div>
@@ -313,15 +323,22 @@ const AppContent: React.FC = () => {
              {/* GLOBAL SEARCH */}
              <div ref={searchRef} className="relative">
                 {/* Desktop Search Input */}
-                <div className="hidden md:flex items-center bg-gray-100 dark:bg-slate-800 rounded-lg px-3 py-1.5 border transition-all w-64">
-                   <Search size={16} className="text-gray-400 shrink-0" />
-                   <input type="text" placeholder="Tìm nhanh..." className="bg-transparent border-none outline-none text-sm ml-2 w-full text-gray-700 dark:text-gray-200 placeholder:text-gray-400" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setIsSearchOpen(true); }} onFocus={() => setIsSearchOpen(true)} />
-                   {searchTerm && <button onClick={() => { setSearchTerm(''); setIsSearchOpen(false); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={14} /></button>}
+                <div className="hidden md:flex items-center bg-muted/50 hover:bg-muted/80 focus-within:bg-background focus-within:ring-2 focus-within:ring-ring rounded-md px-3 py-1.5 border border-transparent focus-within:border-input transition-all w-64">
+                   <Search size={16} className="text-muted-foreground shrink-0" />
+                   <input 
+                      type="text" 
+                      placeholder="Tìm kiếm dữ liệu..." 
+                      className="bg-transparent border-none outline-none text-sm ml-2 w-full text-foreground placeholder:text-muted-foreground/70" 
+                      value={searchTerm} 
+                      onChange={(e) => { setSearchTerm(e.target.value); setIsSearchOpen(true); }} 
+                      onFocus={() => setIsSearchOpen(true)} 
+                   />
+                   {searchTerm && <button onClick={() => { setSearchTerm(''); setIsSearchOpen(false); }} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>}
                 </div>
 
                 {/* Mobile Search Trigger */}
                 <button 
-                    className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full"
+                    className="md:hidden p-2 text-muted-foreground hover:bg-accent rounded-full"
                     onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
                 >
                     <Search size={20} />
@@ -329,72 +346,74 @@ const AppContent: React.FC = () => {
 
                 {/* Search Results Dropdown - Z-INDEX 80 */}
                 {((isSearchOpen && searchTerm) || (isMobileSearchOpen)) && (
-                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-24px)] md:w-[400px] max-w-sm bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right z-[80]">
+                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-32px)] md:w-[400px] max-w-sm bg-popover text-popover-foreground rounded-lg shadow-lg border border-border overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right z-[80]">
                        {/* Mobile Input Field inside Dropdown */}
-                       <div className="md:hidden p-3 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50">
-                           <div className="flex items-center bg-white dark:bg-slate-900 rounded-lg px-3 py-2 border border-gray-200 dark:border-slate-700 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
-                               <Search size={16} className="text-gray-400 shrink-0" />
+                       <div className="md:hidden p-3 border-b border-border bg-muted/20">
+                           <div className="flex items-center bg-background rounded-md px-3 py-2 border border-input">
+                               <Search size={16} className="text-muted-foreground shrink-0" />
                                <input 
                                   type="text" 
                                   autoFocus
                                   placeholder="Tìm tài liệu, hồ sơ..." 
-                                  className="bg-transparent border-none outline-none text-sm ml-2 w-full text-gray-700 dark:text-gray-200 placeholder:text-gray-400" 
+                                  className="bg-transparent border-none outline-none text-sm ml-2 w-full text-foreground" 
                                   value={searchTerm} 
                                   onChange={(e) => setSearchTerm(e.target.value)} 
                                />
-                               {searchTerm && <button onClick={() => setSearchTerm('')}><X size={14} className="text-gray-400"/></button>}
+                               {searchTerm && <button onClick={() => setSearchTerm('')}><X size={14} className="text-muted-foreground"/></button>}
                            </div>
                        </div>
 
                        {!hasResults && searchTerm ? (
-                           <div className="p-8 text-center text-gray-400 text-sm"><p>Không tìm thấy kết quả cho "{searchTerm}"</p></div>
+                           <div className="p-8 text-center text-muted-foreground text-sm flex flex-col items-center">
+                              <Search size={32} className="mb-2 opacity-20" />
+                              <p>Không tìm thấy kết quả</p>
+                           </div>
                        ) : searchTerm ? (
-                           <div className="max-h-[60vh] overflow-y-auto">
+                           <div className="max-h-[60vh] overflow-y-auto p-1">
                                {searchResults.docs.length > 0 && (
-                                   <div className="py-2"><div className="px-4 py-1 text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Tài liệu</div>{searchResults.docs.map(doc => (<div key={doc.id} onClick={() => handleSearchResultClick('documents')} className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer flex items-start gap-3 group"><div className="mt-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-1.5 rounded"><FileText size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600">{doc.ten_tai_lieu}</p><p className="text-xs text-gray-500 font-mono">{doc.ma_tai_lieu}</p></div><ArrowRight size={14} className="self-center opacity-0 group-hover:opacity-100 text-gray-400 transition-opacity"/></div>))}</div>
+                                   <div className="py-2"><div className="px-3 py-1 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Tài liệu</div>{searchResults.docs.map(doc => (<div key={doc.id} onClick={() => handleSearchResultClick('documents')} className="px-3 py-2 hover:bg-accent rounded-md cursor-pointer flex items-center gap-3 group transition-colors"><div className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-1.5 rounded-md"><FileText size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{doc.ten_tai_lieu}</p><p className="text-xs text-muted-foreground font-mono">{doc.ma_tai_lieu}</p></div><ArrowRight size={14} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity"/></div>))}</div>
                                )}
                                {searchResults.recs.length > 0 && (
-                                   <div className="py-2 border-t border-gray-100 dark:border-slate-800"><div className="px-4 py-1 text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Hồ sơ</div>{searchResults.recs.map(rec => (<div key={rec.id} onClick={() => handleSearchResultClick('records')} className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer flex items-start gap-3 group"><div className="mt-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-1.5 rounded"><Archive size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-orange-600">{rec.tieu_de}</p><p className="text-xs text-gray-500 font-mono">{rec.ma_ho_so}</p></div><ArrowRight size={14} className="self-center opacity-0 group-hover:opacity-100 text-gray-400 transition-opacity"/></div>))}</div>
+                                   <div className="py-2 border-t border-border"><div className="px-3 py-1 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Hồ sơ</div>{searchResults.recs.map(rec => (<div key={rec.id} onClick={() => handleSearchResultClick('records')} className="px-3 py-2 hover:bg-accent rounded-md cursor-pointer flex items-center gap-3 group transition-colors"><div className="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 p-1.5 rounded-md"><Archive size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{rec.tieu_de}</p><p className="text-xs text-muted-foreground font-mono">{rec.ma_ho_so}</p></div><ArrowRight size={14} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity"/></div>))}</div>
                                )}
                                {searchResults.audits.length > 0 && (
-                                   <div className="py-2 border-t border-gray-100 dark:border-slate-800"><div className="px-4 py-1 text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Kế hoạch Audit</div>{searchResults.audits.map(plan => (<div key={plan.id} onClick={() => handleSearchResultClick('audit-schedule')} className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer flex items-start gap-3 group"><div className="mt-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-1.5 rounded"><CalendarDays size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-purple-600">{plan.ten_ke_hoach}</p><p className="text-xs text-gray-500">{plan.loai_danh_gia}</p></div><ArrowRight size={14} className="self-center opacity-0 group-hover:opacity-100 text-gray-400 transition-opacity"/></div>))}</div>
+                                   <div className="py-2 border-t border-border"><div className="px-3 py-1 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Kế hoạch Audit</div>{searchResults.audits.map(plan => (<div key={plan.id} onClick={() => handleSearchResultClick('audit-schedule')} className="px-3 py-2 hover:bg-accent rounded-md cursor-pointer flex items-center gap-3 group transition-colors"><div className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 p-1.5 rounded-md"><CalendarDays size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{plan.ten_ke_hoach}</p><p className="text-xs text-muted-foreground">{plan.loai_danh_gia}</p></div><ArrowRight size={14} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity"/></div>))}</div>
                                )}
                            </div>
                        ) : (
-                           // Just opened mobile search, show hint
-                           <div className="p-4 text-center text-gray-400 text-xs md:hidden">Nhập từ khóa để tìm kiếm</div>
+                           <div className="p-4 text-center text-muted-foreground text-xs md:hidden">Nhập từ khóa để tìm kiếm</div>
                        )}
                     </div>
                 )}
              </div>
 
-             <div className="flex items-center gap-1 md:gap-2">
+             <div className="flex items-center gap-2">
                 <div id="notification-container" className="relative">
-                  <button onClick={() => setShowNotifications(!showNotifications)} className={`relative p-2 rounded-full transition-colors ${showNotifications ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800'}`}>
+                  <button onClick={() => setShowNotifications(!showNotifications)} className={`relative p-2 rounded-full transition-colors ${showNotifications ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}`}>
                     <Bell size={20} />
-                    {notifications.filter(n => !n.read).length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-slate-900 animate-pulse"></span>}
+                    {notifications.filter(n => !n.read).length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border border-background animate-pulse"></span>}
                   </button>
-                  {/* Notifications Dropdown - Z-INDEX 90 */}
+                  {/* Notifications Dropdown */}
                   {showNotifications && (
-                    <div className="absolute right-0 top-full mt-3 w-80 sm:w-96 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden z-[90] animate-in fade-in slide-in-from-top-2 origin-top-right">
-                       <div className="p-3 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50"><h3 className="font-bold text-sm text-gray-800 dark:text-gray-200">Thông báo</h3>{notifications.filter(n => !n.read).length > 0 && <button onClick={() => setNotifications(prev => prev.map(n => ({...n, read: true})))} className="text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline">Đánh dấu đã đọc hết</button>}</div>
+                    <div className="absolute right-0 top-full mt-3 w-80 sm:w-96 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-[90] animate-in fade-in slide-in-from-top-2 origin-top-right">
+                       <div className="p-3 border-b border-border flex justify-between items-center bg-muted/30"><h3 className="font-semibold text-sm">Thông báo</h3>{notifications.filter(n => !n.read).length > 0 && <button onClick={() => setNotifications(prev => prev.map(n => ({...n, read: true})))} className="text-xs text-primary hover:text-primary/80 font-medium hover:underline">Đánh dấu đã đọc hết</button>}</div>
                        <div className="max-h-[60vh] overflow-y-auto">
                           {notifications.length > 0 ? (
                             notifications.map(n => (
-                              <div key={n.id} onClick={() => handleNotificationClick(n)} className={`p-4 border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer transition-colors flex gap-3 ${!n.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
-                                 <div className="mt-1 shrink-0">{getNotiIcon(n.type)}</div>
-                                 <div className="flex-1"><div className="flex justify-between items-start mb-1"><span className={`text-sm font-semibold ${!n.read ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'}`}>{n.title}</span><span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">{n.time}</span></div><p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{n.message}</p></div>{!n.read && <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0 self-center"></div>}
+                              <div key={n.id} onClick={() => handleNotificationClick(n)} className={`p-4 border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer transition-colors flex gap-3 ${!n.read ? 'bg-primary/5' : ''}`}>
+                                 <div className="mt-0.5 shrink-0">{getNotiIcon(n.type)}</div>
+                                 <div className="flex-1"><div className="flex justify-between items-start mb-1"><span className={`text-sm font-medium ${!n.read ? 'text-foreground' : 'text-muted-foreground'}`}>{n.title}</span><span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">{n.time}</span></div><p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p></div>{!n.read && <div className="w-2 h-2 rounded-full bg-primary shrink-0 self-center"></div>}
                               </div>
                             ))
-                          ) : (<div className="p-8 text-center text-gray-400 text-sm">Không có thông báo mới</div>)}
+                          ) : (<div className="p-8 text-center text-muted-foreground text-sm">Không có thông báo mới</div>)}
                        </div>
                     </div>
                   )}
                 </div>
                 
-                <div className="h-6 w-px bg-gray-200 dark:bg-slate-700 hidden sm:block"></div>
+                <div className="h-5 w-px bg-border hidden sm:block"></div>
                 
-                <button onClick={handleLogout} className="flex items-center gap-2 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400" title="Đăng xuất">
+                <button onClick={handleLogout} className="flex items-center gap-2 p-2 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-md transition-colors" title="Đăng xuất">
                   <LogOut size={18} />
                 </button>
              </div>
@@ -404,17 +423,21 @@ const AppContent: React.FC = () => {
         {/* Mobile Sidebar - Z-INDEX 60 */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-[60] md:hidden">
-             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
+             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
              <div className="absolute left-0 top-0 bottom-0 w-64 bg-slate-900 text-white shadow-2xl p-4 animate-slide-in-left">
                 <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-4"><h2 className="text-xl font-bold">{APP_NAME}</h2><button onClick={() => setMobileMenuOpen(false)}><X size={24} className="text-slate-400 hover:text-white" /></button></div>
-                <nav><ul className="space-y-2">{MENU_ITEMS.map((item) => (<li key={item.path}><button onClick={() => { setActiveTab(item.path); setMobileMenuOpen(false); }} className={`w-full flex items-center p-3 rounded-lg ${activeTab === item.path ? 'bg-blue-600 text-white' : 'hover:bg-slate-800 text-slate-300'}`}><item.icon size={20} className="mr-3" />{item.label}</button></li>))}</ul></nav>
-                <div className="absolute bottom-4 left-4 right-4"><button onClick={handleLogout} className="w-full flex items-center justify-center p-3 rounded-lg bg-slate-800 hover:bg-red-900/50 text-slate-300 hover:text-red-400 transition-colors gap-2"><LogOut size={18} /> Đăng xuất</button></div>
+                <nav><ul className="space-y-2">{MENU_ITEMS.map((item) => (<li key={item.path}><button onClick={() => { setActiveTab(item.path); setMobileMenuOpen(false); }} className={`w-full flex items-center p-3 rounded-md ${activeTab === item.path ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-800 text-slate-300'}`}><item.icon size={20} className="mr-3" />{item.label}</button></li>))}</ul></nav>
+                <div className="absolute bottom-4 left-4 right-4"><button onClick={handleLogout} className="w-full flex items-center justify-center p-3 rounded-md bg-slate-800 hover:bg-red-900/50 text-slate-300 hover:text-red-400 transition-colors gap-2"><LogOut size={18} /> Đăng xuất</button></div>
              </div>
           </div>
         )}
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6 relative text-gray-800 dark:text-gray-100">{renderContent()}</main>
+        <main className="flex-1 overflow-auto p-4 md:p-6 relative text-foreground">
+            <div className="max-w-[1600px] mx-auto h-full flex flex-col">
+                {renderContent()}
+            </div>
+        </main>
       </div>
     </div>
   );

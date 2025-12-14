@@ -6,12 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ISO DocManager Pro</title>
     
-    <!-- Sử dụng Tailwind CDN để đảm bảo style hoạt động ngay cả khi build CSS thất bại -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
+          container: {
+            center: true,
+            padding: "2rem",
+            screens: {
+              "2xl": "1400px",
+            },
+          },
           extend: {
             colors: {
               border: "hsl(var(--border))",
@@ -20,30 +26,42 @@
               background: "hsl(var(--background))",
               foreground: "hsl(var(--foreground))",
               primary: {
-                DEFAULT: "#0f172a",
-                foreground: "#f8fafc",
+                DEFAULT: "hsl(var(--primary))",
+                foreground: "hsl(var(--primary-foreground))",
               },
               secondary: {
-                DEFAULT: "#f1f5f9",
-                foreground: "#0f172a",
+                DEFAULT: "hsl(var(--secondary))",
+                foreground: "hsl(var(--secondary-foreground))",
               },
               destructive: {
-                DEFAULT: "#ef4444",
-                foreground: "#f8fafc",
+                DEFAULT: "hsl(var(--destructive))",
+                foreground: "hsl(var(--destructive-foreground))",
               },
               muted: {
-                DEFAULT: "#f1f5f9",
-                foreground: "#64748b",
+                DEFAULT: "hsl(var(--muted))",
+                foreground: "hsl(var(--muted-foreground))",
               },
               accent: {
-                DEFAULT: "#f1f5f9",
-                foreground: "#0f172a",
+                DEFAULT: "hsl(var(--accent))",
+                foreground: "hsl(var(--accent-foreground))",
+              },
+              popover: {
+                DEFAULT: "hsl(var(--popover))",
+                foreground: "hsl(var(--popover-foreground))",
+              },
+              card: {
+                DEFAULT: "hsl(var(--card))",
+                foreground: "hsl(var(--card-foreground))",
               },
             },
             borderRadius: {
-              lg: "0.5rem",
-              md: "calc(0.5rem - 2px)",
-              sm: "calc(0.5rem - 4px)",
+              lg: "var(--radius)",
+              md: "calc(var(--radius) - 2px)",
+              sm: "calc(var(--radius) - 4px)",
+            },
+            fontFamily: {
+              sans: ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+              mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
             },
             zIndex: {
               'sticky-col': '10',
@@ -62,7 +80,6 @@
       }
     </script>
     <script>
-      // Kiểm tra và áp dụng Dark Mode theo hệ điều hành
       if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         document.documentElement.classList.add('dark');
       }
@@ -75,148 +92,144 @@
       });
     </script>
     <style>
-      /* Định nghĩa biến CSS cho Tailwind Config */
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
       :root {
-        --background: 0 0% 100%;
-        --foreground: 222.2 47.4% 11.2%;
+        /* Professional Enterprise Blue Theme */
+        --background: 210 40% 98%;
+        --foreground: 222.2 84% 4.9%;
+
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+ 
+        --popover: 0 0% 100%;
+        --popover-foreground: 222.2 84% 4.9%;
+ 
+        --primary: 221.2 83.2% 53.3%; /* #2563eb Blue 600 */
+        --primary-foreground: 210 40% 98%;
+ 
+        --secondary: 210 40% 96.1%;
+        --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215.4 16.3% 46.9%;
+ 
+        --accent: 210 40% 96.1%;
+        --accent-foreground: 222.2 47.4% 11.2%;
+ 
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
+
         --border: 214.3 31.8% 91.4%;
         --input: 214.3 31.8% 91.4%;
-        --ring: 222.2 47.4% 11.2%;
-        
-        /* Z-Index Hierarchy Definitions (Reference) */
-        --z-table-sticky: 10;
-        --z-table-header: 20;
-        --z-app-header: 30;
-        --z-app-sidebar: 40;
-        --z-drawer: 50;
-        --z-mobile-menu: 60;
-        --z-modal: 70;
-        --z-dropdown: 80;
-        --z-notification: 90;
-        --z-widget: 100;
+        --ring: 221.2 83.2% 53.3%;
+ 
+        --radius: 0.5rem;
       }
-      
+ 
       .dark {
         --background: 222.2 84% 4.9%;
         --foreground: 210 40% 98%;
+ 
+        --card: 222.2 84% 4.9%;
+        --card-foreground: 210 40% 98%;
+ 
+        --popover: 222.2 84% 4.9%;
+        --popover-foreground: 210 40% 98%;
+ 
+        --primary: 217.2 91.2% 59.8%; /* #3b82f6 Blue 500 */
+        --primary-foreground: 222.2 47.4% 11.2%;
+ 
+        --secondary: 217.2 32.6% 17.5%;
+        --secondary-foreground: 210 40% 98%;
+ 
+        --muted: 217.2 32.6% 17.5%;
+        --muted-foreground: 215 20.2% 65.1%;
+ 
+        --accent: 217.2 32.6% 17.5%;
+        --accent-foreground: 210 40% 98%;
+ 
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 210 40% 98%;
+ 
         --border: 217.2 32.6% 17.5%;
         --input: 217.2 32.6% 17.5%;
-        --ring: 212.7 26.8% 83.9%;
+        --ring: 224.3 76.3% 48%;
       }
 
-      /* Đảm bảo ứng dụng full chiều cao màn hình */
+      /* High Contrast Mode (Windows) Overrides */
+      @media (forced-colors: active) {
+        :root {
+          --primary: CanvasText;
+          --primary-foreground: Canvas;
+          --secondary: Canvas;
+          --secondary-foreground: CanvasText;
+          --muted: Canvas;
+          --muted-foreground: CanvasText;
+          --accent: Highlight;
+          --accent-foreground: HighlightText;
+          --border: CanvasText;
+        }
+      }
+
       html, body, #root {
         height: 100%;
         margin: 0;
         padding: 0;
       }
+      
+      body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
 
-      /* Custom Scrollbar */
+      /* Modern Scrollbar */
       ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: #f1f5f9; 
-      }
-      .dark ::-webkit-scrollbar-track {
-        background: #1e293b;
+        background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: #cbd5e1; 
-        border-radius: 4px;
-      }
-      .dark ::-webkit-scrollbar-thumb {
-        background: #475569;
+        background: hsl(var(--muted-foreground) / 0.3); 
+        border-radius: 9999px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8; 
-      }
-      body {
-        font-family: system-ui, -apple-system, sans-serif;
+        background: hsl(var(--muted-foreground) / 0.5); 
       }
 
-      /* --- Animation Polyfills for Tailwind CDN --- */
-      
-      /* Base Animation Keyframe similar to tailwindcss-animate */
-      @keyframes enter {
-        from {
-          opacity: var(--tw-enter-opacity, 1);
-          transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), 1) rotate(var(--tw-enter-rotate, 0));
-        }
-      }
-
-      /* Utility Classes */
-      .animate-in {
-        animation: enter 0.2s ease-out;
-        --tw-enter-opacity: initial;
-        --tw-enter-scale: initial;
-        --tw-enter-rotate: initial;
-        --tw-enter-translate-x: initial;
-        --tw-enter-translate-y: initial;
-      }
-
-      .fade-in {
-        --tw-enter-opacity: 0;
-      }
-
-      .zoom-in-95 {
-        --tw-enter-scale: 0.95;
-      }
-
-      .slide-in-from-top-2 {
-        --tw-enter-translate-y: -0.5rem;
-      }
-
-      .slide-in-from-bottom-2 {
-        --tw-enter-translate-y: 0.5rem;
-      }
-
-      /* Custom Application Animations */
-      @keyframes slideInRight {
-        from { transform: translateX(100%); }
-        to { transform: translateX(0); }
-      }
-      .animate-slide-in-right {
-        animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-
-      @keyframes slideInLeft {
-        from { transform: translateX(-100%); }
-        to { transform: translateX(0); }
-      }
-      .animate-slide-in-left {
-        animation: slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      .animate-fade-in {
-        animation: fadeIn 0.3s ease-out forwards;
-      }
-
+      /* Animations */
+      .animate-in { animation: enter 0.2s ease-out; --tw-enter-opacity: initial; --tw-enter-scale: initial; --tw-enter-rotate: initial; --tw-enter-translate-x: initial; --tw-enter-translate-y: initial; }
+      .fade-in { --tw-enter-opacity: 0; }
+      .zoom-in-95 { --tw-enter-scale: 0.95; }
+      .slide-in-from-top-2 { --tw-enter-translate-y: -0.5rem; }
+      .slide-in-from-bottom-2 { --tw-enter-translate-y: 0.5rem; }
+      @keyframes enter { from { opacity: var(--tw-enter-opacity, 1); transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), 1) rotate(var(--tw-enter-rotate, 0)); } }
+      @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+      .animate-slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
-    "react-dom": "https://esm.sh/react-dom@^19.2.3",
-    "xlsx": "https://esm.sh/xlsx@^0.18.5",
-    "recharts": "https://esm.sh/recharts@^3.5.1",
-    "date-fns": "https://esm.sh/date-fns@^4.1.0",
-    "lunar-javascript": "https://esm.sh/lunar-javascript@^1.7.7",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.87.1"
-  }
-}
-</script>
-</head>
-  <body class="bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-gray-100 transition-colors duration-300">
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
+        "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
+        "react-dom": "https://esm.sh/react-dom@^19.2.3",
+        "xlsx": "https://esm.sh/xlsx@^0.18.5",
+        "recharts": "https://esm.sh/recharts@^3.5.1",
+        "date-fns": "https://esm.sh/date-fns@^4.1.0",
+        "lunar-javascript": "https://esm.sh/lunar-javascript@^1.7.7",
+        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.87.1"
+      }
+    }
+    </script>
+  </head>
+  <body class="bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
