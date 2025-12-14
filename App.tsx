@@ -24,9 +24,6 @@ const AppContent: React.FC = () => {
   const [isAiEnabled, setIsAiEnabled] = useState(false); 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   
-  // Sidebar Tooltip State
-  const [hoveredItem, setHoveredItem] = useState<{ id: string, label: string, top: number } | null>(null);
-  
   // Notification State
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -252,59 +249,52 @@ const AppContent: React.FC = () => {
           hidden md:flex flex-col flex-none
           ${isSidebarOpen ? 'w-64' : 'w-20'} 
           bg-slate-900 text-slate-200 
-          transition-all duration-300 ease-in-out 
+          transition-[width] duration-300 ease-in-out 
           shadow-xl z-40 border-r border-slate-800 
           relative
         `}
       >
-        <div className="h-16 flex items-center justify-center border-b border-slate-800/50 bg-slate-950/20 shrink-0 overflow-hidden">
-           <div className={`transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 scale-50'}`}>
-              {isSidebarOpen && <span className="font-bold text-xl tracking-tight text-white whitespace-nowrap">ISO DocManager</span>}
-           </div>
-           {!isSidebarOpen && <span className="font-bold text-xl text-white absolute">ISO</span>}
+        <div className="h-16 flex items-center justify-center border-b border-slate-800/50 bg-slate-950/20 shrink-0">
+           {isSidebarOpen ? <span className="font-bold text-xl tracking-tight text-white px-4 truncate animate-in fade-in">{APP_NAME}</span> : <span className="font-bold text-xl text-white">ISO</span>}
         </div>
         
-        <nav className="flex-1 py-6 px-3 overflow-y-auto overflow-x-hidden space-y-1 custom-scrollbar">
+        <nav className="flex-1 py-6 px-3 overflow-y-auto overflow-x-hidden space-y-1">
             {MENU_ITEMS.map((item) => (
               <button 
                 key={item.path}
                 onClick={() => setActiveTab(item.path)} 
-                onMouseEnter={(e) => {
-                    if (!isSidebarOpen) {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        setHoveredItem({ id: item.path, label: item.label, top: rect.top + rect.height / 2 });
-                    }
-                }}
-                onMouseLeave={() => setHoveredItem(null)}
-                className={`w-full flex items-center p-2.5 rounded-md transition-all duration-200 group relative
+                className={`w-full flex items-center p-2.5 rounded-md transition-all duration-200 group whitespace-nowrap
                   ${activeTab === item.path 
                     ? 'bg-primary text-primary-foreground shadow-md font-medium' 
                     : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'
                   }`}
               >
                   <item.icon size={20} className={`min-w-[20px] transition-transform ${isSidebarOpen ? '' : 'mx-auto'}`} />
+                  {isSidebarOpen && <span className="ml-3 text-sm opacity-100 transition-opacity duration-300">{item.label}</span>}
                   
-                  {/* Label with transition */}
-                  <span className={`ml-3 text-sm whitespace-nowrap transition-all duration-300 origin-left ${isSidebarOpen ? 'opacity-100 scale-100 w-auto' : 'opacity-0 scale-0 w-0 overflow-hidden'}`}>
-                    {item.label}
-                  </span>
+                  {!isSidebarOpen && activeTab === item.path && (
+                    <div className="absolute left-16 bg-popover text-popover-foreground px-2 py-1 rounded text-xs shadow-md border whitespace-nowrap z-50 animate-in fade-in slide-in-from-left-2 ml-2">
+                        {item.label}
+                    </div>
+                  )}
               </button>
             ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800 bg-slate-950/30 shrink-0 overflow-hidden relative">
+        <div className="p-4 border-t border-slate-800 bg-slate-950/30 shrink-0 overflow-hidden">
           <div className="flex items-center gap-3">
-             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-inner border border-white/10 shrink-0 relative z-10">
+             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-inner border border-white/10 shrink-0">
                {currentUser.ho_ten ? currentUser.ho_ten.charAt(0) : '?'}
              </div>
-             
-             <div className={`overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
+             {isSidebarOpen && (
+               <div className="overflow-hidden">
                  <p className="text-sm font-medium text-slate-200 truncate">{currentUser.ho_ten}</p>
                  <p className="text-xs text-slate-500 truncate">{currentUser.email}</p>
-             </div>
+               </div>
+             )}
           </div>
           {isSidebarOpen && (
-             <div className="mt-4 flex flex-col gap-2 transition-opacity duration-300 delay-100">
+             <div className="mt-4 flex flex-col gap-2">
                <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                   <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-600'}`}></div>
                   {isConnected ? 'System Online' : 'Offline'}
@@ -312,18 +302,6 @@ const AppContent: React.FC = () => {
              </div>
            )}
         </div>
-
-        {/* Sidebar Tooltip (Rendered outside overflow-hidden nav) */}
-        {!isSidebarOpen && hoveredItem && (
-            <div 
-                className="fixed left-20 px-2 py-1 bg-slate-800 text-white text-xs rounded shadow-lg border border-slate-700 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-100 whitespace-nowrap"
-                style={{ top: hoveredItem.top, transform: 'translateY(-50%)', marginLeft: '8px' }}
-            >
-                {hoveredItem.label}
-                {/* Arrow */}
-                <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-slate-800 rotate-45 border-l border-b border-slate-700"></div>
-            </div>
-        )}
       </aside>
 
       {/* Main Content Area - Flex-1 (Tự động chiếm phần còn lại), min-w-0 (Ngăn tràn flex) */}
@@ -400,7 +378,7 @@ const AppContent: React.FC = () => {
                               <p>Không tìm thấy kết quả</p>
                            </div>
                        ) : searchTerm ? (
-                           <div className="max-h-[60vh] overflow-y-auto p-1 custom-scrollbar">
+                           <div className="max-h-[60vh] overflow-y-auto p-1">
                                {searchResults.docs.length > 0 && (
                                    <div className="py-2"><div className="px-3 py-1 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Tài liệu</div>{searchResults.docs.map(doc => (<div key={doc.id} onClick={() => handleSearchResultClick('documents')} className="px-3 py-2 hover:bg-accent rounded-md cursor-pointer flex items-center gap-3 group transition-colors"><div className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-1.5 rounded-md"><FileText size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{doc.ten_tai_lieu}</p><p className="text-xs text-muted-foreground font-mono">{doc.ma_tai_lieu}</p></div><ArrowRight size={14} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity"/></div>))}</div>
                                )}
@@ -428,7 +406,7 @@ const AppContent: React.FC = () => {
                   {showNotifications && (
                     <div className="absolute right-0 top-full mt-3 w-80 sm:w-96 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-[90] animate-in fade-in slide-in-from-top-2 origin-top-right">
                        <div className="p-3 border-b border-border flex justify-between items-center bg-muted/30"><h3 className="font-semibold text-sm">Thông báo</h3>{notifications.filter(n => !n.read).length > 0 && <button onClick={() => setNotifications(prev => prev.map(n => ({...n, read: true})))} className="text-xs text-primary hover:text-primary/80 font-medium hover:underline">Đánh dấu đã đọc hết</button>}</div>
-                       <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
+                       <div className="max-h-[60vh] overflow-y-auto">
                           {notifications.length > 0 ? (
                             notifications.map(n => (
                               <div key={n.id} onClick={() => handleNotificationClick(n)} className={`p-4 border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer transition-colors flex gap-3 ${!n.read ? 'bg-primary/5' : ''}`}>
@@ -464,7 +442,7 @@ const AppContent: React.FC = () => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6 relative text-foreground w-full custom-scrollbar">
+        <main className="flex-1 overflow-auto p-4 md:p-6 relative text-foreground w-full">
             <div className="max-w-[1600px] mx-auto h-full flex flex-col">
                 {renderContent()}
             </div>

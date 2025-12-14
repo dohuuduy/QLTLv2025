@@ -1,9 +1,10 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { TaiLieu, TrangThaiTaiLieu, MasterDataState, NhanSu, HoSo, ColumnDefinition } from '../../types';
+import { TaiLieu, TrangThaiTaiLieu, MasterDataState, NhanSu, HoSo, ColumnDefinition, DinhKem } from '../../types';
 import { DataTable } from '../../components/DataTable';
 import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { TaiLieuForm } from './TaiLieuForm';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
@@ -12,7 +13,6 @@ import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 import { format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
-import { Modal } from '../../components/ui/Modal'; // Use standard Modal for Confirm/History
 
 interface TaiLieuListProps {
   masterData: MasterDataState;
@@ -26,7 +26,6 @@ interface TaiLieuListProps {
 export const TaiLieuList: React.FC<TaiLieuListProps> = ({ 
   masterData, currentUser, initialFilters, data, onUpdate, records 
 }) => {
-  // View Modes: list, form (create/edit), detail (centered card)
   const [viewMode, setViewMode] = useState<'list' | 'form' | 'detail'>('list');
   const [isTreeView, setIsTreeView] = useState(true); 
   const [selectedDoc, setSelectedDoc] = useState<TaiLieu | null>(null);
@@ -34,7 +33,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const [filters, setFilters] = useState<{ trang_thai?: string; bo_phan?: string; loai_tai_lieu?: string }>(initialFilters || {});
   
   const [showVersionModal, setShowVersionModal] = useState(false);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false); // NEW STATE FOR HISTORY
   const [versionType, setVersionType] = useState<'minor' | 'major'>('minor');
   const [versionReason, setVersionReason] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -42,20 +41,11 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const dialog = useDialog();
   const isAdmin = currentUser.roles.includes('QUAN_TRI');
 
-  // Lock body scroll when in detail/form mode
-  useEffect(() => {
-    if (viewMode !== 'list') {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [viewMode]);
-
   useEffect(() => {
     if (initialFilters) setFilters(prev => ({ ...prev, ...initialFilters }));
   }, [initialFilters]);
 
+  // Helper to resolve names
   const getUserName = (id: string) => masterData.nhanSu.find(u => u.id === id)?.ho_ten || '---';
   const getDept = (userId: string) => masterData.nhanSu.find(u => u.id === userId)?.phong_ban || '---';
 
@@ -65,7 +55,12 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       let currentDoc = doc;
       while (currentDoc.tai_lieu_cha_id && level < 5) {
           const parent = allDocs.find(d => d.id === currentDoc.tai_lieu_cha_id);
-          if (parent) { level++; currentDoc = parent; } else { break; }
+          if (parent) {
+              level++;
+              currentDoc = parent;
+          } else {
+              break;
+          }
       }
       return level;
   };
@@ -73,29 +68,38 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const sortDataHierarchy = (docs: TaiLieu[]) => {
       const docMap = new Map<string, TaiLieu[]>();
       const roots: TaiLieu[] = [];
+
       docs.forEach(doc => {
           if (doc.tai_lieu_cha_id && docs.find(d => d.id === doc.tai_lieu_cha_id)) {
               const siblings = docMap.get(doc.tai_lieu_cha_id) || [];
               siblings.push(doc);
               docMap.set(doc.tai_lieu_cha_id, siblings);
-          } else { roots.push(doc); }
+          } else {
+              roots.push(doc);
+          }
       });
+
       const buildList = (nodes: TaiLieu[]): TaiLieu[] => {
           const sortedNodes = nodes.sort((a, b) => (a.thu_tu || 0) - (b.thu_tu || 0) || a.ma_tai_lieu.localeCompare(b.ma_tai_lieu));
           let result: TaiLieu[] = [];
           sortedNodes.forEach(node => {
               result.push(node);
               const children = docMap.get(node.id);
-              if (children && children.length > 0) result = result.concat(buildList(children));
+              if (children && children.length > 0) {
+                  result = result.concat(buildList(children));
+              }
           });
           return result;
       };
+
       return buildList(roots);
   };
+  // --- END HIERARCHY LOGIC ---
 
   const filteredData = useMemo(() => {
     let result = data.filter(doc => {
       if (filters.trang_thai && doc.trang_thai !== filters.trang_thai) return false;
+      // Filter by Department based on Author
       if (filters.bo_phan) {
           const authorDept = masterData.nhanSu.find(u => u.id === doc.id_nguoi_soan_thao)?.phong_ban;
           if (authorDept !== filters.bo_phan) return false;
@@ -103,38 +107,64 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       if (filters.loai_tai_lieu && doc.loai_tai_lieu !== filters.loai_tai_lieu) return false;
       return true;
     });
-    return isTreeView ? sortDataHierarchy(result) : result;
+
+    if (isTreeView) {
+        return sortDataHierarchy(result);
+    }
+    return result;
   }, [data, filters, isTreeView, masterData.nhanSu]);
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const confirmed = await dialog.confirm('Hành động này không thể hoàn tác! Bạn có chắc muốn xóa tài liệu này không?', { title: 'Xác nhận xóa tài liệu', type: 'error', confirmLabel: 'Xóa ngay' });
+    const confirmed = await dialog.confirm(
+        'Hành động này không thể hoàn tác! Bạn có chắc muốn xóa tài liệu này không?',
+        { title: 'Xác nhận xóa tài liệu', type: 'error', confirmLabel: 'Xóa ngay' }
+    );
+
     if (confirmed) {
         try {
             await deleteDocument(id);
             onUpdate(data.filter(d => d.id !== id));
             dialog.alert('Đã xóa tài liệu thành công!', { type: 'success' });
-        } catch (error) { dialog.alert('Lỗi khi xóa tài liệu!', { type: 'error' }); }
+        } catch (error) {
+            dialog.alert('Lỗi khi xóa tài liệu! Vui lòng thử lại.', { type: 'error' });
+        }
     }
   };
 
-  // --- COLUMN DEFINITIONS ---
   const columns: ColumnDefinition<TaiLieu>[] = [
     { key: 'ma_tai_lieu', header: 'Mã tài liệu', visible: true, render: (val) => <span className="font-mono font-bold text-blue-700 dark:text-blue-400">{val}</span> },
     { 
-        key: 'ten_tai_lieu', header: 'Tên tài liệu', visible: true, 
+        key: 'ten_tai_lieu', 
+        header: 'Tên tài liệu', 
+        visible: true, 
         render: (val, doc) => {
             const level = isTreeView ? getLevel(doc, data) : 0;
             const file = doc.dinh_kem?.[0];
+
             return (
                 <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 24}px` }}>
                     {level > 0 && <CornerDownRight size={16} className="text-gray-400 shrink-0" />}
+                    
                     {file && (
-                        <a href={file.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="shrink-0 hover:scale-110 transition-transform" title={`Mở file: ${file.ten_file}`}>
-                            {file.loai === 'pdf' ? <FileType size={18} className="text-red-600" /> : file.loai === 'excel' ? <FileSpreadsheet size={18} className="text-green-600" /> : file.loai === 'doc' ? <FileText size={18} className="text-blue-600" /> : <File size={18} className="text-gray-400" />}
+                        <a 
+                            href={file.url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()} // Prevent row click
+                            className="shrink-0 hover:scale-110 transition-transform"
+                            title={`Mở file: ${file.ten_file}`}
+                        >
+                            {file.loai === 'pdf' ? <FileType size={18} className="text-red-600" /> : 
+                             file.loai === 'excel' ? <FileSpreadsheet size={18} className="text-green-600" /> : 
+                             file.loai === 'doc' ? <FileText size={18} className="text-blue-600" /> :
+                             <File size={18} className="text-gray-400" />}
                         </a>
                     )}
-                    <span className={`font-medium line-clamp-1 ${level === 0 ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-700 dark:text-gray-300'}`} title={val as string}>{val}</span>
+
+                    <span className={`font-medium line-clamp-1 ${level === 0 ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-700 dark:text-gray-300'}`} title={val as string}>
+                        {val}
+                    </span>
                 </div>
             );
         }
@@ -145,16 +175,30 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     { key: 'trang_thai', header: 'Trạng thái', visible: true, render: (val) => <Badge status={val as TrangThaiTaiLieu} /> },
     { key: 'id', header: 'Thao tác', visible: true, render: (_, item) => (
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleViewDetail(item); }} title="Xem chi tiết"><Eye size={16} className="text-gray-500 hover:text-blue-500" /></Button>
-        <Button variant="ghost" size="icon" onClick={(e) => handleDelete(item.id, e)} title="Xóa tài liệu"><Trash2 size={16} className="text-gray-500 hover:text-red-500" /></Button>
+        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleViewDetail(item); }} title="Xem chi tiết">
+          <Eye size={16} className="text-gray-500 hover:text-blue-500" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={(e) => handleDelete(item.id, e)} title="Xóa tài liệu">
+          <Trash2 size={16} className="text-gray-500 hover:text-red-500" />
+        </Button>
       </div>
     )}
   ];
 
-  // --- HANDLERS ---
-  const handleAddNew = () => { setSelectedDoc(null); setViewMode('form'); };
-  const handleViewDetail = (doc: TaiLieu) => { setSelectedDoc(doc); setViewMode('detail'); };
-  const handleCloseOverlay = () => { setViewMode('list'); setTimeout(() => setSelectedDoc(null), 200); };
+  const handleAddNew = () => {
+    setSelectedDoc(null);
+    setViewMode('form');
+  };
+
+  const handleViewDetail = (doc: TaiLieu) => {
+    setSelectedDoc(doc);
+    setViewMode('detail');
+  };
+
+  const handleCloseDrawer = () => {
+    setViewMode('list');
+    setTimeout(() => setSelectedDoc(null), 200);
+  };
 
   const handleSaveDoc = async (docData: Partial<TaiLieu>) => {
     setIsLoading(true);
@@ -168,49 +212,124 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       lich_su: docData.lich_su || []
     } as TaiLieu;
 
-    if (!docData.id) newDoc.lich_su?.push({ id: `H${Date.now()}`, nguoi_thuc_hien: currentUser.ho_ten, hanh_dong: 'TAO_MOI', thoi_gian: new Date().toISOString(), ghi_chu: 'Khởi tạo tài liệu' });
-    else newDoc.lich_su?.push({ id: `H${Date.now()}`, nguoi_thuc_hien: currentUser.ho_ten, hanh_dong: 'CAP_NHAT', thoi_gian: new Date().toISOString(), ghi_chu: 'Cập nhật thông tin' });
+    if (!docData.id) {
+       newDoc.lich_su?.push({
+         id: `H${Date.now()}`,
+         nguoi_thuc_hien: currentUser.ho_ten, // Keep Name in History for immutability
+         hanh_dong: 'TAO_MOI',
+         thoi_gian: new Date().toISOString(),
+         ghi_chu: 'Khởi tạo tài liệu'
+       });
+    } else {
+        newDoc.lich_su?.push({
+         id: `H${Date.now()}`,
+         nguoi_thuc_hien: currentUser.ho_ten,
+         hanh_dong: 'CAP_NHAT',
+         thoi_gian: new Date().toISOString(),
+         ghi_chu: 'Cập nhật thông tin'
+       });
+    }
 
     try {
       await upsertDocument(newDoc);
-      if (docData.id) onUpdate(data.map(d => d.id === newDoc.id ? newDoc : d));
-      else onUpdate([newDoc, ...data]);
-      handleCloseOverlay();
+      if (docData.id) {
+        onUpdate(data.map(d => d.id === newDoc.id ? newDoc : d));
+      } else {
+        onUpdate([newDoc, ...data]);
+      }
+      handleCloseDrawer();
       dialog.alert('Lưu tài liệu thành công!', { type: 'success' });
-    } catch (e) { dialog.alert('Lỗi lưu tài liệu! Vui lòng thử lại.', { type: 'error' }); } finally { setIsLoading(false); }
+    } catch (e) {
+      dialog.alert('Lỗi lưu tài liệu! Vui lòng thử lại.', { type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Approval Request
   const handleSendRequest = async () => {
     if (!selectedDoc) return;
     setIsLoading(true);
     const updatedDoc: TaiLieu = {
       ...selectedDoc,
       trang_thai: TrangThaiTaiLieu.CHO_DUYET,
-      lich_su: [...(selectedDoc.lich_su || []), { id: `H${Date.now()}`, nguoi_thuc_hien: currentUser.ho_ten, hanh_dong: 'GUI_DUYET', thoi_gian: new Date().toISOString(), ghi_chu: 'Gửi yêu cầu phê duyệt', trang_thai_cu: selectedDoc.trang_thai, trang_thai_moi: TrangThaiTaiLieu.CHO_DUYET }]
+      lich_su: [
+        ...(selectedDoc.lich_su || []),
+        {
+          id: `H${Date.now()}`,
+          nguoi_thuc_hien: currentUser.ho_ten,
+          hanh_dong: 'GUI_DUYET',
+          thoi_gian: new Date().toISOString(),
+          ghi_chu: 'Gửi yêu cầu phê duyệt',
+          trang_thai_cu: selectedDoc.trang_thai,
+          trang_thai_moi: TrangThaiTaiLieu.CHO_DUYET
+        }
+      ]
     };
+
     try {
       await upsertDocument(updatedDoc);
       onUpdate(data.map(d => d.id === updatedDoc.id ? updatedDoc : d));
       setSelectedDoc(updatedDoc);
       dialog.alert('Đã gửi yêu cầu phê duyệt thành công!', { type: 'success' });
-    } catch (e) { dialog.alert('Lỗi gửi yêu cầu phê duyệt.', { type: 'error' }); } finally { setIsLoading(false); }
+    } catch (e) {
+      dialog.alert('Lỗi gửi yêu cầu phê duyệt.', { type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Versioning Logic
-  const handleVersionUpClick = () => { setShowVersionModal(true); setVersionReason(''); setVersionType('minor'); };
+  const handleVersionUpClick = () => {
+    setShowVersionModal(true);
+    setVersionReason('');
+    setVersionType('minor');
+  };
+
   const getNextVersion = (currentVer: string, type: 'minor' | 'major') => {
     const parts = currentVer.split('.');
     const major = parseInt(parts[0]) || 1;
     const minor = parseInt(parts[1]) || 0;
-    return type === 'major' ? `${major + 1}.0` : `${major}.${minor + 1}`;
+    if (type === 'major') return `${major + 1}.0`;
+    return `${major}.${minor + 1}`;
   };
+
   const confirmVersionUp = async () => {
-    if (!selectedDoc || !versionReason.trim()) { dialog.alert("Vui lòng nhập lý do nâng cấp!", { type: 'warning' }); return; }
+    if (!selectedDoc) return;
+    if (!versionReason.trim()) {
+        dialog.alert("Vui lòng nhập lý do nâng cấp!", { type: 'warning' });
+        return;
+    }
     setIsLoading(true);
-    const oldDoc: TaiLieu = { ...selectedDoc, trang_thai: TrangThaiTaiLieu.HET_HIEU_LUC, lich_su: [...(selectedDoc.lich_su || []), { id: `H${Date.now()}_OLD`, nguoi_thuc_hien: currentUser.ho_ten, hanh_dong: 'HUY_BO', thoi_gian: new Date().toISOString(), ghi_chu: `Hết hiệu lực do có phiên bản mới: ${versionReason}` }] };
+
+    const oldDoc: TaiLieu = {
+       ...selectedDoc,
+       trang_thai: TrangThaiTaiLieu.HET_HIEU_LUC,
+       lich_su: [...(selectedDoc.lich_su || []), {
+          id: `H${Date.now()}_OLD`,
+          nguoi_thuc_hien: currentUser.ho_ten,
+          hanh_dong: 'HUY_BO', // Hoặc hết hiệu lực
+          thoi_gian: new Date().toISOString(),
+          ghi_chu: `Hết hiệu lực do có phiên bản mới: ${versionReason}`
+       }]
+    };
+
     const newVersion = getNextVersion(selectedDoc.phien_ban, versionType);
-    const newDoc: TaiLieu = { ...selectedDoc, id: `TL${Date.now()}`, phien_ban: newVersion, trang_thai: TrangThaiTaiLieu.SOAN_THAO, ngay_ban_hanh: '', ngay_hieu_luc: '', lan_ban_hanh: selectedDoc.lan_ban_hanh + 1, lich_su: [{ id: `H${Date.now()}_NEW`, nguoi_thuc_hien: currentUser.ho_ten, hanh_dong: 'TAO_MOI', thoi_gian: new Date().toISOString(), ghi_chu: `Khởi tạo phiên bản ${newVersion} từ ${selectedDoc.phien_ban}. Lý do: ${versionReason}` }] };
+    const newDoc: TaiLieu = {
+       ...selectedDoc,
+       id: `TL${Date.now()}`,
+       phien_ban: newVersion,
+       trang_thai: TrangThaiTaiLieu.SOAN_THAO,
+       ngay_ban_hanh: '', // Reset
+       ngay_hieu_luc: '', // Reset
+       lan_ban_hanh: selectedDoc.lan_ban_hanh + 1,
+       lich_su: [{
+          id: `H${Date.now()}_NEW`,
+          nguoi_thuc_hien: currentUser.ho_ten,
+          hanh_dong: 'TAO_MOI',
+          thoi_gian: new Date().toISOString(),
+          ghi_chu: `Khởi tạo phiên bản ${newVersion} từ ${selectedDoc.phien_ban}. Lý do: ${versionReason}`
+       }]
+    };
+
     try {
         await upsertDocument(oldDoc);
         await upsertDocument(newDoc);
@@ -219,12 +338,18 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         setShowVersionModal(false);
         setViewMode('form');
         dialog.alert(`Đã nâng cấp lên phiên bản ${newVersion}`, { type: 'success' });
-    } catch(e) { dialog.alert("Lỗi khi nâng phiên bản tài liệu.", { type: 'error' }); } finally { setIsLoading(false); }
+    } catch(e) {
+        dialog.alert("Lỗi khi nâng phiên bản tài liệu.", { type: 'error' });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const renderFilters = (
     <div className="flex items-center gap-2 w-full">
-       <button onClick={() => setIsTreeView(!isTreeView)} className={`shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border transition-all ${isTreeView ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300' : 'bg-white border-gray-200 text-gray-500 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}`} title={isTreeView ? "Đang xem dạng cây. Click để chuyển dạng danh sách." : "Đang xem danh sách. Click để chuyển dạng cây."}>{isTreeView ? <Layers size={18} /> : <List size={18} />}</button>
+       <button onClick={() => setIsTreeView(!isTreeView)} className={`shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border transition-all ${isTreeView ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300' : 'bg-white border-gray-200 text-gray-500 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}`} title={isTreeView ? "Đang xem dạng cây. Click để chuyển dạng danh sách." : "Đang xem danh sách. Click để chuyển dạng cây."}>
+          {isTreeView ? <Layers size={18} /> : <List size={18} />}
+       </button>
        <div className="h-6 w-px bg-gray-200 dark:bg-slate-700 shrink-0 mx-1"></div>
        <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar min-w-0">
            <div className="relative group shrink-0">
@@ -237,7 +362,20 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
               </select>
               <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
            </div>
-           {/* More filters can be added here */}
+           <div className="relative group shrink-0">
+              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.bo_phan || ''} onChange={(e) => setFilters(prev => ({ ...prev, bo_phan: e.target.value || undefined }))}>
+                 <option value="">Bộ phận: Tất cả</option>
+                 {masterData.boPhan.map(bp => (<option key={bp.id} value={bp.ten}>{bp.ten}</option>))}
+              </select>
+              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           </div>
+           <div className="relative group shrink-0">
+              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.loai_tai_lieu || ''} onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}>
+                 <option value="">Loại: Tất cả</option>
+                 {masterData.loaiTaiLieu.map(lt => (<option key={lt.id} value={lt.ten}>{lt.ten}</option>))}
+              </select>
+              <FileText size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           </div>
        </div>
        {(filters.trang_thai || filters.bo_phan || filters.loai_tai_lieu) && (
           <button onClick={() => setFilters({})} className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 ml-1" title="Xóa tất cả bộ lọc"><X size={16} /></button>
@@ -248,131 +386,329 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   return (
     <div className="h-full flex flex-col animate-fade-in relative">
       <div className="flex-1 overflow-hidden h-full rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
-         <DataTable data={filteredData} columns={columns} onRowClick={handleViewDetail} filters={renderFilters} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16}/>} className="shadow-sm">Thêm mới</Button>} />
+         <DataTable 
+            data={filteredData} 
+            columns={columns} 
+            onRowClick={handleViewDetail}
+            filters={renderFilters}
+            actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16}/>} className="shadow-sm">Thêm mới</Button>}
+         />
       </div>
 
-      {/* RENDER FORM OVERLAY (If in Form Mode) */}
-      {viewMode === 'form' && (
-         <TaiLieuForm initialData={selectedDoc} onSave={handleSaveDoc} onCancel={handleCloseOverlay} masterData={masterData} fullList={data} />
+      {(viewMode === 'form' || viewMode === 'detail') && createPortal(
+        <div className="fixed inset-0 top-16 z-[50] flex justify-end">
+           {/* Backdrop starts below navbar */}
+           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" onClick={handleCloseDrawer}/>
+           
+           {/* Drawer starts below navbar with top border */}
+           <div className="w-full max-w-7xl bg-white dark:bg-slate-950 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
+              {viewMode === 'form' ? (
+                 <TaiLieuForm 
+                   initialData={selectedDoc} 
+                   onSave={handleSaveDoc} 
+                   onCancel={handleCloseDrawer} 
+                   masterData={masterData}
+                   fullList={data}
+                 />
+              ) : (
+                 selectedDoc && (
+                   <div className="flex flex-col h-full overflow-hidden relative bg-gray-50 dark:bg-slate-950">
+                     
+                     {/* --- 1. STICKY HEADER --- */}
+                     {/* UPDATED: Fully responsive, sticky, and safe from overlap */}
+                     <div className="sticky top-0 z-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shrink-0 shadow-sm">
+                        <div className="flex items-center gap-3 min-w-0 flex-1 w-full sm:w-auto">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm shrink-0">
+                                <FileText size={20} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight truncate pr-2" title={selectedDoc.ten_tai_lieu}>{selectedDoc.ten_tai_lieu}</h2>
+                                <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mt-0.5">
+                                    <span className="font-mono font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 px-1.5 rounded border border-gray-200 dark:border-slate-700 text-xs">{selectedDoc.ma_tai_lieu}</span>
+                                    <span className="text-xs">•</span>
+                                    <span className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 px-1.5 rounded text-xs font-semibold border border-blue-100 dark:border-blue-800">v{selectedDoc.phien_ban}</span>
+                                    <span className="text-xs hidden sm:inline">•</span>
+                                    <Badge status={selectedDoc.trang_thai} />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setShowHistoryModal(true)} 
+                                className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                                title="Xem lịch sử"
+                            >
+                                <History size={18} />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={handleCloseDrawer} className="text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                <X size={20} />
+                            </Button>
+                        </div>
+                     </div>
+
+                     {/* --- 2. SCROLLABLE CONTENT --- */}
+                     <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 custom-scrollbar">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+                           
+                           {/* --- LEFT COLUMN (MAIN CONTENT 66%) --- */}
+                           <div className="lg:col-span-2 space-y-6">
+                              {/* Content Card */}
+                              <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-6">
+                                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-3 mb-4">
+                                      <Info size={16} className="text-blue-500"/> Nội dung tóm tắt
+                                  </h3>
+                                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm text-justify whitespace-pre-wrap">
+                                      {selectedDoc.mo_ta_tom_tat || <span className="text-gray-400 italic">Chưa có mô tả chi tiết cho tài liệu này.</span>}
+                                  </p>
+                              </div>
+
+                              {/* Attachments Card */}
+                              <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-6">
+                                  <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-3 mb-4">
+                                      <Paperclip size={16} className="text-orange-500"/> Tài liệu đính kèm
+                                  </h3>
+                                  {selectedDoc.dinh_kem && selectedDoc.dinh_kem.length > 0 ? (
+                                      <div className="grid grid-cols-1 gap-3">
+                                          {selectedDoc.dinh_kem.map(file => {
+                                              const isRestricted = (file.loai === 'doc' || file.loai === 'excel') && !isAdmin;
+                                              const icon = file.loai === 'pdf' ? <FileType className="text-red-500" size={20} /> : 
+                                                           file.loai === 'excel' ? <FileSpreadsheet className="text-emerald-500" size={20} /> :
+                                                           file.loai === 'doc' ? <FileText className="text-blue-500" size={20} /> :
+                                                           <File className="text-gray-400" size={20} />;
+                                              
+                                              return (
+                                                  <div key={file.id} className="group relative flex items-center gap-3 p-3 rounded-lg border border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:border-blue-200 dark:hover:border-blue-800 transition-all">
+                                                      <div className="shrink-0">{icon}</div>
+                                                      <div className="flex-1 min-w-0">
+                                                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate" title={file.ten_file}>{file.ten_file}</p>
+                                                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                                                              <span>{format(new Date(file.ngay_upload), 'dd/MM/yyyy HH:mm')}</span>
+                                                              {isRestricted && <span className="text-amber-500 flex items-center gap-1"><Lock size={10} /> Protected</span>}
+                                                          </div>
+                                                      </div>
+                                                      {!isRestricted && (
+                                                          <a href={file.url} target="_blank" rel="noreferrer" className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-white dark:hover:bg-slate-700 transition-colors" title="Mở file">
+                                                              <ExternalLink size={16} />
+                                                          </a>
+                                                      )}
+                                                  </div>
+                                              );
+                                          })}
+                                      </div>
+                                  ) : (
+                                      <div className="text-center py-8 text-gray-400 text-sm bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-dashed border-gray-200 dark:border-slate-700">Không có file đính kèm</div>
+                                  )}
+                              </div>
+                           </div>
+
+                           {/* --- RIGHT COLUMN (SIDEBAR 33%) --- */}
+                           <div className="space-y-6">
+                               
+                               {/* Meta Info Card */}
+                               <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                   <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
+                                       <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                           <LayoutDashboard size={16} className="text-purple-500" /> Thông tin chung
+                                       </h4>
+                                   </div>
+                                   <div className="p-4 space-y-4">
+                                       <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Loại tài liệu</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedDoc.loai_tai_lieu}</p></div>
+                                       <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Lĩnh vực</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedDoc.linh_vuc || '---'}</p></div>
+                                       <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Bộ phận sở hữu</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getDept(selectedDoc.id_nguoi_soan_thao)}</p></div>
+                                       {selectedDoc.tieu_chuan && selectedDoc.tieu_chuan.length > 0 && (
+                                           <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Tiêu chuẩn áp dụng</p><div className="flex flex-wrap gap-1.5">{selectedDoc.tieu_chuan.map(t => (<span key={t} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"><Tag size={10} /> {t}</span>))}</div></div>
+                                       )}
+                                   </div>
+                               </div>
+
+                               {/* Control Card */}
+                               <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                   <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
+                                       <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                           <Shield size={16} className="text-emerald-500" /> Kiểm soát
+                                       </h4>
+                                   </div>
+                                   <div className="p-4 space-y-4">
+                                       <div className="grid grid-cols-2 gap-4">
+                                           <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Ngày ban hành</p><p className="text-sm font-medium">{selectedDoc.ngay_ban_hanh ? format(new Date(selectedDoc.ngay_ban_hanh), 'dd/MM/yyyy') : '---'}</p></div>
+                                           <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Ngày hiệu lực</p><p className="text-sm font-medium">{selectedDoc.ngay_hieu_luc ? format(new Date(selectedDoc.ngay_hieu_luc), 'dd/MM/yyyy') : '---'}</p></div>
+                                       </div>
+                                       {selectedDoc.ngay_ra_soat_tiep_theo && (
+                                           <div className="pt-3 border-t border-gray-100 dark:border-slate-800">
+                                               <p className="text-xs text-orange-600 dark:text-orange-400 uppercase font-bold mb-1 flex items-center gap-1"><RefreshCw size={12} /> Rà soát tiếp theo</p>
+                                               <div className="flex items-center justify-between">
+                                                   <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{format(new Date(selectedDoc.ngay_ra_soat_tiep_theo), 'dd/MM/yyyy')}</p>
+                                                   <span className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-100">{selectedDoc.chu_ky_ra_soat} tháng</span>
+                                               </div>
+                                           </div>
+                                       )}
+                                   </div>
+                               </div>
+
+                               {/* Responsibilities Card */}
+                               <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                   <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
+                                       <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                           <UserCheck size={16} className="text-blue-500" /> Trách nhiệm
+                                       </h4>
+                                   </div>
+                                   <div className="p-4 space-y-3">
+                                       <div className="flex items-center justify-between text-sm"><span className="text-gray-500 text-xs uppercase font-semibold">Soạn thảo</span><span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.id_nguoi_soan_thao)}</span></div>
+                                       <div className="w-full h-px bg-gray-100 dark:bg-slate-800"></div>
+                                       <div className="flex items-center justify-between text-sm"><span className="text-gray-500 text-xs uppercase font-semibold">Xem xét</span><span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.id_nguoi_xem_xet)}</span></div>
+                                       <div className="w-full h-px bg-gray-100 dark:bg-slate-800"></div>
+                                       <div className="flex items-center justify-between text-sm"><span className="text-gray-500 text-xs uppercase font-semibold">Phê duyệt</span><span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.id_nguoi_phe_duyet)}</span></div>
+                                   </div>
+                               </div>
+
+                               {/* Related Records */}
+                               <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                   <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
+                                       <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                           <Archive size={16} className="text-gray-500" /> Hồ sơ liên quan
+                                       </h4>
+                                   </div>
+                                   <div className="p-4">
+                                       {records.filter(r => r.ma_tai_lieu_lien_quan === selectedDoc.ma_tai_lieu).length > 0 ? (
+                                           <div className="space-y-2">
+                                              {records.filter(r => r.ma_tai_lieu_lien_quan === selectedDoc.ma_tai_lieu).map(rec => (
+                                                 <div key={rec.id} className="p-2.5 border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/30 rounded-lg hover:border-blue-200 dark:hover:border-slate-600 transition-colors cursor-pointer group">
+                                                    <div className="font-medium text-xs text-gray-800 dark:text-gray-200 line-clamp-2 mb-1 group-hover:text-blue-600 transition-colors">{rec.tieu_de}</div>
+                                                    <div className="flex justify-between items-center text-[10px] text-gray-500">
+                                                       <span className="font-mono bg-white dark:bg-slate-900 px-1 rounded border border-gray-200 dark:border-slate-700">{rec.ma_ho_so}</span>
+                                                       <span>{format(new Date(rec.ngay_tao), 'dd/MM/yyyy')}</span>
+                                                    </div>
+                                                 </div>
+                                              ))}
+                                           </div>
+                                       ) : <p className="text-xs text-gray-400 italic text-center py-2">Chưa có hồ sơ phát sinh.</p>}
+                                   </div>
+                               </div>
+
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* --- 3. FOOTER ACTIONS --- */}
+                     <div className="p-4 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-950 sticky bottom-0 z-20 flex justify-end gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                       {(selectedDoc.trang_thai === TrangThaiTaiLieu.SOAN_THAO) ? (
+                           <>
+                             <Button variant="secondary" onClick={() => setViewMode('form')}><Pencil size={16} className="mr-2" /> Chỉnh sửa</Button>
+                             <Button onClick={handleSendRequest} className="bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200" isLoading={isLoading} leftIcon={<Send size={16} />}>Gửi phê duyệt</Button>
+                           </>
+                       ) : (
+                           <>
+                             <Button className="bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200 border border-transparent" onClick={handleVersionUpClick} leftIcon={<FileUp size={16} />}>Nâng phiên bản</Button>
+                             <Button variant="secondary" onClick={() => setViewMode('form')}><Pencil size={16} className="mr-2" /> Sửa thông tin</Button>
+                           </>
+                       )}
+                    </div>
+                    
+                    {/* Floating Chat Widget */}
+                    <AIChatWidget document={selectedDoc} />
+                   </div>
+                 )
+              )}
+           </div>
+        </div>,
+        document.body
       )}
 
-      {/* RENDER DETAIL CARD OVERLAY (If in Detail Mode) */}
-      {viewMode === 'detail' && selectedDoc && createPortal(
-         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-gray-100/80 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-            {/* Background Decoration */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-               <div className="absolute top-[20%] right-[20%] w-[30%] h-[30%] bg-blue-500/10 rounded-full blur-3xl"></div>
+      {/* History Modal */}
+      <Modal 
+        isOpen={showHistoryModal} 
+        onClose={() => setShowHistoryModal(false)} 
+        title="Lịch sử hoạt động tài liệu" 
+        size="lg"
+        footer={<Button onClick={() => setShowHistoryModal(false)}>Đóng</Button>}
+      >
+        <div className="p-6">
+            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg mb-6 border border-blue-100 dark:border-blue-900/50">
+                <h4 className="font-bold text-blue-800 dark:text-blue-300 text-sm mb-1">{selectedDoc?.ten_tai_lieu}</h4>
+                <div className="flex gap-4 text-xs text-blue-600 dark:text-blue-400">
+                    <span>Mã: {selectedDoc?.ma_tai_lieu}</span>
+                    <span>Phiên bản hiện tại: {selectedDoc?.phien_ban}</span>
+                </div>
             </div>
+            <DocumentTimeline history={selectedDoc?.lich_su || []} />
+        </div>
+      </Modal>
 
-            <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-slate-800 flex flex-col max-h-[95vh] z-10 animate-in zoom-in-95 duration-300">
-               {/* Header */}
-               <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-start shrink-0">
-                  <div className="flex items-center gap-4">
-                     <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center shadow-inner">
-                        <FileText size={32} />
-                     </div>
-                     <div>
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">{selectedDoc.ten_tai_lieu}</h2>
-                        <div className="flex items-center gap-2 mt-2">
-                           <span className="font-mono font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded text-xs border border-blue-100 dark:border-blue-800">{selectedDoc.ma_tai_lieu}</span>
-                           <span className="text-gray-400">•</span>
-                           <Badge status={selectedDoc.trang_thai} />
-                           <span className="text-gray-400">•</span>
-                           <span className="text-sm text-gray-500">Phiên bản {selectedDoc.phien_ban}</span>
-                        </div>
-                     </div>
-                  </div>
-                  <button onClick={handleCloseOverlay} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"><X size={24} className="text-gray-400"/></button>
-               </div>
-
-               {/* Body */}
-               <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                     {/* Left: Main Content */}
-                     <div className="lg:col-span-2 space-y-8">
-                        <div>
-                           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2"><Info size={16}/> Nội dung chi tiết</h3>
-                           <div className="p-6 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-800 text-gray-700 dark:text-gray-300 leading-relaxed text-sm text-justify">
-                              {selectedDoc.mo_ta_tom_tat || "Chưa có mô tả."}
-                           </div>
-                        </div>
-                        <div>
-                           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2"><Paperclip size={16}/> Tài liệu đính kèm</h3>
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {selectedDoc.dinh_kem?.map(file => (
-                                 <a key={file.id} href={file.url} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-400 hover:shadow-md transition-all group bg-white dark:bg-slate-900">
-                                    <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-slate-800 flex items-center justify-center text-gray-500 group-hover:text-blue-600 transition-colors"><FileText size={20}/></div>
-                                    <div className="overflow-hidden">
-                                       <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 transition-colors">{file.ten_file}</p>
-                                       <p className="text-xs text-gray-400">Nhấn để xem chi tiết</p>
-                                    </div>
-                                 </a>
-                              ))}
-                              {(!selectedDoc.dinh_kem || selectedDoc.dinh_kem.length === 0) && <p className="text-sm text-gray-400 italic">Không có file.</p>}
-                           </div>
-                        </div>
-                     </div>
-
-                     {/* Right: Meta Info */}
-                     <div className="space-y-6">
-                        <div className="p-5 rounded-2xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-                           <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Shield size={18} className="text-green-500"/> Thông tin kiểm soát</h4>
-                           <div className="space-y-3 text-sm">
-                              <div className="flex justify-between"><span className="text-gray-500">Ngày ban hành</span><span className="font-medium">{selectedDoc.ngay_ban_hanh || '--'}</span></div>
-                              <div className="flex justify-between"><span className="text-gray-500">Ngày hiệu lực</span><span className="font-medium">{selectedDoc.ngay_hieu_luc || '--'}</span></div>
-                              <div className="flex justify-between"><span className="text-gray-500">Chu kỳ rà soát</span><span className="font-medium">{selectedDoc.chu_ky_ra_soat ? `${selectedDoc.chu_ky_ra_soat} tháng` : 'Không'}</span></div>
-                           </div>
-                        </div>
-
-                        <div className="p-5 rounded-2xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-                           <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><UserCheck size={18} className="text-purple-500"/> Trách nhiệm</h4>
-                           <div className="space-y-4">
-                              <div><p className="text-xs text-gray-400 uppercase mb-1">Soạn thảo</p><div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold">{getUserName(selectedDoc.id_nguoi_soan_thao).charAt(0)}</div><span className="text-sm font-medium">{getUserName(selectedDoc.id_nguoi_soan_thao)}</span></div></div>
-                              <div><p className="text-xs text-gray-400 uppercase mb-1">Xem xét</p><div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold">{getUserName(selectedDoc.id_nguoi_xem_xet).charAt(0)}</div><span className="text-sm font-medium">{getUserName(selectedDoc.id_nguoi_xem_xet)}</span></div></div>
-                              <div><p className="text-xs text-gray-400 uppercase mb-1">Phê duyệt</p><div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold">{getUserName(selectedDoc.id_nguoi_phe_duyet).charAt(0)}</div><span className="text-sm font-medium">{getUserName(selectedDoc.id_nguoi_phe_duyet)}</span></div></div>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-
-               {/* Footer Actions */}
-               <div className="p-6 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/50 rounded-b-3xl">
-                  <Button variant="ghost" onClick={() => setShowHistoryModal(true)} leftIcon={<History size={18}/>} className="text-gray-500">Lịch sử</Button>
-                  <div className="flex gap-3">
-                     {selectedDoc.trang_thai === TrangThaiTaiLieu.SOAN_THAO ? (
-                        <>
-                           <Button variant="secondary" onClick={() => setViewMode('form')} className="h-11 px-6 rounded-xl"><Pencil size={18} className="mr-2"/> Chỉnh sửa</Button>
-                           <Button onClick={handleSendRequest} className="h-11 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20" isLoading={isLoading} leftIcon={<Send size={18}/>}>Gửi duyệt</Button>
-                        </>
-                     ) : (
-                        <Button onClick={handleVersionUpClick} className="h-11 px-6 rounded-xl bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20" leftIcon={<FileUp size={18}/>}>Nâng phiên bản</Button>
-                     )}
-                  </div>
-               </div>
-               
-               {/* Chat Widget Inside Detail */}
-               <AIChatWidget document={selectedDoc} />
-            </div>
-         </div>,
-         document.body
-      )}
-
-      {/* History & Version Modals (Keep existing) */}
-      <Modal isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} title="Lịch sử hoạt động" size="lg" footer={<Button onClick={() => setShowHistoryModal(false)}>Đóng</Button>}><div className="p-6"><DocumentTimeline history={selectedDoc?.lich_su || []} /></div></Modal>
-      
+      {/* Keep Version Modal unchanged */}
       <Modal isOpen={showVersionModal} onClose={() => setShowVersionModal(false)} title="Nâng phiên bản tài liệu" size="lg" footer={<><Button variant="ghost" onClick={() => setShowVersionModal(false)}>Hủy bỏ</Button><Button onClick={confirmVersionUp} leftIcon={<FileUp size={16} />}>Xác nhận & Tạo bản thảo</Button></>}>
         <div className="space-y-6 p-6">
            {selectedDoc && (
              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800 p-5 rounded-xl flex items-center justify-between border border-blue-100 dark:border-slate-700 relative overflow-hidden shadow-sm">
-               <div className="relative z-10"><p className="text-[10px] text-blue-600 dark:text-blue-300 font-bold uppercase tracking-wider mb-1">Phiên bản hiện tại</p><p className="text-3xl font-mono font-bold text-blue-700 dark:text-blue-400">{selectedDoc.phien_ban}</p></div>
-               <div className="flex items-center text-blue-300 dark:text-slate-600"><div className="w-8 h-0.5 bg-current"></div><ChevronRight size={24} className="-ml-2" /></div>
-               <div className="relative z-10 text-right"><p className="text-[10px] text-green-600 dark:text-green-300 font-bold uppercase tracking-wider mb-1">Phiên bản mới</p><p className="text-3xl font-mono font-bold text-green-700 dark:text-green-400">{getNextVersion(selectedDoc.phien_ban, versionType)}</p></div>
+               <div className="relative z-10">
+                  <p className="text-[10px] text-blue-600 dark:text-blue-300 font-bold uppercase tracking-wider mb-1">Phiên bản hiện tại</p>
+                  <p className="text-3xl font-mono font-bold text-blue-700 dark:text-blue-400">{selectedDoc.phien_ban}</p>
+               </div>
+               <div className="flex items-center text-blue-300 dark:text-slate-600">
+                  <div className="w-8 h-0.5 bg-current"></div>
+                  <ChevronRight size={24} className="-ml-2" />
+               </div>
+               <div className="relative z-10 text-right">
+                  <p className="text-[10px] text-green-600 dark:text-green-300 font-bold uppercase tracking-wider mb-1">Phiên bản mới</p>
+                  <p className="text-3xl font-mono font-bold text-green-700 dark:text-green-400">{getNextVersion(selectedDoc.phien_ban, versionType)}</p>
+               </div>
+               <div className="absolute -right-6 -top-6 w-24 h-24 bg-green-100 dark:bg-green-900/20 rounded-full blur-2xl opacity-50"></div>
+               <div className="absolute -left-6 -bottom-6 w-24 h-24 bg-blue-100 dark:bg-blue-900/20 rounded-full blur-2xl opacity-50"></div>
              </div>
            )}
-           <div><label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-3">Chọn loại nâng cấp</label><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><button onClick={() => setVersionType('minor')} className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 group hover:shadow-md ${versionType === 'minor' ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500/20 dark:bg-blue-900/20 dark:border-blue-400' : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'}`}><div className="flex justify-between items-start mb-2"><div className={`p-2 rounded-lg ${versionType === 'minor' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-600'}`}><Zap size={20} /></div>{versionType === 'minor' && <div className="bg-blue-600 text-white rounded-full p-0.5"><Check size={14} /></div>}</div><span className={`block font-bold text-sm mb-1 ${versionType === 'minor' ? 'text-blue-900 dark:text-blue-100' : 'text-gray-700 dark:text-gray-200'}`}>Nâng cấp nhỏ (Minor)</span><p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Sửa lỗi chính tả, format, thay đổi nhỏ không ảnh hưởng quy trình.</p></button><button onClick={() => setVersionType('major')} className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 group hover:shadow-md ${versionType === 'major' ? 'bg-purple-50 border-purple-500 ring-1 ring-purple-500/20 dark:bg-purple-900/20 dark:border-purple-400' : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'}`}><div className="flex justify-between items-start mb-2"><div className={`p-2 rounded-lg ${versionType === 'major' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400 group-hover:bg-purple-50 group-hover:text-purple-600'}`}><GitMerge size={20} /></div>{versionType === 'major' && <div className="bg-purple-600 text-white rounded-full p-0.5"><Check size={14} /></div>}</div><span className={`block font-bold text-sm mb-1 ${versionType === 'major' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-200'}`}>Nâng cấp lớn (Major)</span><p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Thay đổi nội dung, lưu đồ, biểu mẫu hoặc quy trình vận hành.</p></button></div></div>
-           <div><label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-2">Nội dung cập nhật / Lý do <span className="text-red-500">*</span></label><textarea className="w-full p-4 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 focus:border-primary outline-none text-sm min-h-[120px] transition-shadow placeholder:text-gray-400 shadow-sm dark:text-gray-200" placeholder="Mô tả chi tiết các thay đổi so với phiên bản trước để lưu vào lịch sử..." value={versionReason} onChange={(e) => setVersionReason(e.target.value)}/></div>
-           <div className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-xl flex gap-3 items-start border border-amber-200 dark:border-amber-800/30"><AlertTriangle size={18} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" /><div><p className="text-xs font-bold text-amber-800 dark:text-amber-400 mb-1">Lưu ý quan trọng</p><p className="text-xs text-amber-700 dark:text-amber-500 leading-relaxed">Sau khi xác nhận, tài liệu phiên bản cũ ({selectedDoc?.phien_ban}) sẽ chuyển sang trạng thái "Hết hiệu lực". Một bản thảo mới sẽ được tạo ra để bạn bắt đầu chỉnh sửa.</p></div></div>
+           
+           <div>
+              <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-3">Chọn loại nâng cấp</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <button 
+                    onClick={() => setVersionType('minor')} 
+                    className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 group hover:shadow-md ${versionType === 'minor' ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500/20 dark:bg-blue-900/20 dark:border-blue-400' : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'}`}
+                 >
+                    <div className="flex justify-between items-start mb-2">
+                       <div className={`p-2 rounded-lg ${versionType === 'minor' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-600'}`}>
+                          <Zap size={20} />
+                       </div>
+                       {versionType === 'minor' && <div className="bg-blue-600 text-white rounded-full p-0.5"><Check size={14} /></div>}
+                    </div>
+                    <span className={`block font-bold text-sm mb-1 ${versionType === 'minor' ? 'text-blue-900 dark:text-blue-100' : 'text-gray-700 dark:text-gray-200'}`}>Nâng cấp nhỏ (Minor)</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Sửa lỗi chính tả, format, thay đổi nhỏ không ảnh hưởng quy trình.</p>
+                 </button>
+
+                 <button 
+                    onClick={() => setVersionType('major')} 
+                    className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 group hover:shadow-md ${versionType === 'major' ? 'bg-purple-50 border-purple-500 ring-1 ring-purple-500/20 dark:bg-purple-900/20 dark:border-purple-400' : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'}`}
+                 >
+                    <div className="flex justify-between items-start mb-2">
+                       <div className={`p-2 rounded-lg ${versionType === 'major' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400 group-hover:bg-purple-50 group-hover:text-purple-600'}`}>
+                          <GitMerge size={20} />
+                       </div>
+                       {versionType === 'major' && <div className="bg-purple-600 text-white rounded-full p-0.5"><Check size={14} /></div>}
+                    </div>
+                    <span className={`block font-bold text-sm mb-1 ${versionType === 'major' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-200'}`}>Nâng cấp lớn (Major)</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Thay đổi nội dung, lưu đồ, biểu mẫu hoặc quy trình vận hành.</p>
+                 </button>
+              </div>
+           </div>
+
+           <div>
+              <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-2">Nội dung cập nhật / Lý do <span className="text-red-500">*</span></label>
+              <textarea 
+                 className="w-full p-4 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 focus:border-primary outline-none text-sm min-h-[120px] transition-shadow placeholder:text-gray-400 shadow-sm dark:text-gray-200" 
+                 placeholder="Mô tả chi tiết các thay đổi so với phiên bản trước để lưu vào lịch sử..." 
+                 value={versionReason} 
+                 onChange={(e) => setVersionReason(e.target.value)}
+              />
+           </div>
+
+           <div className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-xl flex gap-3 items-start border border-amber-200 dark:border-amber-800/30">
+              <AlertTriangle size={18} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" />
+              <div>
+                 <p className="text-xs font-bold text-amber-800 dark:text-amber-400 mb-1">Lưu ý quan trọng</p>
+                 <p className="text-xs text-amber-700 dark:text-amber-500 leading-relaxed">Sau khi xác nhận, tài liệu phiên bản cũ ({selectedDoc?.phien_ban}) sẽ chuyển sang trạng thái "Hết hiệu lực". Một bản thảo mới sẽ được tạo ra để bạn bắt đầu chỉnh sửa.</p>
+              </div>
+           </div>
         </div>
       </Modal>
     </div>
