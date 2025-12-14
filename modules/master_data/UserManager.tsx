@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { NhanSu, UserRole, DanhMucItem, ColumnDefinition } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { DataTable } from '../../components/DataTable';
@@ -178,8 +179,8 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
       <div className="flex-1 overflow-hidden rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm">
         <DataTable data={users} columns={columns} onRowClick={handleEdit} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16} />} size="sm">Thêm nhân sự</Button>}/>
       </div>
-      {viewMode === 'form' && (
-        <div className="fixed inset-0 top-16 z-[50] flex justify-end">
+      {viewMode === 'form' && createPortal(
+        <div className="fixed inset-0 z-[70] flex justify-end">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={() => setViewMode('list')} />
           <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
             <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800"><h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2"><User className="text-primary" /> {editingUser.id ? 'Cập nhật nhân sự' : 'Thêm nhân sự mới'}</h2><Button variant="ghost" size="icon" onClick={() => setViewMode('list')}><X size={20} /></Button></div>
@@ -245,7 +246,8 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
                <Button onClick={handleSave} leftIcon={<Check size={16} />} isLoading={isLoading}>Lưu thông tin</Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

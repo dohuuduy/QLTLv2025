@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { KeHoachDanhGia, MasterDataState, TaiLieu, NhanSu, ColumnDefinition, TrangThaiKeHoach, PhienDanhGia } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { DataTable } from '../../components/DataTable';
@@ -156,8 +157,8 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
                 <DataTable data={auditPlans} columns={columns} onRowClick={handleEdit} filters={renderFilters} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16} />} className="shadow-sm">Lập kế hoạch mới</Button>}/>
             )}
         </div>
-        {isDrawerOpen && (
-            <div className="fixed inset-0 top-16 z-[50] flex justify-end">
+        {isDrawerOpen && createPortal(
+            <div className="fixed inset-0 z-[70] flex justify-end">
                 <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)} />
                 <div className="w-full md:max-w-2xl bg-white dark:bg-slate-900 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
                     <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50"><h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2"><Layers className="text-primary" /> {editingPlan.id ? 'Cập nhật kế hoạch đánh giá' : 'Lập kế hoạch đánh giá mới'}</h2><Button variant="ghost" size="icon" onClick={() => setIsDrawerOpen(false)}><X size={20} /></Button></div>
@@ -189,7 +190,8 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
                         <Button onClick={handleSave} leftIcon={<Save size={16} />} isLoading={isLoading}>Lưu kế hoạch</Button>
                     </div>
                 </div>
-            </div>
+            </div>,
+            document.body
         )}
     </div>
   );

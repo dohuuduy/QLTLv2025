@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, NhanSu, HoSo, ColumnDefinition, DinhKem } from '../../types';
 import { DataTable } from '../../components/DataTable';
 import { Button } from '../../components/ui/Button';
@@ -394,7 +395,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
          />
       </div>
 
-      {(viewMode === 'form' || viewMode === 'detail') && (
+      {(viewMode === 'form' || viewMode === 'detail') && createPortal(
         <div className="fixed inset-0 top-16 z-[50] flex justify-end">
            {/* Backdrop starts below navbar */}
            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" onClick={handleCloseDrawer}/>
@@ -613,7 +614,8 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                  )
               )}
            </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* History Modal */}
