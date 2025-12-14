@@ -294,13 +294,16 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
   };
 
   // --- Sticky Column Styles helper ---
+  // isHeader logic updated: Header intersection with Sticky Col is z-30 (highest in table)
+  // Sticky Column Body is z-10 (higher than regular cells z-0)
+  // Regular Header is z-20 (higher than Sticky Col Body z-10)
   const getStickyClass = (index: number, total: number, isHeader: boolean) => {
     // Cố định cột cuối cùng (Thường là action)
     if (index === total - 1) {
-      return `sticky right-0 z-20 ${
+      return `sticky right-0 ${
         isHeader 
-          ? 'bg-gray-50 dark:bg-slate-800' 
-          : 'bg-white dark:bg-slate-900 group-hover:bg-gray-50 dark:group-hover:bg-slate-800'
+          ? 'z-30 bg-gray-50 dark:bg-slate-800' // Highest z in table for intersection
+          : 'z-10 bg-white dark:bg-slate-900 group-hover:bg-gray-50 dark:group-hover:bg-slate-800' // Higher than normal cells
       } shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.05)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)]`;
     }
     return "";
@@ -347,11 +350,11 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                     <Settings2 size={16} /> 
                   </button>
                   
-                  {/* React Portal for Dropdown */}
+                  {/* React Portal for Dropdown - Z-INDEX 80 */}
                   {showColumnSelector && dropdownPosition && createPortal(
                     <div 
                       ref={dropdownRef}
-                      className="fixed z-[1000] mt-2 w-56 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded shadow-xl p-2 animate-in fade-in zoom-in-95 duration-100 max-h-[60vh] overflow-y-auto"
+                      className="fixed z-[80] mt-2 w-56 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded shadow-xl p-2 animate-in fade-in zoom-in-95 duration-100 max-h-[60vh] overflow-y-auto"
                       style={{
                         top: dropdownPosition.top,
                         right: dropdownPosition.right
@@ -394,12 +397,12 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
       {/* Table */}
       <div className="overflow-auto flex-1 w-full relative">
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 border-separate border-spacing-0">
-          <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-slate-800 sticky top-0 z-30">
+          <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-slate-800 sticky top-0 z-20">
             <tr>
-              {/* STT COLUMN - Sticky Left */}
+              {/* STT COLUMN - Sticky Left - Z-INDEX 30 (Intersection) */}
               <th 
                 scope="col" 
-                className="sticky left-0 z-20 bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 py-3 text-center w-12 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)]"
+                className="sticky left-0 z-30 bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 py-3 text-center w-12 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)]"
               >
                 STT
               </th>
@@ -430,8 +433,8 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                   onClick={() => onRowClick && onRowClick(item)}
                   className="group bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
                 >
-                  {/* STT CELL */}
-                  <td className="sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-gray-50 dark:group-hover:bg-slate-800 border-b border-gray-100 dark:border-slate-800 px-4 py-4 text-center font-mono text-xs text-gray-500 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)]">
+                  {/* STT CELL - Sticky Left - Z-INDEX 10 */}
+                  <td className="sticky left-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-gray-50 dark:group-hover:bg-slate-800 border-b border-gray-100 dark:border-slate-800 px-4 py-4 text-center font-mono text-xs text-gray-500 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.5)]">
                     {(currentPage - 1) * pageSize + index + 1}
                   </td>
 
@@ -504,7 +507,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
 
       {/* Export / Print Modal */}
       {showExportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] animate-in fade-in duration-200 p-4">
           <div className="bg-white dark:bg-slate-800 rounded-lg w-full max-w-md shadow-xl border dark:border-slate-700 flex flex-col max-h-[90vh]">
             <div className="p-4 border-b border-gray-100 dark:border-slate-700">
               <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Xuất dữ liệu & In ấn</h3>

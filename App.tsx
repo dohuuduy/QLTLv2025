@@ -243,8 +243,8 @@ const AppContent: React.FC = () => {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-slate-950 text-foreground overflow-hidden transition-colors duration-300">
       
-      {/* Sidebar Desktop */}
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} hidden md:flex flex-col bg-slate-900 dark:bg-slate-900 text-slate-100 transition-all duration-300 shadow-xl z-50 border-r border-slate-800`}>
+      {/* Sidebar Desktop - Z-INDEX 40 (Lower than Drawer z-50) */}
+      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} hidden md:flex flex-col bg-slate-900 dark:bg-slate-900 text-slate-100 transition-all duration-300 shadow-xl z-40 border-r border-slate-800`}>
         <div className="h-16 flex items-center justify-center border-b border-slate-800">
            {isSidebarOpen ? <span className="font-bold text-xl tracking-wider truncate px-4">{APP_NAME}</span> : <span className="font-bold text-xl">ISO</span>}
         </div>
@@ -287,8 +287,8 @@ const AppContent: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Header */}
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-3 md:px-6 shadow-sm z-40 transition-colors relative">
+        {/* Header - Z-INDEX 30 */}
+        <header className="h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-3 md:px-6 shadow-sm z-30 transition-colors relative">
           {/* Left: Mobile Menu & Title */}
           <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
              <button className="md:hidden p-2 -ml-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg" onClick={() => setMobileMenuOpen(true)}>
@@ -327,9 +327,9 @@ const AppContent: React.FC = () => {
                     <Search size={20} />
                 </button>
 
-                {/* Search Results Dropdown (Shared for both) */}
+                {/* Search Results Dropdown - Z-INDEX 80 */}
                 {((isSearchOpen && searchTerm) || (isMobileSearchOpen)) && (
-                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-24px)] md:w-[400px] max-w-sm bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right z-50">
+                    <div className="absolute top-full right-0 mt-2 w-[calc(100vw-24px)] md:w-[400px] max-w-sm bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-gray-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right z-[80]">
                        {/* Mobile Input Field inside Dropdown */}
                        <div className="md:hidden p-3 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50">
                            <div className="flex items-center bg-white dark:bg-slate-900 rounded-lg px-3 py-2 border border-gray-200 dark:border-slate-700 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
@@ -374,9 +374,9 @@ const AppContent: React.FC = () => {
                     <Bell size={20} />
                     {notifications.filter(n => !n.read).length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-slate-900 animate-pulse"></span>}
                   </button>
-                  {/* Notifications Dropdown */}
+                  {/* Notifications Dropdown - Z-INDEX 90 */}
                   {showNotifications && (
-                    <div className="absolute right-0 top-full mt-3 w-80 sm:w-96 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden z-[60] animate-in fade-in slide-in-from-top-2 origin-top-right">
+                    <div className="absolute right-0 top-full mt-3 w-80 sm:w-96 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden z-[90] animate-in fade-in slide-in-from-top-2 origin-top-right">
                        <div className="p-3 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50"><h3 className="font-bold text-sm text-gray-800 dark:text-gray-200">Thông báo</h3>{notifications.filter(n => !n.read).length > 0 && <button onClick={() => setNotifications(prev => prev.map(n => ({...n, read: true})))} className="text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline">Đánh dấu đã đọc hết</button>}</div>
                        <div className="max-h-[60vh] overflow-y-auto">
                           {notifications.length > 0 ? (
@@ -401,7 +401,7 @@ const AppContent: React.FC = () => {
           </div>
         </header>
 
-        {/* Mobile Sidebar */}
+        {/* Mobile Sidebar - Z-INDEX 60 */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-[60] md:hidden">
              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>

@@ -45,6 +45,18 @@
               md: "calc(0.5rem - 2px)",
               sm: "calc(0.5rem - 4px)",
             },
+            zIndex: {
+              'sticky-col': '10',
+              'sticky-header': '20',
+              'header': '30',
+              'sidebar': '40',
+              'drawer': '50',
+              'mobile-menu': '60',
+              'modal': '70',
+              'dropdown': '80',
+              'notification': '90',
+              'widget': '100',
+            }
           },
         },
       }
@@ -70,6 +82,18 @@
         --border: 214.3 31.8% 91.4%;
         --input: 214.3 31.8% 91.4%;
         --ring: 222.2 47.4% 11.2%;
+        
+        /* Z-Index Hierarchy Definitions (Reference) */
+        --z-table-sticky: 10;
+        --z-table-header: 20;
+        --z-app-header: 30;
+        --z-app-sidebar: 40;
+        --z-drawer: 50;
+        --z-mobile-menu: 60;
+        --z-modal: 70;
+        --z-dropdown: 80;
+        --z-notification: 90;
+        --z-widget: 100;
       }
       
       .dark {

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, X, RotateCcw, MessageSquareText, Minimize2 } from 'lucide-react';
 import { chatWithDocument } from '../services/geminiService';
