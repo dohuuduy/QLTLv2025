@@ -207,19 +207,21 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   return (
     <div className="h-full flex flex-col animate-fade-in relative">
       <div className="flex-1 overflow-hidden h-full rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
-         <DataTable data={filteredData} columns={columns} onRowClick={handleViewDetail} filters={renderFilters} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16}/>} className="shadow-sm">Thêm mới</Button>} />
+         <DataTable 
+            data={filteredData} 
+            columns={columns} 
+            onRowClick={handleViewDetail}
+            filters={renderFilters}
+            actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16}/>} className="shadow-sm">Thêm mới</Button>}
+         />
       </div>
 
-      {(viewMode === 'form' || viewMode === 'detail') && createPortal(
+      {/* VIEW DETAIL - Full Screen/Large Drawer */}
+      {viewMode === 'detail' && selectedDoc && createPortal(
         <div className="fixed inset-0 top-16 z-[50] flex justify-end">
            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" onClick={handleCloseDrawer}/>
            <div className="w-full max-w-7xl bg-white dark:bg-slate-950 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
-              {viewMode === 'form' ? (
-                 <TaiLieuForm initialData={selectedDoc} onSave={handleSaveDoc} onCancel={handleCloseDrawer} masterData={masterData} fullList={data} />
-              ) : (
-                 selectedDoc && (
-                   <div className="flex flex-col h-full overflow-hidden relative bg-gray-50/50 dark:bg-slate-950">
-                     
+                 <div className="flex flex-col h-full overflow-hidden relative bg-gray-50/50 dark:bg-slate-950">
                      {/* --- 1. HERO HEADER (Re-designed) --- */}
                      <div className="sticky top-0 z-20 border-b border-gray-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shrink-0 shadow-sm">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-5">
@@ -242,7 +244,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                         </div>
                      </div>
 
-                     {/* --- 2. DOCUMENT CONTENT (Re-designed) --- */}
+                     {/* --- 2. DOCUMENT CONTENT --- */}
                      <div className="flex-1 overflow-y-auto p-6 pb-24 custom-scrollbar">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
                            
@@ -363,15 +365,39 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                     
                     <AIChatWidget document={selectedDoc} />
                    </div>
-                 )
-              )}
            </div>
         </div>,
         document.body
       )}
 
-      {/* Other Modals (History, Version) keep same as before, simplified here for brevity but logic remains */}
-      <Modal isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} title="Lịch sử hoạt động" size="lg" footer={<Button onClick={() => setShowHistoryModal(false)}>Đóng</Button>}>
+      {/* VIEW FORM - Centered Modal Style */}
+      {viewMode === 'form' && createPortal(
+        <div className="fixed inset-0 top-0 z-[60] flex items-center justify-center p-4">
+           {/* Backdrop */}
+           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" onClick={handleCloseDrawer}/>
+           
+           {/* Modal Container */}
+           <div className="w-full max-w-3xl bg-white dark:bg-slate-950 rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-slate-800 max-h-[90vh] overflow-hidden flex flex-col">
+              <TaiLieuForm 
+                initialData={selectedDoc} 
+                onSave={handleSaveDoc} 
+                onCancel={handleCloseDrawer} 
+                masterData={masterData}
+                fullList={data}
+              />
+           </div>
+        </div>,
+        document.body
+      )}
+
+      {/* History Modal */}
+      <Modal 
+        isOpen={showHistoryModal} 
+        onClose={() => setShowHistoryModal(false)} 
+        title="Lịch sử hoạt động tài liệu" 
+        size="lg"
+        footer={<Button onClick={() => setShowHistoryModal(false)}>Đóng</Button>}
+      >
         <div className="p-6"><DocumentTimeline history={selectedDoc?.lich_su || []} /></div>
       </Modal>
 

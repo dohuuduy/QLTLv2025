@@ -17,7 +17,10 @@
     "recharts": "^3.5.1",
     "date-fns": "^4.1.0",
     "lunar-javascript": "^1.7.7",
-    "@supabase/supabase-js": "^2.87.1"
+    "@supabase/supabase-js": "^2.87.1",
+    "react-hook-form": "7.51.0",
+    "zod": "3.22.4",
+    "@hookform/resolvers": "^5.2.2"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
