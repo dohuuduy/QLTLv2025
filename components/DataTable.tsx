@@ -204,7 +204,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
   // --- REDESIGN RENDERING ---
 
   return (
-    <div className="bg-card text-card-foreground rounded-lg shadow-sm border border-border flex flex-col h-full overflow-hidden">
+    <div className="bg-card text-card-foreground rounded-lg shadow-sm border border-border flex flex-col h-full overflow-hidden max-w-full">
       {/* Toolbar */}
       <div className="p-3 border-b border-border bg-muted/20 shrink-0">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

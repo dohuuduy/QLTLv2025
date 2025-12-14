@@ -241,17 +241,17 @@ const AppContent: React.FC = () => {
   if (!session) return <LoginPage />;
 
   return (
-    <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans">
+    <div className="flex h-screen w-full bg-background text-foreground overflow-hidden font-sans">
       
-      {/* Sidebar Desktop - Strictly Flex Item, shrink-0 to maintain width */}
+      {/* Sidebar Desktop - Strictly Flex-None to prevent shrinking */}
       <aside 
         className={`
-          hidden md:flex flex-col 
+          hidden md:flex flex-col flex-none
           ${isSidebarOpen ? 'w-64' : 'w-20'} 
           bg-slate-900 text-slate-200 
-          transition-all duration-300 ease-in-out 
+          transition-[width] duration-300 ease-in-out 
           shadow-xl z-40 border-r border-slate-800 
-          shrink-0 relative
+          relative
         `}
       >
         <div className="h-16 flex items-center justify-center border-b border-slate-800/50 bg-slate-950/20 shrink-0">
@@ -304,8 +304,8 @@ const AppContent: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content Area - Flex-1 takes remaining space, min-w-0 and w-0 prevents flex overflow issues */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-muted/20 relative min-w-0 w-0">
+      {/* Main Content Area - Flex-1 takes remaining space, min-w-0 prevents flex overflow issues */}
+      <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden bg-muted/20 relative">
         {/* Header - Z-INDEX 30 */}
         <header className="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 md:px-6 z-30 transition-colors sticky top-0 shrink-0">
           {/* Left: Mobile Menu & Title */}

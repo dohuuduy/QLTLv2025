@@ -383,7 +383,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   );
 
   return (
-    <div className="h-full flex flex-col animate-fade-in -mx-4 md:mx-0 relative">
+    <div className="h-full flex flex-col animate-fade-in relative">
       <div className="flex-1 overflow-hidden h-full rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
          <DataTable 
             data={filteredData} 
