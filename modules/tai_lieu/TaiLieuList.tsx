@@ -395,7 +395,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       </div>
 
       {(viewMode === 'form' || viewMode === 'detail') && (
-        <div className="fixed inset-0 top-16 z-[50] flex justify-end">
+        <div className="fixed inset-0 top-16 z-[60] flex justify-end">
            {/* Backdrop starts below navbar */}
            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity animate-in fade-in duration-200" onClick={handleCloseDrawer}/>
            
