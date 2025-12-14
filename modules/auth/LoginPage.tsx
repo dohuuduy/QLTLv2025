@@ -72,13 +72,8 @@ export const LoginPage: React.FC = () => {
           }
 
           // 2. Check system admins
-          try {
-            const adminExists = await checkSystemHasAdmin();
-            setHasAdminAccount(adminExists);
-          } catch (e) {
-            console.warn("Failed to check admin status (likely network error or missing keys). Defaulting to true.");
-            setHasAdminAccount(true); // Default to true to hide setup UI if DB is unreachable
-          }
+          const adminExists = await checkSystemHasAdmin();
+          setHasAdminAccount(adminExists);
       };
       initPage();
   }, []);
