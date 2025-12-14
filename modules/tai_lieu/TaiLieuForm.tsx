@@ -1,10 +1,9 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { Info, Calendar, UserCheck, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, Lock, Unlock, Layers, Tag, UploadCloud, AlertCircle, Save } from 'lucide-react';
+import { Info, Calendar, UserCheck, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, Lock, Unlock, Layers, Tag, UploadCloud, AlertCircle, Save, PenTool, Search as SearchIcon, FileSignature, GitCommit } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -194,8 +193,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     setFormData(prev => ({ ...prev, dinh_kem: (prev.dinh_kem || []).filter(f => f.id !== fileId) }));
   };
 
-  // Expose submission to parent if needed, but for now we are wrapping in Modal which calls save.
-  // Actually, we pass onSave down.
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!formData.ma_tai_lieu || !formData.ten_tai_lieu) {
@@ -227,28 +224,32 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const reviewerOptions = masterData.nhanSu.filter(u => u.roles.includes('XEM_XET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
   const approverOptions = masterData.nhanSu.filter(u => u.roles.includes('PHE_DUYET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
 
-  // Unified Styles
+  // Styles
   const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm disabled:bg-gray-100 disabled:text-gray-500 dark:disabled:bg-slate-800";
   const textareaClass = "w-full p-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm resize-none";
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5 block flex items-center gap-1";
   
-  // Custom Render for Form Sections inside Modal
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 p-2">
       <form id="document-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            {/* Left Column (Main Content) */}
+            {/* Left Column (Main Content) - 8 cols */}
             <div className="lg:col-span-8 space-y-6">
                 
+                {/* SECTION 1: IDENTITY & CLASSIFICATION */}
                 <div className="space-y-4">
-                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><Info size={16} className="text-blue-500"/> Thông tin định danh</h4>
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
+                        <Info size={16} className="text-blue-500"/> Thông tin chung
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        
                         <div className="md:col-span-2">
                             <label className={labelClass}>Tên tài liệu <span className="text-red-500">*</span></label>
-                            <input required name="ten_tai_lieu" value={formData.ten_tai_lieu} onChange={handleChange} className={inputClass} placeholder="VD: Quy trình kiểm soát chất lượng đầu vào" autoFocus />
+                            <input required name="ten_tai_lieu" value={formData.ten_tai_lieu} onChange={handleChange} className={`${inputClass} font-medium`} placeholder="VD: Quy trình kiểm soát chất lượng đầu vào" autoFocus />
                         </div>
-                        
+
+                        {/* Row: Code & Parent */}
                         <div>
                             <label className={labelClass}>Mã tài liệu <span className="text-red-500">*</span></label>
                             <div className="relative group">
@@ -275,18 +276,31 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
                         <div>
                             <label className={labelClass}>Tài liệu gốc (Parent)</label>
-                            <SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} placeholder="-- Chọn tài liệu cha --" />
+                            <SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} placeholder="-- Chọn tài liệu cha (nếu có) --" />
+                        </div>
+
+                        {/* Row: Type & Field */}
+                        <div>
+                            <label className={labelClass}>Loại tài liệu</label>
+                            <SearchableSelect options={loaiTaiLieuOptions} value={formData.loai_tai_lieu} onChange={(val) => handleSelectChange('loai_tai_lieu', val)} placeholder="-- Chọn loại --" />
+                        </div>
+                        <div>
+                            <label className={labelClass}>Lĩnh vực hoạt động</label>
+                            <SearchableSelect options={linhVucOptions} value={formData.linh_vuc} onChange={(val) => handleSelectChange('linh_vuc', val)} placeholder="-- Chọn lĩnh vực --" />
                         </div>
 
                         <div className="md:col-span-2">
                             <label className={labelClass}>Mô tả tóm tắt</label>
-                            <textarea name="mo_ta_tom_tat" value={formData.mo_ta_tom_tat} onChange={handleChange} className={`${textareaClass} min-h-[100px]`} placeholder="Mô tả phạm vi áp dụng, mục đích của tài liệu..." />
+                            <textarea name="mo_ta_tom_tat" value={formData.mo_ta_tom_tat} onChange={handleChange} className={`${textareaClass} min-h-[80px]`} placeholder="Mô tả phạm vi áp dụng, mục đích của tài liệu..." />
                         </div>
                     </div>
                 </div>
 
+                {/* SECTION 2: CONTENT & ATTACHMENTS */}
                 <div className="space-y-4">
-                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><Paperclip size={16} className="text-orange-500"/> Nội dung & Đính kèm</h4>
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
+                        <Paperclip size={16} className="text-orange-500"/> Nội dung & Đính kèm
+                    </h4>
                     <div className="space-y-4">
                         <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 p-4 transition-colors hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 group">
                             <div className="flex gap-3 flex-col sm:flex-row items-center">
@@ -330,79 +344,118 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                 </div>
             </div>
 
-            {/* Right Column (Sidebar) */}
+            {/* Right Column (Sidebar) - 4 cols */}
             <div className="lg:col-span-4 space-y-6">
                 
-                <div className="space-y-4">
-                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><Layers size={16} className="text-purple-500"/> Phân loại</h4>
-                    <div className="space-y-4">
-                        <div>
-                            <label className={labelClass}>Loại tài liệu</label>
-                            <SearchableSelect options={loaiTaiLieuOptions} value={formData.loai_tai_lieu} onChange={(val) => handleSelectChange('loai_tai_lieu', val)} placeholder="-- Chọn loại --" />
+                {/* NEW DESIGN: Responsibility Workflow */}
+                <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800 bg-gray-50/80 dark:bg-slate-950/30 flex items-center gap-2">
+                        <GitCommit size={16} className="text-purple-500"/>
+                        <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase">Quy trình xử lý</h4>
+                    </div>
+                    
+                    <div className="p-5 relative">
+                        {/* Connecting Line */}
+                        <div className="absolute left-9 top-8 bottom-12 w-0.5 bg-gray-200 dark:bg-slate-800 z-0"></div>
+
+                        {/* Step 1: Draft */}
+                        <div className="relative z-10 mb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-sm">
+                                    <PenTool size={14} />
+                                </div>
+                                <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Bước 1: Soạn thảo</span>
+                            </div>
+                            <div className="pl-11">
+                                <SearchableSelect options={drafterOptions} value={formData.id_nguoi_soan_thao} onChange={(val) => handleSelectChange('id_nguoi_soan_thao', val)} placeholder="Người soạn thảo..." />
+                            </div>
                         </div>
-                        <div>
-                            <label className={labelClass}>Lĩnh vực hoạt động</label>
-                            <SearchableSelect options={linhVucOptions} value={formData.linh_vuc} onChange={(val) => handleSelectChange('linh_vuc', val)} placeholder="-- Chọn lĩnh vực --" />
+
+                        {/* Step 2: Review */}
+                        <div className="relative z-10 mb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-sm">
+                                    <SearchIcon size={14} />
+                                </div>
+                                <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Bước 2: Xem xét</span>
+                            </div>
+                            <div className="pl-11">
+                                <SearchableSelect options={reviewerOptions} value={formData.id_nguoi_xem_xet} onChange={(val) => handleSelectChange('id_nguoi_xem_xet', val)} placeholder="Người xem xét..." />
+                            </div>
                         </div>
-                        <div>
-                            <label className={labelClass}>Tiêu chuẩn áp dụng</label>
-                            <div className="flex flex-wrap gap-2 pt-1">
-                                {masterData.tieuChuan.map(item => {
-                                    const isSelected = formData.tieu_chuan?.includes(item.ten);
-                                    return (
-                                        <button key={item.id} type="button" onClick={() => toggleTieuChuan(item.ten)} className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-all flex items-center gap-1.5 ${isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-300'}`}>
-                                            <Tag size={12} /> {item.ten}
-                                        </button>
-                                    );
-                                })}
+
+                        {/* Step 3: Approve */}
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-sm">
+                                    <FileSignature size={14} />
+                                </div>
+                                <span className="text-xs font-bold uppercase text-green-700 dark:text-green-500">Bước 3: Phê duyệt</span>
+                            </div>
+                            <div className="pl-11">
+                                <SearchableSelect options={approverOptions} value={formData.id_nguoi_phe_duyet} onChange={(val) => handleSelectChange('id_nguoi_phe_duyet', val)} placeholder="Người phê duyệt..." />
                             </div>
                         </div>
                     </div>
                 </div>
 
+                {/* Control & Validity */}
                 <div className="space-y-4">
                     <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><Calendar size={16} className="text-green-500"/> Kiểm soát & Hiệu lực</h4>
-                    <div className="space-y-4">
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className={labelClass}>Phiên bản (Ver)</label>
+                            <input name="phien_ban" value={formData.phien_ban} onChange={handleChange} className={inputClass} placeholder="1.0" />
+                        </div>
+                        <div>
+                            <label className={labelClass}>Lần ban hành</label>
+                            <input type="number" min="0" name="lan_ban_hanh" value={formData.lan_ban_hanh} onChange={handleChange} className={inputClass} />
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label className={labelClass}>Ngày ban hành / Hiệu lực</label>
                         <div className="grid grid-cols-2 gap-3">
-                            <div><label className={labelClass}>Phiên bản (Ver)</label><input name="phien_ban" value={formData.phien_ban} onChange={handleChange} className={inputClass} placeholder="1.0" /></div>
-                            <div><label className={labelClass}>Lần ban hành</label><input type="number" min="0" name="lan_ban_hanh" value={formData.lan_ban_hanh} onChange={handleChange} className={inputClass} /></div>
+                            <input type="date" name="ngay_ban_hanh" value={formData.ngay_ban_hanh} onChange={handleChange} className={`${inputClass} dark:[color-scheme:dark] text-[11px] px-2`} title="Ngày ban hành"/>
+                            <input type="date" name="ngay_hieu_luc" value={formData.ngay_hieu_luc} onChange={handleChange} className={`${inputClass} dark:[color-scheme:dark] text-[11px] px-2`} title="Ngày hiệu lực"/>
                         </div>
-                        
-                        <div className="grid grid-cols-1 gap-3">
-                            <div><label className={labelClass}>Ngày ban hành</label><input type="date" name="ngay_ban_hanh" value={formData.ngay_ban_hanh} onChange={handleChange} className={`${inputClass} dark:[color-scheme:dark]`} /></div>
-                            <div><label className={labelClass}>Ngày hiệu lực</label><input type="date" name="ngay_hieu_luc" value={formData.ngay_hieu_luc} onChange={handleChange} className={`${inputClass} dark:[color-scheme:dark]`} /></div>
-                        </div>
-                        
-                        <div className={`p-4 rounded-xl border transition-all ${isReviewEnabled ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-800' : 'bg-gray-50 dark:bg-slate-800 border-transparent'}`}>
-                            <label className="flex items-center justify-between cursor-pointer mb-3">
-                                <span className={`text-sm font-bold flex items-center gap-2 ${isReviewEnabled ? 'text-orange-700 dark:text-orange-400' : 'text-gray-600 dark:text-gray-400'}`}><RefreshCw size={16}/> Định kỳ rà soát</span>
-                                <div className={`w-10 h-5 rounded-full relative transition-colors ${isReviewEnabled ? 'bg-orange-500' : 'bg-gray-300 dark:bg-slate-600'}`}>
-                                    <input type="checkbox" className="hidden" checked={isReviewEnabled} onChange={toggleReview} />
-                                    <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all shadow-sm ${isReviewEnabled ? 'left-6' : 'left-1'}`}></div>
+                    </div>
+                    
+                    <div className={`p-4 rounded-xl border transition-all ${isReviewEnabled ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-800' : 'bg-gray-50 dark:bg-slate-800 border-transparent'}`}>
+                        <label className="flex items-center justify-between cursor-pointer mb-3">
+                            <span className={`text-xs font-bold flex items-center gap-2 ${isReviewEnabled ? 'text-orange-700 dark:text-orange-400' : 'text-gray-600 dark:text-gray-400'}`}><RefreshCw size={14}/> Định kỳ rà soát</span>
+                            <div className={`w-9 h-5 rounded-full relative transition-colors ${isReviewEnabled ? 'bg-orange-500' : 'bg-gray-300 dark:bg-slate-600'}`}>
+                                <input type="checkbox" className="hidden" checked={isReviewEnabled} onChange={toggleReview} />
+                                <div className={`w-3 h-3 bg-white rounded-full absolute top-1 transition-all shadow-sm ${isReviewEnabled ? 'left-5' : 'left-1'}`}></div>
+                            </div>
+                        </label>
+                        {isReviewEnabled && (
+                            <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                <div className="flex items-center gap-2">
+                                    <input type="number" min="1" name="chu_ky_ra_soat" value={formData.chu_ky_ra_soat || ''} onChange={handleChange} className="w-full h-8 px-2 rounded-lg border border-orange-300 dark:border-orange-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-orange-500/20 outline-none text-xs" placeholder="Số tháng" />
+                                    <span className="text-[10px] text-orange-600 dark:text-orange-400 whitespace-nowrap font-medium uppercase">Tháng/lần</span>
                                 </div>
-                            </label>
-                            {isReviewEnabled && (
-                                <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                                    <div className="flex items-center gap-2">
-                                        <input type="number" min="1" name="chu_ky_ra_soat" value={formData.chu_ky_ra_soat || ''} onChange={handleChange} className="w-full h-9 px-3 rounded-lg border border-orange-300 dark:border-orange-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-orange-500/20 outline-none text-sm" placeholder="Số tháng" />
-                                        <span className="text-xs text-orange-600 dark:text-orange-400 whitespace-nowrap font-medium">Tháng/lần</span>
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] text-orange-600 dark:text-orange-400 uppercase font-bold block mb-1">Ngày rà soát tiếp theo</label>
-                                        <input type="date" name="ngay_ra_soat_tiep_theo" value={formData.ngay_ra_soat_tiep_theo || ''} onChange={handleChange} className="w-full h-9 px-3 rounded-lg border border-orange-300 dark:border-orange-700 bg-white dark:bg-slate-900 outline-none text-sm dark:[color-scheme:dark]" />
-                                    </div>
+                                <div>
+                                    <label className="text-[10px] text-orange-600 dark:text-orange-400 uppercase font-bold block mb-1">Ngày rà soát tiếp theo</label>
+                                    <input type="date" name="ngay_ra_soat_tiep_theo" value={formData.ngay_ra_soat_tiep_theo || ''} onChange={handleChange} className="w-full h-8 px-2 rounded-lg border border-orange-300 dark:border-orange-700 bg-white dark:bg-slate-900 outline-none text-xs dark:[color-scheme:dark]" />
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><UserCheck size={16} className="text-blue-500"/> Trách nhiệm</h4>
-                    <div className="space-y-4">
-                        <div><label className={labelClass}>Người soạn thảo</label><SearchableSelect options={drafterOptions} value={formData.id_nguoi_soan_thao} onChange={(val) => handleSelectChange('id_nguoi_soan_thao', val)} placeholder="-- Chọn nhân sự --" /></div>
-                        <div><label className={labelClass}>Người xem xét</label><SearchableSelect options={reviewerOptions} value={formData.id_nguoi_xem_xet} onChange={(val) => handleSelectChange('id_nguoi_xem_xet', val)} placeholder="-- Chọn nhân sự --" /></div>
-                        <div><label className={labelClass}>Người phê duyệt</label><SearchableSelect options={approverOptions} value={formData.id_nguoi_phe_duyet} onChange={(val) => handleSelectChange('id_nguoi_phe_duyet', val)} placeholder="-- Chọn nhân sự --" /></div>
+                <div className="space-y-2">
+                    <label className={labelClass}><Tag size={14}/> Tiêu chuẩn áp dụng</label>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                        {masterData.tieuChuan.map(item => {
+                            const isSelected = formData.tieu_chuan?.includes(item.ten);
+                            return (
+                                <button key={item.id} type="button" onClick={() => toggleTieuChuan(item.ten)} className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium border transition-all flex items-center gap-1.5 ${isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-300'}`}>
+                                    {item.ten}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
