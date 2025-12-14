@@ -289,6 +289,21 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             <SearchableSelect options={linhVucOptions} value={formData.linh_vuc} onChange={(val) => handleSelectChange('linh_vuc', val)} placeholder="-- Chọn lĩnh vực --" />
                         </div>
 
+                        {/* Standards (Moved here) */}
+                        <div className="md:col-span-2">
+                            <label className={labelClass}><Tag size={12} className="mr-1"/> Tiêu chuẩn áp dụng</label>
+                            <div className="flex flex-wrap gap-2 pt-1">
+                                {masterData.tieuChuan.map(item => {
+                                    const isSelected = formData.tieu_chuan?.includes(item.ten);
+                                    return (
+                                        <button key={item.id} type="button" onClick={() => toggleTieuChuan(item.ten)} className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-all flex items-center gap-1.5 ${isSelected ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' : 'bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-300'}`}>
+                                            {isSelected && <Tag size={10} className="fill-current" />} {item.ten}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
                         <div className="md:col-span-2">
                             <label className={labelClass}>Mô tả tóm tắt</label>
                             <textarea name="mo_ta_tom_tat" value={formData.mo_ta_tom_tat} onChange={handleChange} className={`${textareaClass} min-h-[80px]`} placeholder="Mô tả phạm vi áp dụng, mục đích của tài liệu..." />
@@ -442,20 +457,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                                 </div>
                             </div>
                         )}
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <label className={labelClass}><Tag size={14}/> Tiêu chuẩn áp dụng</label>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                        {masterData.tieuChuan.map(item => {
-                            const isSelected = formData.tieu_chuan?.includes(item.ten);
-                            return (
-                                <button key={item.id} type="button" onClick={() => toggleTieuChuan(item.ten)} className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium border transition-all flex items-center gap-1.5 ${isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-300'}`}>
-                                    {item.ten}
-                                </button>
-                            );
-                        })}
                     </div>
                 </div>
 
