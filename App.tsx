@@ -24,6 +24,9 @@ const AppContent: React.FC = () => {
   const [isAiEnabled, setIsAiEnabled] = useState(false); 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   
+  // Sidebar Tooltip State
+  const [hoveredItem, setHoveredItem] = useState<{ id: string, label: string, top: number } | null>(null);
+  
   // Notification State
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -266,6 +269,13 @@ const AppContent: React.FC = () => {
               <button 
                 key={item.path}
                 onClick={() => setActiveTab(item.path)} 
+                onMouseEnter={(e) => {
+                    if (!isSidebarOpen) {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setHoveredItem({ id: item.path, label: item.label, top: rect.top + rect.height / 2 });
+                    }
+                }}
+                onMouseLeave={() => setHoveredItem(null)}
                 className={`w-full flex items-center p-2.5 rounded-md transition-all duration-200 group relative
                   ${activeTab === item.path 
                     ? 'bg-primary text-primary-foreground shadow-md font-medium' 
@@ -278,13 +288,6 @@ const AppContent: React.FC = () => {
                   <span className={`ml-3 text-sm whitespace-nowrap transition-all duration-300 origin-left ${isSidebarOpen ? 'opacity-100 scale-100 w-auto' : 'opacity-0 scale-0 w-0 overflow-hidden'}`}>
                     {item.label}
                   </span>
-                  
-                  {/* Tooltip for collapsed state */}
-                  {!isSidebarOpen && (
-                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-lg border border-slate-700">
-                        {item.label}
-                    </div>
-                  )}
               </button>
             ))}
         </nav>
@@ -309,6 +312,18 @@ const AppContent: React.FC = () => {
              </div>
            )}
         </div>
+
+        {/* Sidebar Tooltip (Rendered outside overflow-hidden nav) */}
+        {!isSidebarOpen && hoveredItem && (
+            <div 
+                className="fixed left-16 px-2 py-1 bg-slate-800 text-white text-xs rounded shadow-lg border border-slate-700 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-100 whitespace-nowrap"
+                style={{ top: hoveredItem.top, transform: 'translateY(-50%)', marginLeft: '8px' }}
+            >
+                {hoveredItem.label}
+                {/* Arrow */}
+                <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-slate-800 rotate-45 border-l border-b border-slate-700"></div>
+            </div>
+        )}
       </aside>
 
       {/* Main Content Area - Flex-1 (Tự động chiếm phần còn lại), min-w-0 (Ngăn tràn flex) */}
