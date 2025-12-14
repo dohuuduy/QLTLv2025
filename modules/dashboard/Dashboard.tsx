@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrangThaiTaiLieu, TaiLieu } from '../../types';
+import { TrangThaiTaiLieu, TaiLieu, MasterDataState } from '../../types';
 import { ArrowRight, BarChart3, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
-import { fetchDocumentsFromDB } from '../../services/supabaseService';
+import { fetchDocumentsFromDB, fetchMasterDataFromDB } from '../../services/supabaseService';
 
 interface DashboardProps {
   onNavigateToDocuments: (filters: { trang_thai?: string; bo_phan?: string }) => void;
@@ -78,14 +79,30 @@ const ChartContainer = ({ children, height = 300, className = "" }: ChartContain
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) => {
   const [data, setData] = useState<TaiLieu[]>([]);
+  const [masterData, setMasterData] = useState<MasterDataState | null>(null);
 
   useEffect(() => {
       const loadData = async () => {
-          const docs = await fetchDocumentsFromDB();
+          const [docs, mData] = await Promise.all([
+              fetchDocumentsFromDB(),
+              fetchMasterDataFromDB()
+          ]);
           if (docs) setData(docs);
+          if (mData) setMasterData(mData);
       };
       loadData();
   }, []);
+
+  // Helpers to resolve names
+  const getDept = (userId: string) => {
+      if (!masterData) return 'Unknown';
+      return masterData.nhanSu.find(u => u.id === userId)?.phong_ban || 'Khác';
+  };
+
+  const getName = (userId: string) => {
+      if (!masterData) return userId;
+      return masterData.nhanSu.find(u => u.id === userId)?.ho_ten || 'Unknown';
+  };
 
   // 1. Dữ liệu Trạng thái (Status Pie)
   const statusCounts = data.reduce((acc, curr) => {
@@ -100,9 +117,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
     fill: getStatusColor(key)
   }));
 
-  // 2. Dữ liệu Bộ phận (Department Bar)
+  // 2. Dữ liệu Bộ phận (Department Bar) - Derived from Author
   const departmentCounts = data.reduce((acc, curr) => {
-    const dept = curr.bo_phan_soan_thao || 'Khác';
+    const dept = getDept(curr.nguoi_soan_thao);
     acc[dept] = (acc[dept] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -114,8 +131,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
 
   // 3. Dữ liệu Năng suất (Top Authors Bar)
   const authorCounts = data.reduce((acc, curr) => {
-    const author = curr.nguoi_soan_thao || 'Unknown';
-    acc[author] = (acc[author] || 0) + 1;
+    const authorName = getName(curr.nguoi_soan_thao);
+    acc[authorName] = (acc[authorName] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 

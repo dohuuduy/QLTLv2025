@@ -26,7 +26,7 @@ export interface DinhKem {
 
 export interface LichSuHoatDong {
   id: string;
-  nguoi_thuc_hien: string; // Tên người thực hiện
+  nguoi_thuc_hien: string; // ID người thực hiện (hoặc tên snapshot)
   hanh_dong: 'TAO_MOI' | 'CAP_NHAT' | 'GUI_DUYET' | 'PHE_DUYET' | 'TU_CHOI' | 'BAN_HANH' | 'HUY_BO';
   thoi_gian: string;
   ghi_chu?: string;
@@ -64,8 +64,7 @@ export interface TaiLieu {
   dinh_kem?: DinhKem[]; // NEW: Danh sách file đính kèm
   lich_su?: LichSuHoatDong[]; // NEW: Lịch sử hoạt động
 
-  // Trách nhiệm
-  bo_phan_soan_thao: string;
+  // Trách nhiệm (Lưu ID NhanSu)
   nguoi_soan_thao: string;
   nguoi_xem_xet: string;
   nguoi_phe_duyet: string;

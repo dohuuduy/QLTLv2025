@@ -220,7 +220,7 @@ const AppContent: React.FC = () => {
       case 'documents': return <TaiLieuList masterData={masterData} currentUser={currentUser} initialFilters={dashboardFilters} data={documents} onUpdate={setDocuments} records={records} />;
       case 'records': return <HoSoList masterData={masterData} currentUser={currentUser} data={records} onUpdate={setRecords} documents={documents} />;
       case 'audit-schedule': return <AuditSchedulePage auditPlans={auditPlans} onUpdate={setAuditPlans} masterData={masterData} documents={documents} currentUser={currentUser} />;
-      case 'approvals': return <ApprovalsPage currentUser={currentUser} documents={documents} onUpdate={setDocuments} />;
+      case 'approvals': return <ApprovalsPage currentUser={currentUser} documents={documents} onUpdate={setDocuments} masterData={masterData} />;
       case 'master-data': return <MasterDataLayout data={masterData} onUpdate={setMasterData} />;
       case 'settings': return <SettingsPage masterData={masterData} documents={documents} records={records} auditPlans={auditPlans} onRestore={handleRestoreSystem} />;
       default: return <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">Tính năng đang phát triển...</div>;

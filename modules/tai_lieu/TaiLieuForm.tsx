@@ -30,7 +30,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     ngay_hieu_luc: '',
     chu_ky_ra_soat: 0, // Default 0 (Disabled)
     ngay_ra_soat_tiep_theo: '',
-    bo_phan_soan_thao: '',
     nguoi_soan_thao: '',
     nguoi_xem_xet: '',
     nguoi_phe_duyet: '',
@@ -260,10 +259,10 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
   const loaiTaiLieuOptions = masterData.loaiTaiLieu.map(i => ({ value: i.ten, label: i.ten }));
   const linhVucOptions = masterData.linhVuc.map(i => ({ value: i.ten, label: i.ten }));
-  const boPhanOptions = masterData.boPhan.map(i => ({ value: i.ten, label: i.ten }));
   
+  // Update to use ID as value
   const mapUserToOption = (u: NhanSu) => ({
-      value: u.ho_ten,
+      value: u.id,
       label: u.ho_ten,
       subLabel: u.chuc_vu
   });
@@ -614,18 +613,8 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
             <UserCheck size={18} className="text-orange-500" /> Trách nhiệm
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className={labelClass}>Bộ phận soạn thảo</label>
-              <SearchableSelect
-                 options={boPhanOptions}
-                 value={formData.bo_phan_soan_thao}
-                 onChange={(val) => handleSelectChange('bo_phan_soan_thao', val)}
-                 placeholder="-- Chọn bộ phận --"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className={labelClass}>Người soạn thảo</label>
+            <div className="md:col-span-2 space-y-2">
+              <label className={labelClass}>Người soạn thảo (Bộ phận sẽ tự động theo người soạn)</label>
               <SearchableSelect
                  options={drafterOptions}
                  value={formData.nguoi_soan_thao}

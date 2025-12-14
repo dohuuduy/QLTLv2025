@@ -8,6 +8,7 @@ import { Badge } from '../../components/ui/Badge';
 import { TaiLieuForm } from './TaiLieuForm';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
 import { AIChatWidget } from '../../components/AIChatWidget';
+import { WorkflowStepper } from '../../components/WorkflowStepper';
 import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, Search, FileType, FileSpreadsheet, Lock, History, Hash, Calendar, Shield, UserCheck, Briefcase, Tag, RefreshCw, Paperclip, ExternalLink, Archive, Info } from 'lucide-react';
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 import { format } from 'date-fns';
@@ -43,6 +44,10 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   useEffect(() => {
     if (initialFilters) setFilters(prev => ({ ...prev, ...initialFilters }));
   }, [initialFilters]);
+
+  // Helper to resolve names
+  const getUserName = (id: string) => masterData.nhanSu.find(u => u.id === id)?.ho_ten || '---';
+  const getDept = (userId: string) => masterData.nhanSu.find(u => u.id === userId)?.phong_ban || '---';
 
   // --- HIERARCHY LOGIC ---
   const getLevel = (doc: TaiLieu, allDocs: TaiLieu[]): number => {
@@ -94,7 +99,11 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const filteredData = useMemo(() => {
     let result = data.filter(doc => {
       if (filters.trang_thai && doc.trang_thai !== filters.trang_thai) return false;
-      if (filters.bo_phan && doc.bo_phan_soan_thao !== filters.bo_phan) return false;
+      // Filter by Department based on Author
+      if (filters.bo_phan) {
+          const authorDept = masterData.nhanSu.find(u => u.id === doc.nguoi_soan_thao)?.phong_ban;
+          if (authorDept !== filters.bo_phan) return false;
+      }
       if (filters.loai_tai_lieu && doc.loai_tai_lieu !== filters.loai_tai_lieu) return false;
       return true;
     });
@@ -103,7 +112,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         return sortDataHierarchy(result);
     }
     return result;
-  }, [data, filters, isTreeView]);
+  }, [data, filters, isTreeView, masterData.nhanSu]);
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -161,7 +170,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         }
     },
     { key: 'phien_ban', header: 'Ver', visible: true, render: (val) => <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-xs font-mono dark:text-gray-300">{val}</span> },
-    { key: 'bo_phan_soan_thao', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val}</span> },
+    { key: 'nguoi_soan_thao', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{getDept(val as string)}</span> },
     { key: 'ngay_ban_hanh', header: 'Ngày BH', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val ? format(new Date(val), 'dd/MM/yyyy') : '--'}</span> },
     { key: 'trang_thai', header: 'Trạng thái', visible: true, render: (val) => <Badge status={val as TrangThaiTaiLieu} /> },
     { key: 'id', header: 'Thao tác', visible: true, render: (_, item) => (
@@ -197,16 +206,16 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       ...docData,
       id: docData.id || `TL${Date.now()}`,
       ngay_tao: docData.ngay_tao || new Date().toISOString(),
-      nguoi_tao: docData.nguoi_tao || currentUser.ho_ten,
+      nguoi_tao: docData.nguoi_tao || currentUser.id,
       ngay_cap_nhat_cuoi: new Date().toISOString(),
-      nguoi_cap_nhat_cuoi: currentUser.ho_ten,
+      nguoi_cap_nhat_cuoi: currentUser.id,
       lich_su: docData.lich_su || []
     } as TaiLieu;
 
     if (!docData.id) {
        newDoc.lich_su?.push({
          id: `H${Date.now()}`,
-         nguoi_thuc_hien: currentUser.ho_ten,
+         nguoi_thuc_hien: currentUser.ho_ten, // Keep Name in History for immutability
          hanh_dong: 'TAO_MOI',
          thoi_gian: new Date().toISOString(),
          ghi_chu: 'Khởi tạo tài liệu'
@@ -443,6 +452,9 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
                                 {selectedDoc.ten_tai_lieu}
                             </h2>
+                            <div className="mt-3 w-full">
+                                <WorkflowStepper document={selectedDoc} masterData={masterData} />
+                            </div>
                         </div>
                      </div>
 
@@ -466,7 +478,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 uppercase font-bold mb-0.5">Bộ phận</p>
-                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 line-clamp-1" title={selectedDoc.bo_phan_soan_thao}>{selectedDoc.bo_phan_soan_thao}</p>
+                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 line-clamp-1" title={getDept(selectedDoc.nguoi_soan_thao)}>{getDept(selectedDoc.nguoi_soan_thao)}</p>
                                 </div>
                             </div>
                             <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm flex items-start gap-3">
@@ -639,17 +651,17 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                    <div className="p-4 space-y-3">
                                        <div className="flex items-center justify-between text-sm">
                                            <span className="text-gray-500 text-xs uppercase font-semibold">Soạn thảo</span>
-                                           <span className="font-medium text-gray-800 dark:text-gray-200">{selectedDoc.nguoi_soan_thao}</span>
+                                           <span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.nguoi_soan_thao)}</span>
                                        </div>
                                        <div className="w-full h-px bg-gray-100 dark:bg-slate-800"></div>
                                        <div className="flex items-center justify-between text-sm">
                                            <span className="text-gray-500 text-xs uppercase font-semibold">Xem xét</span>
-                                           <span className="font-medium text-gray-800 dark:text-gray-200">{selectedDoc.nguoi_xem_xet || '---'}</span>
+                                           <span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.nguoi_xem_xet)}</span>
                                        </div>
                                        <div className="w-full h-px bg-gray-100 dark:bg-slate-800"></div>
                                        <div className="flex items-center justify-between text-sm">
                                            <span className="text-gray-500 text-xs uppercase font-semibold">Phê duyệt</span>
-                                           <span className="font-medium text-gray-800 dark:text-gray-200">{selectedDoc.nguoi_phe_duyet || '---'}</span>
+                                           <span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.nguoi_phe_duyet)}</span>
                                        </div>
                                    </div>
                                </div>

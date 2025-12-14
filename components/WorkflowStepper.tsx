@@ -1,31 +1,35 @@
+
 import React from 'react';
-import { TaiLieu, TrangThaiTaiLieu } from '../types';
+import { TaiLieu, TrangThaiTaiLieu, MasterDataState } from '../types';
 import { Check, Edit3, Search, FileSignature, Send } from 'lucide-react';
 
 interface WorkflowStepperProps {
   document: TaiLieu;
+  masterData: MasterDataState;
 }
 
-export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({ document }) => {
+export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({ document, masterData }) => {
+  const getName = (id: string) => masterData.nhanSu.find(u => u.id === id)?.ho_ten || id || 'Chưa chỉ định';
+
   const steps = [
     { 
       id: 1, 
       label: 'Soạn thảo', 
-      user: document.nguoi_soan_thao, 
+      user: getName(document.nguoi_soan_thao), 
       icon: Edit3,
       status: 'completed' // Bước 1 luôn coi như completed nếu đã có tài liệu
     },
     { 
       id: 2, 
       label: 'Xem xét', 
-      user: document.nguoi_xem_xet || 'Chưa chỉ định', 
+      user: getName(document.nguoi_xem_xet), 
       icon: Search,
       status: 'pending' 
     },
     { 
       id: 3, 
       label: 'Phê duyệt', 
-      user: document.nguoi_phe_duyet || 'Chưa chỉ định', 
+      user: getName(document.nguoi_phe_duyet), 
       icon: FileSignature,
       status: 'pending'
     },
