@@ -64,16 +64,16 @@ export interface TaiLieu {
   dinh_kem?: DinhKem[]; // NEW: Danh sách file đính kèm
   lich_su?: LichSuHoatDong[]; // NEW: Lịch sử hoạt động
 
-  // Trách nhiệm (Lưu ID NhanSu)
-  nguoi_soan_thao: string;
-  nguoi_xem_xet: string;
-  nguoi_phe_duyet: string;
+  // Trách nhiệm (Lưu ID NhanSu - Đã đổi tên theo yêu cầu)
+  id_nguoi_soan_thao: string;
+  id_nguoi_xem_xet: string;
+  id_nguoi_phe_duyet: string;
   
   // Standard columns (System)
   ngay_tao: string;
-  nguoi_tao: string;
+  id_nguoi_tao: string; // Renaming consistent with others
   ngay_cap_nhat_cuoi: string;
-  nguoi_cap_nhat_cuoi: string;
+  id_nguoi_cap_nhat_cuoi: string; // Renaming
   trang_thai: TrangThaiTaiLieu;
 }
 

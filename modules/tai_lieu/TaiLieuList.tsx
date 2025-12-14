@@ -101,7 +101,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       if (filters.trang_thai && doc.trang_thai !== filters.trang_thai) return false;
       // Filter by Department based on Author
       if (filters.bo_phan) {
-          const authorDept = masterData.nhanSu.find(u => u.id === doc.nguoi_soan_thao)?.phong_ban;
+          const authorDept = masterData.nhanSu.find(u => u.id === doc.id_nguoi_soan_thao)?.phong_ban;
           if (authorDept !== filters.bo_phan) return false;
       }
       if (filters.loai_tai_lieu && doc.loai_tai_lieu !== filters.loai_tai_lieu) return false;
@@ -170,7 +170,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         }
     },
     { key: 'phien_ban', header: 'Ver', visible: true, render: (val) => <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-xs font-mono dark:text-gray-300">{val}</span> },
-    { key: 'nguoi_soan_thao', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{getDept(val as string)}</span> },
+    { key: 'id_nguoi_soan_thao', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{getDept(val as string)}</span> },
     { key: 'ngay_ban_hanh', header: 'Ngày BH', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val ? format(new Date(val), 'dd/MM/yyyy') : '--'}</span> },
     { key: 'trang_thai', header: 'Trạng thái', visible: true, render: (val) => <Badge status={val as TrangThaiTaiLieu} /> },
     { key: 'id', header: 'Thao tác', visible: true, render: (_, item) => (
@@ -206,9 +206,9 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       ...docData,
       id: docData.id || `TL${Date.now()}`,
       ngay_tao: docData.ngay_tao || new Date().toISOString(),
-      nguoi_tao: docData.nguoi_tao || currentUser.id,
+      id_nguoi_tao: docData.id_nguoi_tao || currentUser.id,
       ngay_cap_nhat_cuoi: new Date().toISOString(),
-      nguoi_cap_nhat_cuoi: currentUser.id,
+      id_nguoi_cap_nhat_cuoi: currentUser.id,
       lich_su: docData.lich_su || []
     } as TaiLieu;
 
@@ -478,7 +478,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 uppercase font-bold mb-0.5">Bộ phận</p>
-                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 line-clamp-1" title={getDept(selectedDoc.nguoi_soan_thao)}>{getDept(selectedDoc.nguoi_soan_thao)}</p>
+                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 line-clamp-1" title={getDept(selectedDoc.id_nguoi_soan_thao)}>{getDept(selectedDoc.id_nguoi_soan_thao)}</p>
                                 </div>
                             </div>
                             <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm flex items-start gap-3">
@@ -651,17 +651,17 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                    <div className="p-4 space-y-3">
                                        <div className="flex items-center justify-between text-sm">
                                            <span className="text-gray-500 text-xs uppercase font-semibold">Soạn thảo</span>
-                                           <span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.nguoi_soan_thao)}</span>
+                                           <span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.id_nguoi_soan_thao)}</span>
                                        </div>
                                        <div className="w-full h-px bg-gray-100 dark:bg-slate-800"></div>
                                        <div className="flex items-center justify-between text-sm">
                                            <span className="text-gray-500 text-xs uppercase font-semibold">Xem xét</span>
-                                           <span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.nguoi_xem_xet)}</span>
+                                           <span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.id_nguoi_xem_xet)}</span>
                                        </div>
                                        <div className="w-full h-px bg-gray-100 dark:bg-slate-800"></div>
                                        <div className="flex items-center justify-between text-sm">
                                            <span className="text-gray-500 text-xs uppercase font-semibold">Phê duyệt</span>
-                                           <span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.nguoi_phe_duyet)}</span>
+                                           <span className="font-medium text-gray-800 dark:text-gray-200">{getUserName(selectedDoc.id_nguoi_phe_duyet)}</span>
                                        </div>
                                    </div>
                                </div>

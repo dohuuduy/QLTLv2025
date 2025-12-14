@@ -15,21 +15,21 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({ document, mast
     { 
       id: 1, 
       label: 'Soạn thảo', 
-      user: getName(document.nguoi_soan_thao), 
+      user: getName(document.id_nguoi_soan_thao), 
       icon: Edit3,
       status: 'completed' // Bước 1 luôn coi như completed nếu đã có tài liệu
     },
     { 
       id: 2, 
       label: 'Xem xét', 
-      user: getName(document.nguoi_xem_xet), 
+      user: getName(document.id_nguoi_xem_xet), 
       icon: Search,
       status: 'pending' 
     },
     { 
       id: 3, 
       label: 'Phê duyệt', 
-      user: getName(document.nguoi_phe_duyet), 
+      user: getName(document.id_nguoi_phe_duyet), 
       icon: FileSignature,
       status: 'pending'
     },

@@ -30,9 +30,9 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     ngay_hieu_luc: '',
     chu_ky_ra_soat: 0, // Default 0 (Disabled)
     ngay_ra_soat_tiep_theo: '',
-    nguoi_soan_thao: '',
-    nguoi_xem_xet: '',
-    nguoi_phe_duyet: '',
+    id_nguoi_soan_thao: '',
+    id_nguoi_xem_xet: '',
+    id_nguoi_phe_duyet: '',
     mo_ta_tom_tat: '',
     dinh_kem: [],
     trang_thai: TrangThaiTaiLieu.SOAN_THAO,
@@ -617,8 +617,8 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
               <label className={labelClass}>Người soạn thảo (Bộ phận sẽ tự động theo người soạn)</label>
               <SearchableSelect
                  options={drafterOptions}
-                 value={formData.nguoi_soan_thao}
-                 onChange={(val) => handleSelectChange('nguoi_soan_thao', val)}
+                 value={formData.id_nguoi_soan_thao}
+                 onChange={(val) => handleSelectChange('id_nguoi_soan_thao', val)}
                  placeholder="-- Chọn người soạn --"
               />
             </div>
@@ -627,8 +627,8 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
               <label className={labelClass}>Người xem xét</label>
               <SearchableSelect
                  options={reviewerOptions}
-                 value={formData.nguoi_xem_xet}
-                 onChange={(val) => handleSelectChange('nguoi_xem_xet', val)}
+                 value={formData.id_nguoi_xem_xet}
+                 onChange={(val) => handleSelectChange('id_nguoi_xem_xet', val)}
                  placeholder="-- Chọn người xem xét --"
               />
             </div>
@@ -637,8 +637,8 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
               <label className={labelClass}>Người phê duyệt</label>
               <SearchableSelect
                  options={approverOptions}
-                 value={formData.nguoi_phe_duyet}
-                 onChange={(val) => handleSelectChange('nguoi_phe_duyet', val)}
+                 value={formData.id_nguoi_phe_duyet}
+                 onChange={(val) => handleSelectChange('id_nguoi_phe_duyet', val)}
                  placeholder="-- Chọn người duyệt --"
               />
             </div>

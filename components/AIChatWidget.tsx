@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, X, RotateCcw, MessageSquareText, Minimize2 } from 'lucide-react';
 import { chatWithDocument } from '../services/geminiService';
@@ -58,7 +57,7 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ document }) => {
       Mô tả tóm tắt: ${document.mo_ta_tom_tat}
       Phiên bản: ${document.phien_ban}
       Ngày hiệu lực: ${document.ngay_hieu_luc}
-      Người soạn: ${document.nguoi_soan_thao}
+      Người soạn: ${document.id_nguoi_soan_thao}
       Tiêu chuẩn áp dụng: ${document.tieu_chuan?.join(', ')}
     `;
 

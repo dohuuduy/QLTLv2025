@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, X, RotateCcw } from 'lucide-react';
 import { Button } from './ui/Button';
@@ -49,7 +48,7 @@ export const AIChatBox: React.FC<AIChatBoxProps> = ({ document }) => {
       Mô tả tóm tắt: ${document.mo_ta_tom_tat}
       Phiên bản: ${document.phien_ban}
       Ngày hiệu lực: ${document.ngay_hieu_luc}
-      Người soạn: ${document.nguoi_soan_thao}
+      Người soạn: ${document.id_nguoi_soan_thao}
       Tiêu chuẩn áp dụng: ${document.tieu_chuan?.join(', ')}
     `;
 
