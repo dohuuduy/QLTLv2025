@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { DanhMucItem, ColumnDefinition } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { DataTable } from '../../components/DataTable';
-import { Trash2, Pencil, Plus, CheckCircle, XCircle, Link as LinkIcon, X, Layers, Save, Hash } from 'lucide-react';
+import { Modal } from '../../components/ui/Modal';
+import { Trash2, Pencil, Plus, CheckCircle, XCircle, Link as LinkIcon, Layers, Hash, FileBox } from 'lucide-react';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { upsertCategory, deleteCategory } from '../../services/supabaseService';
 import { useDialog } from '../../contexts/DialogContext';
@@ -26,7 +26,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
   parentLabel = "Thuộc danh mục",
   showDocTypeConfig = false
 }) => {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DanhMucItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const dialog = useDialog();
@@ -61,6 +61,10 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
     do_dai_so: 2
   });
 
+  // Unified Styles
+  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm";
+  const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5 block";
+
   const handleAddNew = () => {
     setEditingItem(null);
     const nextOrder = data.length > 0 ? Math.max(...data.map(i => i.thu_tu || 0)) + 1 : 1;
@@ -73,7 +77,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
         ky_tu_noi: '.',
         do_dai_so: 2 
     });
-    setIsDrawerOpen(true);
+    setIsModalOpen(true);
   };
 
   const handleEdit = (item: DanhMucItem) => {
@@ -87,7 +91,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
       ky_tu_noi: item.ky_tu_noi || '.',
       do_dai_so: item.do_dai_so || 2
     });
-    setIsDrawerOpen(true);
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -136,7 +140,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
         } else {
             onUpdate([...data, tempItem]);
         }
-        setIsDrawerOpen(false);
+        setIsModalOpen(false);
         dialog.alert('Lưu danh mục thành công!', { type: 'success' });
     } catch (error) {
         dialog.alert("Lỗi khi lưu danh mục!", { type: 'error' });
@@ -201,29 +205,24 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
     return cols;
   }, [data, parentOptions, parentLabel, showDocTypeConfig]);
 
-  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm";
-  const labelClass = "block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5";
-
   return (
     <div className="h-full flex flex-col relative">
       <div className="flex-1 overflow-hidden rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm">
         <DataTable data={data} columns={columns} onRowClick={handleEdit} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16} />} size="sm">Thêm mới</Button>}/>
       </div>
-      {isDrawerOpen && createPortal(
-        <div className="fixed inset-0 z-[70] flex justify-end">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)} />
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
-            {/* STICKY HEADER */}
-            <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-6 border-b border-gray-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shrink-0">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2 truncate pr-2">
-                    <Layers className="text-primary shrink-0" /> <span className="truncate">{editingItem ? 'Cập nhật danh mục' : 'Thêm danh mục mới'}</span>
-                </h2>
-                <Button variant="ghost" size="icon" onClick={() => setIsDrawerOpen(false)} className="shrink-0 self-end sm:self-auto"><X size={20} /></Button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase border-b border-gray-100 dark:border-slate-800 pb-2">Thông tin chi tiết</h3>
+      
+      {/* Modal Form */}
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title={editingItem ? 'Cập nhật danh mục' : 'Thêm danh mục mới'} 
+        size="md"
+        footer={<><Button variant="ghost" onClick={() => setIsModalOpen(false)}>Hủy bỏ</Button><Button onClick={handleSave} isLoading={isLoading}>Lưu thông tin</Button></>}
+      >
+        <div className="space-y-6 p-2">
+            <div className="space-y-4">
+                <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><FileBox size={16} className="text-blue-500"/> Thông tin chi tiết</h4>
+                
                 <div className="space-y-4">
                   <div><label className={labelClass}>Tên hiển thị <span className="text-red-500">*</span></label><input autoFocus className={inputClass} value={formState.ten} onChange={(e) => setFormState({...formState, ten: e.target.value})} placeholder="Nhập tên danh mục..." onKeyDown={(e) => e.key === 'Enter' && handleSave()}/></div>
                   <div><label className={labelClass}>Thứ tự hiển thị</label><input type="number" className={inputClass} value={formState.thu_tu} onChange={(e) => setFormState({...formState, thu_tu: parseInt(e.target.value) || 0})}/></div>
@@ -243,16 +242,9 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
                   
                   <div className="pt-2"><label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"><div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formState.active ? 'bg-primary border-primary text-white' : 'bg-white border-gray-400'}`}>{formState.active && <CheckCircle size={14} />}</div><input type="checkbox" className="hidden" checked={formState.active} onChange={() => setFormState({...formState, active: !formState.active})}/><div><p className="text-sm font-bold text-gray-800 dark:text-gray-200">Đang hoạt động</p><p className="text-xs text-gray-500">Bỏ chọn để tạm khóa danh mục này.</p></div></label></div>
                 </div>
-              </div>
             </div>
-            <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 sticky bottom-0 z-10 flex justify-end gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-               <Button variant="ghost" onClick={() => setIsDrawerOpen(false)}>Hủy bỏ</Button>
-               <Button onClick={handleSave} leftIcon={<Save size={16} />} isLoading={isLoading}>Lưu thông tin</Button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+        </div>
+      </Modal>
     </div>
   );
 };

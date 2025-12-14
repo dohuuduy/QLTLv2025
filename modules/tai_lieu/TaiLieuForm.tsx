@@ -1,9 +1,10 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { Save, Info, Calendar, UserCheck, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, Lock, Unlock, Layers, Tag, UploadCloud, AlertCircle } from 'lucide-react';
+import { Info, Calendar, UserCheck, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, Lock, Unlock, Layers, Tag, UploadCloud, AlertCircle, Save } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -193,8 +194,10 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     setFormData(prev => ({ ...prev, dinh_kem: (prev.dinh_kem || []).filter(f => f.id !== fileId) }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Expose submission to parent if needed, but for now we are wrapping in Modal which calls save.
+  // Actually, we pass onSave down.
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!formData.ma_tai_lieu || !formData.ten_tai_lieu) {
         dialog.alert("Vui lòng nhập Mã và Tên tài liệu!", { type: 'warning' });
         return;
@@ -224,57 +227,22 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const reviewerOptions = masterData.nhanSu.filter(u => u.roles.includes('XEM_XET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
   const approverOptions = masterData.nhanSu.filter(u => u.roles.includes('PHE_DUYET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
 
-  // Styles
-  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-gray-400 text-sm disabled:bg-gray-100 disabled:text-gray-500 dark:disabled:bg-slate-800";
-  const textareaClass = "w-full p-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-gray-400 text-sm resize-none";
-  const labelClass = "text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1.5 block flex items-center gap-1";
+  // Unified Styles
+  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm disabled:bg-gray-100 disabled:text-gray-500 dark:disabled:bg-slate-800";
+  const textareaClass = "w-full p-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm resize-none";
+  const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5 block flex items-center gap-1";
   
-  const Section = ({ title, icon: Icon, children, className = "" }: any) => (
-      <div className={`bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden ${className}`}>
-          <div className="px-5 py-3 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-950/30 flex items-center gap-2">
-              <Icon size={18} className="text-blue-600 dark:text-blue-400" />
-              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wide">{title}</h3>
-          </div>
-          <div className="p-5">{children}</div>
-      </div>
-  );
-
+  // Custom Render for Form Sections inside Modal
   return (
-    <div className="flex flex-col h-full bg-gray-50/50 dark:bg-slate-950">
-      {/* Header */}
-      <div className="sticky top-0 z-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 md:px-6 md:py-4 border-b border-gray-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-sm">
-        <div className="flex flex-col min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
-                    <FileText size={20} />
-                </div>
-                <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate" title={initialData ? initialData.ten_tai_lieu : 'Tạo mới'}>
-                        {initialData ? 'Cập nhật tài liệu' : 'Soạn thảo tài liệu mới'}
-                    </h2>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                        {initialData ? 
-                            <span className="font-mono bg-gray-100 dark:bg-slate-800 px-1.5 rounded">{initialData.ma_tai_lieu}</span> : 
-                            <span>Điền thông tin bên dưới để khởi tạo</span>
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div className="flex gap-3 w-full sm:w-auto justify-end">
-            <Button variant="secondary" onClick={onCancel}>Hủy bỏ</Button>
-            <Button onClick={handleSubmit} leftIcon={<Save size={16} />} className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20">Lưu dữ liệu</Button>
-        </div>
-      </div>
-
-      {/* Form Content */}
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-900 p-2">
+      <form id="document-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
             {/* Left Column (Main Content) */}
             <div className="lg:col-span-8 space-y-6">
                 
-                <Section title="Thông tin định danh" icon={Info}>
+                <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><Info size={16} className="text-blue-500"/> Thông tin định danh</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="md:col-span-2">
                             <label className={labelClass}>Tên tài liệu <span className="text-red-500">*</span></label>
@@ -315,9 +283,10 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             <textarea name="mo_ta_tom_tat" value={formData.mo_ta_tom_tat} onChange={handleChange} className={`${textareaClass} min-h-[100px]`} placeholder="Mô tả phạm vi áp dụng, mục đích của tài liệu..." />
                         </div>
                     </div>
-                </Section>
+                </div>
 
-                <Section title="Nội dung & Đính kèm" icon={Paperclip}>
+                <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><Paperclip size={16} className="text-orange-500"/> Nội dung & Đính kèm</h4>
                     <div className="space-y-4">
                         <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 p-4 transition-colors hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 group">
                             <div className="flex gap-3 flex-col sm:flex-row items-center">
@@ -358,13 +327,14 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             </div>
                         ) : null}
                     </div>
-                </Section>
+                </div>
             </div>
 
             {/* Right Column (Sidebar) */}
             <div className="lg:col-span-4 space-y-6">
                 
-                <Section title="Phân loại" icon={Layers}>
+                <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><Layers size={16} className="text-purple-500"/> Phân loại</h4>
                     <div className="space-y-4">
                         <div>
                             <label className={labelClass}>Loại tài liệu</label>
@@ -388,9 +358,10 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             </div>
                         </div>
                     </div>
-                </Section>
+                </div>
 
-                <Section title="Kiểm soát & Hiệu lực" icon={Calendar}>
+                <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><Calendar size={16} className="text-green-500"/> Kiểm soát & Hiệu lực</h4>
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
                             <div><label className={labelClass}>Phiên bản (Ver)</label><input name="phien_ban" value={formData.phien_ban} onChange={handleChange} className={inputClass} placeholder="1.0" /></div>
@@ -424,19 +395,28 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             )}
                         </div>
                     </div>
-                </Section>
+                </div>
 
-                <Section title="Trách nhiệm" icon={UserCheck}>
+                <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><UserCheck size={16} className="text-blue-500"/> Trách nhiệm</h4>
                     <div className="space-y-4">
                         <div><label className={labelClass}>Người soạn thảo</label><SearchableSelect options={drafterOptions} value={formData.id_nguoi_soan_thao} onChange={(val) => handleSelectChange('id_nguoi_soan_thao', val)} placeholder="-- Chọn nhân sự --" /></div>
                         <div><label className={labelClass}>Người xem xét</label><SearchableSelect options={reviewerOptions} value={formData.id_nguoi_xem_xet} onChange={(val) => handleSelectChange('id_nguoi_xem_xet', val)} placeholder="-- Chọn nhân sự --" /></div>
                         <div><label className={labelClass}>Người phê duyệt</label><SearchableSelect options={approverOptions} value={formData.id_nguoi_phe_duyet} onChange={(val) => handleSelectChange('id_nguoi_phe_duyet', val)} placeholder="-- Chọn nhân sự --" /></div>
                     </div>
-                </Section>
+                </div>
 
             </div>
         </div>
+        {/* Hidden button to trigger submit via form element if needed */}
+        <button type="submit" className="hidden"></button>
       </form>
+      
+      {/* Footer Buttons moved to Modal parent in TaiLieuList, but can add extra content here if needed */}
+      <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
+            <Button variant="secondary" onClick={onCancel}>Hủy bỏ</Button>
+            <Button onClick={() => handleSubmit()} leftIcon={<Save size={16} />} className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20">Lưu dữ liệu</Button>
+      </div>
     </div>
   );
 };

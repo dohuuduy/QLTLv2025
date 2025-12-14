@@ -1,11 +1,11 @@
 
 import React, { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { KeHoachDanhGia, MasterDataState, TaiLieu, NhanSu, ColumnDefinition, TrangThaiKeHoach, PhienDanhGia } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { DataTable } from '../../components/DataTable';
+import { Modal } from '../../components/ui/Modal';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { CalendarDays, Plus, Calendar, Target, MapPin, UserCheck, Briefcase, Trash2, Pencil, X, Save, Layers, List, CheckCircle2 } from 'lucide-react';
+import { CalendarDays, Plus, Calendar, Target, MapPin, UserCheck, Briefcase, Trash2, Pencil, Layers, List, FileBox } from 'lucide-react';
 import { format } from 'date-fns';
 import { AuditCalendar } from './AuditCalendar';
 import { upsertAuditPlan, deleteAuditPlan } from '../../services/supabaseService';
@@ -26,7 +26,7 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
     documents,
     currentUser
 }) => {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [editingPlan, setEditingPlan] = useState<Partial<KeHoachDanhGia>>({
      trang_thai: 'lap_ke_hoach',
@@ -35,6 +35,10 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
   });
   const [isLoading, setIsLoading] = useState(false);
   const dialog = useDialog();
+
+  // Unified Styles
+  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm";
+  const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5 block";
 
   const getStatusBadge = (status: TrangThaiKeHoach) => {
       const map = {
@@ -56,12 +60,12 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
          to_chuc_danh_gia_id: '',
          truong_doan_id: ''
      });
-     setIsDrawerOpen(true);
+     setIsModalOpen(true);
   };
 
   const handleEdit = (plan: KeHoachDanhGia) => {
      setEditingPlan({ ...plan });
-     setIsDrawerOpen(true);
+     setIsModalOpen(true);
   };
 
   const handleCalendarEventClick = (plan: KeHoachDanhGia, session: PhienDanhGia) => {
@@ -104,7 +108,7 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
           } else {
               onUpdate([newPlan, ...auditPlans]);
           }
-          setIsDrawerOpen(false);
+          setIsModalOpen(false);
           dialog.alert('Lưu kế hoạch thành công!', { type: 'success' });
       } catch (error) {
           dialog.alert("Lỗi lưu kế hoạch!", { type: 'error' });
@@ -132,10 +136,6 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
       { key: 'id', header: 'Thao tác', visible: true, render: (_, item) => (<div className="flex gap-1"><Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}><Pencil size={16} className="text-blue-500"/></Button><Button variant="ghost" size="icon" onClick={(e) => handleDelete(item.id, e)}><Trash2 size={16} className="text-red-500"/></Button></div>) }
   ];
 
-  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm";
-  const textareaClass = "w-full p-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm min-h-[80px]";
-  const labelClass = "block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5 flex items-center gap-1";
-
   const renderFilters = (
       <div className="flex bg-gray-100 dark:bg-slate-800 rounded p-1 mr-2 border border-gray-200 dark:border-slate-700">
          <button onClick={() => setViewMode('list')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-600 shadow text-primary' : 'text-gray-500 hover:text-gray-700'}`} title="Xem dạng bảng"><List size={16}/> Danh sách</button>
@@ -158,84 +158,72 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
                 <DataTable data={auditPlans} columns={columns} onRowClick={handleEdit} filters={renderFilters} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16} />} className="shadow-sm">Lập kế hoạch mới</Button>}/>
             )}
         </div>
-        {isDrawerOpen && createPortal(
-            <div className="fixed inset-0 z-[70] flex justify-end">
-                <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)} />
-                <div className="w-full md:max-w-2xl bg-white dark:bg-slate-900 h-full shadow-2xl relative animate-slide-in-right flex flex-col transition-colors border-l border-t border-gray-200 dark:border-slate-800">
-                    {/* STICKY HEADER */}
-                    <div className="sticky top-0 z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-6 border-b border-gray-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shrink-0">
+        
+        {/* Unified Modal Form */}
+        <Modal 
+            isOpen={isModalOpen} 
+            onClose={() => setIsModalOpen(false)} 
+            title={editingPlan.id ? 'Cập nhật kế hoạch đánh giá' : 'Lập kế hoạch mới'} 
+            size="lg" 
+            footer={<><Button variant="ghost" onClick={() => setIsModalOpen(false)}>Hủy bỏ</Button><Button onClick={handleSave} isLoading={isLoading}>Lưu kế hoạch</Button></>}
+        >
+            <div className="space-y-6 p-2">
+                {/* Section 1 */}
+                <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><FileBox size={16} className="text-blue-500"/> Thông tin chung</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2">
+                            <label className={labelClass}>Tên kế hoạch <span className="text-red-500">*</span></label>
+                            <input className={inputClass} placeholder="VD: Đánh giá nội bộ lần 1 năm 2024" value={editingPlan.ten_ke_hoach || ''} onChange={(e) => setEditingPlan({...editingPlan, ten_ke_hoach: e.target.value})} autoFocus/>
+                        </div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2 truncate pr-2">
-                                <Layers className="text-blue-500 shrink-0" /> 
-                                <span className="truncate">{editingPlan.id ? 'Cập nhật kế hoạch' : 'Lập kế hoạch mới'}</span>
-                            </h2>
-                            <p className="text-xs text-gray-500 mt-1">Quản lý lịch đánh giá chất lượng</p>
+                            <label className={labelClass}>Loại hình đánh giá</label>
+                            <SearchableSelect options={auditTypeOptions} value={editingPlan.loai_danh_gia} onChange={(val) => setEditingPlan({...editingPlan, loai_danh_gia: String(val)})} placeholder="-- Chọn loại --"/>
                         </div>
-                        <div className="flex gap-2 shrink-0">
-                            <Button variant="ghost" onClick={() => setIsDrawerOpen(false)} className="px-3">Hủy</Button>
-                            <Button onClick={handleSave} leftIcon={<Save size={16} />} isLoading={isLoading} className="shadow-sm">Lưu</Button>
-                        </div>
-                    </div>
-                    
-                    <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-                        
-                        {/* Section 1 */}
-                        <div className="space-y-4">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase border-b border-gray-100 dark:border-slate-800 pb-2">Thông tin chung</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div className="md:col-span-2">
-                                    <label className={labelClass}>Tên kế hoạch <span className="text-red-500">*</span></label>
-                                    <input className={inputClass} placeholder="VD: Đánh giá nội bộ lần 1 năm 2024" value={editingPlan.ten_ke_hoach || ''} onChange={(e) => setEditingPlan({...editingPlan, ten_ke_hoach: e.target.value})} autoFocus/>
-                                </div>
-                                <div>
-                                    <label className={labelClass}>Loại hình đánh giá</label>
-                                    <SearchableSelect options={auditTypeOptions} value={editingPlan.loai_danh_gia} onChange={(val) => setEditingPlan({...editingPlan, loai_danh_gia: String(val)})} placeholder="-- Chọn loại --"/>
-                                </div>
-                                <div>
-                                    <label className={labelClass}>Trạng thái</label>
-                                    <select className={inputClass} value={editingPlan.trang_thai} onChange={(e) => setEditingPlan({...editingPlan, trang_thai: e.target.value as TrangThaiKeHoach})}>
-                                        <option value="lap_ke_hoach">Lập kế hoạch</option>
-                                        <option value="da_chot">Đã chốt lịch</option>
-                                        <option value="dang_thuc_hien">Đang thực hiện</option>
-                                        <option value="hoan_thanh">Hoàn thành</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Section 2 */}
-                        <div className="space-y-4">
-                             <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase border-b border-gray-100 dark:border-slate-800 pb-2 flex items-center gap-2"><Briefcase size={16} className="text-purple-500"/> Đơn vị thực hiện</h3>
-                             <div className="p-5 bg-purple-50 dark:bg-purple-900/10 rounded-xl border border-purple-100 dark:border-purple-900/30 grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div><label className={labelClass}>Tổ chức đánh giá</label><SearchableSelect options={auditOrgOptions} value={editingPlan.to_chuc_danh_gia_id} onChange={(val) => setEditingPlan({...editingPlan, to_chuc_danh_gia_id: String(val), truong_doan_id: ''})} placeholder="-- Chọn tổ chức --"/></div>
-                                <div><label className={labelClass}>Trưởng đoàn đánh giá</label><SearchableSelect options={filteredAuditors} value={editingPlan.truong_doan_id} onChange={(val) => setEditingPlan({...editingPlan, truong_doan_id: String(val)})} placeholder={editingPlan.to_chuc_danh_gia_id ? "-- Chọn trưởng đoàn --" : "-- Chọn tổ chức trước --"} disabled={!editingPlan.to_chuc_danh_gia_id}/></div>
-                             </div>
-                        </div>
-
-                        {/* Section 3 */}
-                        <div className="space-y-4">
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase border-b border-gray-100 dark:border-slate-800 pb-2 flex items-center gap-2"><CalendarDays size={16} className="text-orange-500"/> Thời gian & Phạm vi</h3>
-                            <div>
-                                <label className={labelClass}>Thời gian dự kiến</label>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="relative group"><Calendar size={16} className="absolute left-3 top-2.5 text-gray-400 group-hover:text-blue-500"/><input type="date" className={`${inputClass} pl-10`} value={editingPlan.thoi_gian_du_kien_start || ''} onChange={(e) => setEditingPlan({...editingPlan, thoi_gian_du_kien_start: e.target.value})}/></div>
-                                    <div className="relative group"><Calendar size={16} className="absolute left-3 top-2.5 text-gray-400 group-hover:text-blue-500"/><input type="date" className={`${inputClass} pl-10`} value={editingPlan.thoi_gian_du_kien_end || ''} onChange={(e) => setEditingPlan({...editingPlan, thoi_gian_du_kien_end: e.target.value})}/></div>
-                                </div>
-                            </div>
-                            <div>
-                                <label className={labelClass}>Mục tiêu đánh giá</label>
-                                <div className="relative"><Target size={16} className="absolute left-3 top-3 text-gray-400"/><textarea className={`${textareaClass} pl-10`} placeholder="Xác định sự phù hợp của hệ thống quản lý..." value={editingPlan.muc_tieu || ''} onChange={(e) => setEditingPlan({...editingPlan, muc_tieu: e.target.value})}/></div>
-                            </div>
-                            <div>
-                                <label className={labelClass}>Phạm vi đánh giá</label>
-                                <div className="relative"><MapPin size={16} className="absolute left-3 top-3 text-gray-400"/><textarea className={`${textareaClass} pl-10`} placeholder="Các phòng ban, quy trình liên quan..." value={editingPlan.pham_vi || ''} onChange={(e) => setEditingPlan({...editingPlan, pham_vi: e.target.value})}/></div>
-                            </div>
+                        <div>
+                            <label className={labelClass}>Trạng thái</label>
+                            <select className={inputClass} value={editingPlan.trang_thai} onChange={(e) => setEditingPlan({...editingPlan, trang_thai: e.target.value as TrangThaiKeHoach})}>
+                                <option value="lap_ke_hoach">Lập kế hoạch</option>
+                                <option value="da_chot">Đã chốt lịch</option>
+                                <option value="dang_thuc_hien">Đang thực hiện</option>
+                                <option value="hoan_thanh">Hoàn thành</option>
+                            </select>
                         </div>
                     </div>
                 </div>
-            </div>,
-            document.body
-        )}
+
+                {/* Section 2 */}
+                <div className="space-y-4">
+                        <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><Briefcase size={16} className="text-purple-500"/> Đơn vị thực hiện</h4>
+                        <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-900/30 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label className={labelClass}>Tổ chức đánh giá</label><SearchableSelect options={auditOrgOptions} value={editingPlan.to_chuc_danh_gia_id} onChange={(val) => setEditingPlan({...editingPlan, to_chuc_danh_gia_id: String(val), truong_doan_id: ''})} placeholder="-- Chọn tổ chức --"/></div>
+                        <div><label className={labelClass}>Trưởng đoàn đánh giá</label><SearchableSelect options={filteredAuditors} value={editingPlan.truong_doan_id} onChange={(val) => setEditingPlan({...editingPlan, truong_doan_id: String(val)})} placeholder={editingPlan.to_chuc_danh_gia_id ? "-- Chọn trưởng đoàn --" : "-- Chọn tổ chức trước --"} disabled={!editingPlan.to_chuc_danh_gia_id}/></div>
+                        </div>
+                </div>
+
+                {/* Section 3 */}
+                <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><CalendarDays size={16} className="text-orange-500"/> Thời gian & Phạm vi</h4>
+                    <div className="grid grid-cols-1 gap-4">
+                        <div>
+                            <label className={labelClass}>Thời gian dự kiến</label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="relative group"><input type="date" className={`${inputClass}`} value={editingPlan.thoi_gian_du_kien_start || ''} onChange={(e) => setEditingPlan({...editingPlan, thoi_gian_du_kien_start: e.target.value})}/></div>
+                                <div className="relative group"><input type="date" className={`${inputClass}`} value={editingPlan.thoi_gian_du_kien_end || ''} onChange={(e) => setEditingPlan({...editingPlan, thoi_gian_du_kien_end: e.target.value})}/></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label className={labelClass}>Mục tiêu đánh giá</label>
+                            <div className="relative"><Target size={16} className="absolute left-3 top-2.5 text-gray-400"/><input className={`${inputClass} pl-9`} placeholder="Xác định sự phù hợp của hệ thống quản lý..." value={editingPlan.muc_tieu || ''} onChange={(e) => setEditingPlan({...editingPlan, muc_tieu: e.target.value})}/></div>
+                        </div>
+                        <div>
+                            <label className={labelClass}>Phạm vi đánh giá</label>
+                            <div className="relative"><MapPin size={16} className="absolute left-3 top-2.5 text-gray-400"/><input className={`${inputClass} pl-9`} placeholder="Các phòng ban, quy trình liên quan..." value={editingPlan.pham_vi || ''} onChange={(e) => setEditingPlan({...editingPlan, pham_vi: e.target.value})}/></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Modal>
     </div>
   );
 };
