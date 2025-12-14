@@ -243,8 +243,8 @@ const AppContent: React.FC = () => {
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans">
       
-      {/* Sidebar Desktop - Z-INDEX 40 */}
-      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} hidden md:flex flex-col bg-slate-900 text-slate-200 transition-all duration-300 shadow-xl z-40 border-r border-slate-800`}>
+      {/* Sidebar Desktop - Z-INDEX 40 - SHRINK-0 ADDED TO PREVENT SQUASHING */}
+      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} hidden md:flex flex-col bg-slate-900 text-slate-200 transition-all duration-300 shadow-xl z-40 border-r border-slate-800 shrink-0 relative`}>
         <div className="h-16 flex items-center justify-center border-b border-slate-800/50 bg-slate-950/20">
            {isSidebarOpen ? <span className="font-bold text-xl tracking-tight text-white px-4 truncate">{APP_NAME}</span> : <span className="font-bold text-xl text-white">ISO</span>}
         </div>
@@ -295,10 +295,10 @@ const AppContent: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-muted/20">
+      {/* Main Content Area - MIN-W-0 ADDED TO PREVENT FLEX OVERFLOW */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-muted/20 relative min-w-0">
         {/* Header - Z-INDEX 30 */}
-        <header className="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 md:px-6 z-30 transition-colors sticky top-0">
+        <header className="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-4 md:px-6 z-30 transition-colors sticky top-0 shrink-0">
           {/* Left: Mobile Menu & Title */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
              <button className="md:hidden p-2 -ml-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md" onClick={() => setMobileMenuOpen(true)}>
