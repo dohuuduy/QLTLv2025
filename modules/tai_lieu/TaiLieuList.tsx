@@ -447,10 +447,10 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                      </div>
 
                      {/* --- 2. SCROLLABLE CONTENT --- */}
-                     <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50 dark:bg-slate-950 pb-32">
+                     <div className="flex-1 overflow-y-auto p-5 bg-gray-50/50 dark:bg-slate-950 pb-32">
                         
                         {/* Quick Stats Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                             <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm flex items-start gap-3">
                                 <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-lg shrink-0">
                                     <FileText size={20} />
@@ -489,10 +489,10 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                            
                            {/* --- LEFT COLUMN (MAIN) --- */}
-                           <div className="xl:col-span-2 space-y-8">
+                           <div className="xl:col-span-2 space-y-6">
                               
                               {/* Description Section */}
                               <div className="space-y-3">
@@ -616,10 +616,10 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                        {records.filter(r => r.ma_tai_lieu_lien_quan === selectedDoc.ma_tai_lieu).length > 0 ? (
                                            <div className="space-y-2">
                                               {records.filter(r => r.ma_tai_lieu_lien_quan === selectedDoc.ma_tai_lieu).map(rec => (
-                                                 <div key={rec.id} className="p-2.5 border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/30 rounded-lg hover:border-blue-200 dark:hover:border-slate-600 transition-colors">
-                                                    <div className="font-medium text-xs text-gray-800 dark:text-gray-200 line-clamp-2 mb-1">{rec.tieu_de}</div>
+                                                 <div key={rec.id} className="p-2.5 border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/30 rounded-lg hover:border-blue-200 dark:hover:border-slate-600 transition-colors cursor-pointer group">
+                                                    <div className="font-medium text-xs text-gray-800 dark:text-gray-200 line-clamp-2 mb-1 group-hover:text-blue-600 transition-colors">{rec.tieu_de}</div>
                                                     <div className="flex justify-between items-center text-[10px] text-gray-500">
-                                                       <span className="font-mono">{rec.ma_ho_so}</span>
+                                                       <span className="font-mono bg-white dark:bg-slate-900 px-1 rounded border border-gray-200 dark:border-slate-700">{rec.ma_ho_so}</span>
                                                        <span>{format(new Date(rec.ngay_tao), 'dd/MM/yyyy')}</span>
                                                     </div>
                                                  </div>
@@ -629,7 +629,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                    </div>
                                </div>
 
-                               {/* Responsibilities Card (Moved Down & Compacted) */}
+                               {/* Responsibilities Card (Moved Down & Simplified) */}
                                <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
                                    <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
                                        <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
