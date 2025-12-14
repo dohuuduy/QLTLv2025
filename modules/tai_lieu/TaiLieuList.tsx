@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, NhanSu, HoSo, ColumnDefinition } from '../../types';
 import { DataTable } from '../../components/DataTable';
 import { Button } from '../../components/ui/Button';
@@ -40,6 +41,16 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
   const dialog = useDialog();
   const isAdmin = currentUser.roles.includes('QUAN_TRI');
+
+  // Lock body scroll when in detail/form mode
+  useEffect(() => {
+    if (viewMode !== 'list') {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [viewMode]);
 
   useEffect(() => {
     if (initialFilters) setFilters(prev => ({ ...prev, ...initialFilters }));
@@ -246,8 +257,8 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       )}
 
       {/* RENDER DETAIL CARD OVERLAY (If in Detail Mode) */}
-      {viewMode === 'detail' && selectedDoc && (
-         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-100/80 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+      {viewMode === 'detail' && selectedDoc && createPortal(
+         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-gray-100/80 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
             {/* Background Decoration */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
                <div className="absolute top-[20%] right-[20%] w-[30%] h-[30%] bg-blue-500/10 rounded-full blur-3xl"></div>
@@ -343,7 +354,8 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                {/* Chat Widget Inside Detail */}
                <AIChatWidget document={selectedDoc} />
             </div>
-         </div>
+         </div>,
+         document.body
       )}
 
       {/* History & Version Modals (Keep existing) */}

@@ -316,7 +316,7 @@ const AppContent: React.FC = () => {
         {/* Sidebar Tooltip (Rendered outside overflow-hidden nav) */}
         {!isSidebarOpen && hoveredItem && (
             <div 
-                className="fixed left-16 px-2 py-1 bg-slate-800 text-white text-xs rounded shadow-lg border border-slate-700 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-100 whitespace-nowrap"
+                className="fixed left-20 px-2 py-1 bg-slate-800 text-white text-xs rounded shadow-lg border border-slate-700 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-100 whitespace-nowrap"
                 style={{ top: hoveredItem.top, transform: 'translateY(-50%)', marginLeft: '8px' }}
             >
                 {hoveredItem.label}
