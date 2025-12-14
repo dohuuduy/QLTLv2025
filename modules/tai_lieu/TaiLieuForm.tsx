@@ -119,7 +119,16 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
         ? (value === '' ? 0 : parseInt(value))
         : value;
 
-    setFormData(prev => ({ ...prev, [name]: finalValue }));
+    setFormData(prev => {
+        const newData = { ...prev, [name]: finalValue };
+        
+        // Logic: Khi chọn Ngày ban hành -> Tự động điền Ngày hiệu lực (nếu chưa có hoặc muốn sync)
+        if (name === 'ngay_ban_hanh') {
+            newData.ngay_hieu_luc = value; 
+        }
+        
+        return newData;
+    });
   };
 
   const handleSelectChange = (key: keyof TaiLieu, value: any) => {
@@ -237,10 +246,10 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
             {/* --- LEFT COLUMN: MAIN CONTENT (9 cols) --- */}
             <div className="lg:col-span-9 space-y-6">
                 
-                {/* 1. Thông tin chung & Phân loại */}
+                {/* 1. Thông tin chung & Nội dung */}
                 <div className="bg-white dark:bg-slate-900 rounded-xl">
                     <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2 mb-4">
-                        <Info size={16} className="text-blue-500"/> Thông tin định danh
+                        <Info size={16} className="text-blue-500"/> Thông tin & Nội dung
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                         
@@ -304,61 +313,15 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             </div>
                         </div>
 
+                        {/* Summary Description */}
                         <div className="md:col-span-2">
-                            <label className={labelClass}>Mô tả tóm tắt</label>
-                            <textarea name="mo_ta_tom_tat" value={formData.mo_ta_tom_tat} onChange={handleChange} className={`${textareaClass} min-h-[80px]`} placeholder="Mô tả phạm vi áp dụng, mục đích của tài liệu..." />
+                            <label className={labelClass}>Mô tả tóm tắt nội dung</label>
+                            <textarea name="mo_ta_tom_tat" value={formData.mo_ta_tom_tat} onChange={handleChange} className={`${textareaClass} min-h-[100px]`} placeholder="Mô tả phạm vi áp dụng, mục đích của tài liệu..." />
                         </div>
                     </div>
                 </div>
 
-                {/* 2. Nội dung & Đính kèm */}
-                <div>
-                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2 mb-4">
-                        <Paperclip size={16} className="text-orange-500"/> Nội dung & Đính kèm
-                    </h4>
-                    <div className="space-y-4">
-                        <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 p-4 transition-colors hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 group">
-                            <div className="flex gap-3 flex-col sm:flex-row items-center">
-                                <div className="flex-1 w-full relative">
-                                    <LinkIcon size={16} className="absolute left-3 top-3 text-gray-400"/>
-                                    <input value={urlInput} onChange={(e) => setUrlInput(e.target.value)} className={`${inputClass} pl-9 bg-white dark:bg-slate-950`} placeholder="Dán đường dẫn tài liệu (Google Drive, SharePoint...) tại đây" />
-                                </div>
-                                <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-center">
-                                    <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('pdf')} className="hover:text-red-600 hover:border-red-200 bg-white dark:bg-slate-900"><FileType size={14} className="mr-1"/> PDF</Button>
-                                    <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('doc')} className="hover:text-blue-600 hover:border-blue-200 bg-white dark:bg-slate-900"><FileText size={14} className="mr-1"/> Word</Button>
-                                    <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('excel')} className="hover:text-emerald-600 hover:border-emerald-200 bg-white dark:bg-slate-900"><FileSpreadsheet size={14} className="mr-1"/> Excel</Button>
-                                </div>
-                            </div>
-                            <div className="text-center mt-2 text-[10px] text-gray-400 group-hover:text-blue-500 transition-colors">
-                                <UploadCloud size={14} className="inline mr-1" /> Hỗ trợ link Google Drive, OneDrive, Dropbox
-                            </div>
-                        </div>
-
-                        {formData.dinh_kem && formData.dinh_kem.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-2.5">
-                                {formData.dinh_kem.map(file => {
-                                    const config = getFileTypeConfig(file.loai);
-                                    return (
-                                        <div key={file.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm group hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all">
-                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${config.bg} ${config.color}`}>{config.icon}</div>
-                                            <div className="flex-1 min-w-0">
-                                                <a href={file.url} target="_blank" rel="noreferrer" className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate hover:text-blue-600 block">{file.ten_file}</a>
-                                                <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-2">
-                                                    <span>{format(new Date(file.ngay_upload), 'dd/MM/yyyy HH:mm')}</span>
-                                                    <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                                                    <span className="uppercase">{file.loai}</span>
-                                                </div>
-                                            </div>
-                                            <button type="button" onClick={() => removeFile(file.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={18} /></button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : null}
-                    </div>
-                </div>
-
-                {/* 3. QUY TRÌNH XỬ LÝ (RESPONSIBILITY) - Moved to Bottom of Main Col for better alignment */}
+                {/* 2. QUY TRÌNH XỬ LÝ (RESPONSIBILITY) - Moved to Bottom of Main Col for better alignment */}
                 <div className="border-t border-gray-100 dark:border-slate-800 pt-6">
                     <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 mb-4">
                         <GitCommit size={16} className="text-purple-500"/> Quy trình xử lý & Trách nhiệm
@@ -404,7 +367,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                 </div>
             </div>
 
-            {/* --- RIGHT COLUMN: METADATA & CONTROL (3 cols) --- */}
+            {/* --- RIGHT COLUMN: METADATA & CONTROL & ATTACHMENTS (3 cols) --- */}
             <div className="lg:col-span-3 space-y-6">
                 
                 {/* Control & Validity */}
@@ -453,6 +416,43 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                                 </div>
                             )}
                         </div>
+                    </div>
+                </div>
+
+                {/* Attachments moved to Right Col */}
+                <div className="bg-white dark:bg-slate-900 rounded-xl">
+                    <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2 mb-4">
+                        <Paperclip size={16} className="text-orange-500"/> File đính kèm
+                    </h4>
+                    <div className="space-y-3">
+                        <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-dashed border-gray-300 dark:border-slate-700 p-3 transition-colors hover:border-blue-400 group">
+                            <div className="w-full relative mb-2">
+                                <LinkIcon size={14} className="absolute left-2.5 top-2.5 text-gray-400"/>
+                                <input value={urlInput} onChange={(e) => setUrlInput(e.target.value)} className={`${inputClass} pl-8 text-xs h-8 bg-white dark:bg-slate-950`} placeholder="Dán link Drive/SharePoint..." />
+                            </div>
+                            <div className="flex gap-2 justify-between">
+                                <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('pdf')} className="flex-1 h-7 text-[10px] px-1 hover:text-red-600 hover:border-red-200 bg-white dark:bg-slate-900"><FileType size={12} className="mr-1"/> PDF</Button>
+                                <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('doc')} className="flex-1 h-7 text-[10px] px-1 hover:text-blue-600 hover:border-blue-200 bg-white dark:bg-slate-900"><FileText size={12} className="mr-1"/> Word</Button>
+                                <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('excel')} className="flex-1 h-7 text-[10px] px-1 hover:text-emerald-600 hover:border-emerald-200 bg-white dark:bg-slate-900"><FileSpreadsheet size={12} className="mr-1"/> Excel</Button>
+                            </div>
+                        </div>
+
+                        {formData.dinh_kem && formData.dinh_kem.length > 0 && (
+                            <div className="grid grid-cols-1 gap-2 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                                {formData.dinh_kem.map(file => {
+                                    const config = getFileTypeConfig(file.loai);
+                                    return (
+                                        <div key={file.id} className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm group hover:border-blue-300 transition-all">
+                                            <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${config.bg} ${config.color}`}>{React.cloneElement(config.icon as React.ReactElement<any>, { size: 16 })}</div>
+                                            <div className="flex-1 min-w-0">
+                                                <a href={file.url} target="_blank" rel="noreferrer" className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate hover:text-blue-600 block">{file.ten_file}</a>
+                                            </div>
+                                            <button type="button" onClick={() => removeFile(file.id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"><Trash2 size={14} /></button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 </div>
 
