@@ -44,10 +44,7 @@ export const checkSystemHasAdmin = async (): Promise<boolean> => {
             .contains('quyen', ['QUAN_TRI']);
         
         if (error) {
-             console.warn("Check Admin Error:", error);
-             // Nếu lỗi (ví dụ chưa tạo bảng), trả về false để hiện nút (cho phép thử tạo)
-             // Nhưng để an toàn production, thường mặc định true. 
-             // Ở đây dev mode ta trả về false nếu count null.
+             console.warn("Check Admin Error (using Mock):", error.message);
              return false; 
         }
         return (count || 0) > 0;
@@ -128,10 +125,17 @@ const sortByOrder = (a: any, b: any) => (a.thu_tu || 0) - (b.thu_tu || 0);
 export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> => {
   try {
     const { data: categoriesData, error: catError } = await supabase.from('danh_muc').select('*');
-    if (catError) throw catError;
+    // Nếu bảng chưa tồn tại hoặc lỗi connection, trả về null để App dùng Mock Data
+    if (catError) {
+        console.warn("⚠️ Không thể tải danh mục (sẽ dùng Mock Data):", catError.message);
+        return null; 
+    }
 
     const { data: profilesData, error: profError } = await supabase.from('nhan_su').select('*');
-    if (profError) throw profError;
+    if (profError) {
+        console.warn("⚠️ Không thể tải nhân sự (sẽ dùng Mock Data):", profError.message);
+        return null;
+    }
 
     const categories = categoriesData || [];
     const profiles = profilesData || [];
@@ -164,9 +168,7 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
       loaiDanhGia: loaiDanhGia.length ? loaiDanhGia : INITIAL_MASTER_DATA.loaiDanhGia,
     };
   } catch (error: any) {
-    if (!error?.message?.includes('Invalid API key') && error?.code !== 'PGRST301') {
-        console.warn("⚠️ Lỗi tải Master Data:", JSON.stringify(error, null, 2));
-    }
+    console.warn("⚠️ Exception tải Master Data:", error);
     return null;
   }
 };
@@ -230,18 +232,16 @@ export const fetchDocumentsFromDB = async (): Promise<TaiLieu[] | null> => {
     try {
         const { data, error } = await supabase.from('tai_lieu').select('*').order('ngay_tao', { ascending: false });
         if (error) {
-            console.warn("⚠️ Lỗi tải Tài liệu:", JSON.stringify(error, null, 2));
+            console.warn("⚠️ Lỗi tải Tài liệu (Dùng Mock):", error.message);
             return null;
         }
         return data as TaiLieu[];
     } catch (error) {
-        console.error("Exception tải Tài liệu:", error);
         return null;
     }
 };
 
 export const upsertDocument = async (doc: TaiLieu) => {
-    // Chuyển đổi nếu cần, nhưng hiện tại TaiLieu interface map 1:1 với tên cột DB
     const { error } = await supabase.from('tai_lieu').upsert(doc);
     if (error) {
         console.error('Lỗi lưu tài liệu:', error);
@@ -260,12 +260,11 @@ export const fetchRecordsFromDB = async (): Promise<HoSo[] | null> => {
     try {
         const { data, error } = await supabase.from('ho_so').select('*').order('ngay_tao', { ascending: false });
         if (error) {
-             console.warn("⚠️ Lỗi tải Hồ sơ:", JSON.stringify(error, null, 2));
+             console.warn("⚠️ Lỗi tải Hồ sơ (Dùng Mock):", error.message);
              return null;
         }
         return data as HoSo[];
     } catch (error) {
-        console.error("Exception tải Hồ sơ:", error);
         return null;
     }
 };
@@ -289,12 +288,11 @@ export const fetchAuditPlansFromDB = async (): Promise<KeHoachDanhGia[] | null> 
     try {
         const { data, error } = await supabase.from('ke_hoach_danh_gia').select('*').order('ngay_tao', { ascending: false });
         if (error) {
-             console.warn("⚠️ Lỗi tải Kế hoạch Audit:", JSON.stringify(error, null, 2));
+             console.warn("⚠️ Lỗi tải Kế hoạch Audit (Dùng Mock):", error.message);
              return null;
         }
         return data as KeHoachDanhGia[];
     } catch (error) {
-        console.error("Exception tải Kế hoạch Audit:", error);
         return null;
     }
 };
