@@ -287,8 +287,8 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-950">
       <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-100 dark:border-slate-800">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-          {initialData ? 'Cập nhật tài liệu' : 'Thêm tài liệu mới'}
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white truncate pr-4" title={initialData ? initialData.ten_tai_lieu : 'Thêm tài liệu mới'}>
+          {initialData ? initialData.ten_tai_lieu : 'Thêm tài liệu mới'}
         </h2>
         <Button variant="ghost" size="icon" onClick={onCancel}>
           <X size={20} />

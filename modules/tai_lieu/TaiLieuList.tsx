@@ -8,7 +8,6 @@ import { Badge } from '../../components/ui/Badge';
 import { TaiLieuForm } from './TaiLieuForm';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
 import { AIChatWidget } from '../../components/AIChatWidget';
-import { WorkflowStepper } from '../../components/WorkflowStepper';
 import { Plus, Filter, FileText, Download, Eye, Pencil, Send, FileUp, Zap, Check, GitMerge, AlertTriangle, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, Search, FileType, FileSpreadsheet, Lock, History, Hash, Calendar, Shield, UserCheck, Briefcase, Tag, RefreshCw, Paperclip, ExternalLink, Archive, Info } from 'lucide-react';
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 import { format } from 'date-fns';
@@ -452,9 +451,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
                                 {selectedDoc.ten_tai_lieu}
                             </h2>
-                            <div className="mt-3 w-full">
-                                <WorkflowStepper document={selectedDoc} masterData={masterData} />
-                            </div>
                         </div>
                      </div>
 
