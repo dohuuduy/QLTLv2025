@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { DanhMucItem, ColumnDefinition } from '../../types';
 import { Button } from '../../components/ui/Button';
@@ -31,6 +31,16 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const dialog = useDialog();
   
+  // Lock body scroll when drawer is open
+  useEffect(() => {
+    if (isDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isDrawerOpen]);
+
   const guessType = () => {
       if (title.includes('Loại tài liệu')) return 'LOAI_TAI_LIEU';
       if (title.includes('Phòng ban')) return 'BO_PHAN';

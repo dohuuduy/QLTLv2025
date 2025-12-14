@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NhanSu, UserRole, DanhMucItem, ColumnDefinition } from '../../types';
 import { Button } from '../../components/ui/Button';
@@ -23,6 +23,16 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
   const [createAuthUser, setCreateAuthUser] = useState(true); // Checkbox to toggle auth creation
   const [isLoading, setIsLoading] = useState(false);
   const dialog = useDialog();
+
+  // Lock body scroll when drawer is open
+  useEffect(() => {
+    if (viewMode === 'form') {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [viewMode]);
 
   const handleAddNew = () => {
     const nextOrder = users.length > 0 ? Math.max(...users.map(u => u.thu_tu || 0)) + 1 : 1;
