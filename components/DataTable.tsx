@@ -26,7 +26,20 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
   });
 
   const [exportColumnState, setExportColumnState] = useState<Record<string, boolean>>({});
-  const [sortConfig, setSortConfig] = useState<{ key: keyof T; direction: SortDirection } | null>(null);
+  
+  // Update initialization to set default sort
+  const [sortConfig, setSortConfig] = useState<{ key: keyof T; direction: SortDirection } | null>(() => {
+    // Priority 1: Default sort by 'thu_tu' ASC (for Master Data)
+    if (columns.some(col => String(col.key) === 'thu_tu')) {
+        return { key: 'thu_tu' as keyof T, direction: 'asc' };
+    }
+    // Priority 2: Default sort by 'ngay_tao' DESC (for Logs, Docs, Records)
+    if (columns.some(col => String(col.key) === 'ngay_tao')) {
+        return { key: 'ngay_tao' as keyof T, direction: 'desc' };
+    }
+    return null;
+  });
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
@@ -93,6 +106,12 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
       sortableItems.sort((a, b) => {
         const aVal = (a[sortConfig.key] as any) ?? '';
         const bVal = (b[sortConfig.key] as any) ?? '';
+        
+        // Handle numeric sorting correctly
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+            return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+
         if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
         if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
