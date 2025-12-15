@@ -326,11 +326,11 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                          </div>
                      </div>
                      
-                     {/* CUSTOM ORDER INPUT */}
+                     {/* CUSTOM ORDER INPUT (SMALLER SIZE h-8) */}
                      <div>
                         <label className={labelClass}>Thứ tự hiển thị <span className="font-normal text-[10px] text-muted-foreground lowercase ml-1">(auto tăng)</span></label>
-                        <div className="flex items-center h-10 rounded-lg border border-input bg-background overflow-hidden focus-within:ring-2 ring-primary/20 transition-shadow">
-                            <button type="button" onClick={() => adjustNumber('thu_tu', -1)} className="px-3 h-full hover:bg-muted border-r border-border flex items-center justify-center text-muted-foreground transition-colors"><Minus size={14}/></button>
+                        <div className="flex items-center h-8 rounded-lg border border-input bg-background overflow-hidden focus-within:ring-2 ring-primary/20 transition-shadow">
+                            <button type="button" onClick={() => adjustNumber('thu_tu', -1)} className="px-2 h-full hover:bg-muted border-r border-border flex items-center justify-center text-muted-foreground transition-colors"><Minus size={14}/></button>
                             <input 
                                 type="number" 
                                 min="1" 
@@ -338,7 +338,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                                 value={formData.thu_tu} 
                                 onChange={(e) => setFormData({...formData, thu_tu: parseInt(e.target.value) || 1})}
                             />
-                            <button type="button" onClick={() => adjustNumber('thu_tu', 1)} className="px-3 h-full hover:bg-muted border-l border-border flex items-center justify-center text-muted-foreground transition-colors"><Plus size={14}/></button>
+                            <button type="button" onClick={() => adjustNumber('thu_tu', 1)} className="px-2 h-full hover:bg-muted border-l border-border flex items-center justify-center text-muted-foreground transition-colors"><Plus size={14}/></button>
                         </div>
                      </div>
                 </div>
@@ -394,10 +394,11 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                    <label className={labelClass}>Phiên bản / Lần BH</label>
                    <div className="flex gap-4">
                       <div className="relative flex-1"><GitCommit size={14} className="absolute left-3 top-3 text-muted-foreground"/><input className={`${inputClass} pl-9 font-mono`} value={formData.phien_ban} onChange={handleChange} name="phien_ban" placeholder="1.0" /></div>
-                      <div className="flex items-center h-10 w-24 rounded-lg border border-input bg-background overflow-hidden">
-                          <button type="button" onClick={() => adjustNumber('lan_ban_hanh', -1)} className="px-2 h-full hover:bg-muted border-r border-border text-muted-foreground"><Minus size={12}/></button>
-                          <div className="flex-1 text-center text-xs font-bold">{formData.lan_ban_hanh}</div>
-                          <button type="button" onClick={() => adjustNumber('lan_ban_hanh', 1)} className="px-2 h-full hover:bg-muted border-l border-border text-muted-foreground"><Plus size={12}/></button>
+                      {/* FIXED: Changed h-10 to h-8 for better proportion */}
+                      <div className="flex items-center h-8 w-24 rounded-lg border border-input bg-background overflow-hidden">
+                          <button type="button" onClick={() => adjustNumber('lan_ban_hanh', -1)} className="px-2 h-full hover:bg-muted border-r border-border text-muted-foreground flex items-center justify-center"><Minus size={12}/></button>
+                          <div className="flex-1 text-center text-xs font-bold flex items-center justify-center">{formData.lan_ban_hanh}</div>
+                          <button type="button" onClick={() => adjustNumber('lan_ban_hanh', 1)} className="px-2 h-full hover:bg-muted border-l border-border text-muted-foreground flex items-center justify-center"><Plus size={12}/></button>
                       </div>
                    </div>
                 </div>
@@ -418,10 +419,11 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                     </div>
                     {isReviewEnabled && (
                         <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-                            <div className="flex items-center h-9 bg-background rounded border border-input overflow-hidden w-28">
-                                <button type="button" onClick={() => adjustNumber('chu_ky_ra_soat', -6)} className="px-2 h-full hover:bg-muted border-r border-border text-muted-foreground"><Minus size={12}/></button>
+                            {/* CUSTOM REVIEW CYCLE INPUT (SMALLER SIZE h-8) */}
+                            <div className="flex items-center h-8 bg-background rounded border border-input overflow-hidden w-28">
+                                <button type="button" onClick={() => adjustNumber('chu_ky_ra_soat', -6)} className="px-2 h-full hover:bg-muted border-r border-border text-muted-foreground flex items-center justify-center"><Minus size={12}/></button>
                                 <input className="w-full text-center text-sm font-bold bg-transparent outline-none" value={formData.chu_ky_ra_soat} readOnly />
-                                <button type="button" onClick={() => adjustNumber('chu_ky_ra_soat', 6)} className="px-2 h-full hover:bg-muted border-l border-border text-muted-foreground"><Plus size={12}/></button>
+                                <button type="button" onClick={() => adjustNumber('chu_ky_ra_soat', 6)} className="px-2 h-full hover:bg-muted border-l border-border text-muted-foreground flex items-center justify-center"><Plus size={12}/></button>
                             </div>
                             <span className="text-xs text-muted-foreground">Tháng / lần</span>
                         </div>

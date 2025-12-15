@@ -154,7 +154,7 @@ export interface PhienDanhGia {
 export interface KeHoachDanhGia {
   id: string;
   ten_ke_hoach: string; // VD: Đánh giá nội bộ lần 1 năm 2024
-  loai_danh_gia: string; // Link với MasterData.loaiDanhGia (Nội bộ, Bên ngoài...)
+  id_loai_danh_gia: string; // Link với MasterData.loaiDanhGia (Thay vì text)
   
   // NEW FIELDS
   to_chuc_danh_gia_id?: string; // Link MasterData.toChucDanhGia
@@ -168,7 +168,7 @@ export interface KeHoachDanhGia {
   
   danh_sach_phien: PhienDanhGia[];
   
-  nguoi_tao: string; // Reverted
+  id_nguoi_tao: string; // Changed to match DB column commonly used
   ngay_tao: string;
   trang_thai: TrangThaiKeHoach;
 }

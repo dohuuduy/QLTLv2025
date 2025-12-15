@@ -31,7 +31,8 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
   const [editingPlan, setEditingPlan] = useState<Partial<KeHoachDanhGia>>({
      trang_thai: 'lap_ke_hoach',
      to_chuc_danh_gia_id: '',
-     truong_doan_id: ''
+     truong_doan_id: '',
+     id_loai_danh_gia: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const dialog = useDialog();
@@ -54,7 +55,7 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
   const handleAddNew = () => {
      setEditingPlan({
          trang_thai: 'lap_ke_hoach',
-         loai_danh_gia: '',
+         id_loai_danh_gia: '',
          muc_tieu: '',
          pham_vi: '',
          to_chuc_danh_gia_id: '',
@@ -117,7 +118,7 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
       }
   };
 
-  const auditTypeOptions = (masterData.loaiDanhGia || []).map(t => ({ value: t.ten, label: t.ten }));
+  const auditTypeOptions = (masterData.loaiDanhGia || []).map(t => ({ value: t.id, label: t.ten }));
   const auditOrgOptions = (masterData.toChucDanhGia || []).map(t => ({ value: t.id, label: t.ten }));
   
   const filteredAuditors = useMemo(() => {
@@ -128,7 +129,10 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
   }, [masterData.auditors, editingPlan.to_chuc_danh_gia_id]);
 
   const columns: ColumnDefinition<KeHoachDanhGia>[] = [
-      { key: 'ten_ke_hoach', header: 'Tên kế hoạch', visible: true, render: (val, item) => (<div><div className="font-medium text-gray-800 dark:text-gray-200">{val}</div><div className="text-xs text-gray-500 mt-1">{item.loai_danh_gia}</div></div>) },
+      { key: 'ten_ke_hoach', header: 'Tên kế hoạch', visible: true, render: (val, item) => {
+          const typeName = masterData.loaiDanhGia?.find(t => t.id === item.id_loai_danh_gia)?.ten || '---';
+          return (<div><div className="font-medium text-gray-800 dark:text-gray-200">{val}</div><div className="text-xs text-gray-500 mt-1">{typeName}</div></div>);
+      }},
       { key: 'to_chuc_danh_gia_id', header: 'Tổ chức đánh giá', visible: true, render: (val) => { const org = masterData.toChucDanhGia?.find(o => o.id === val); return <span className="text-sm">{org ? org.ten : '--'}</span>; } },
       { key: 'truong_doan_id', header: 'Trưởng đoàn', visible: true, render: (val) => { const lead = masterData.auditors?.find(a => a.id === val); return lead ? (<div className="flex items-center gap-1 text-sm"><UserCheck size={14} className="text-blue-500"/> {lead.ten}</div>) : '--'; } },
       { key: 'thoi_gian_du_kien_start', header: 'Thời gian', visible: true, render: (_, item) => (<span className="text-xs">{item.thoi_gian_du_kien_start ? format(new Date(item.thoi_gian_du_kien_start), 'dd/MM/yyyy') : '?'} {' - '} {item.thoi_gian_du_kien_end ? format(new Date(item.thoi_gian_du_kien_end), 'dd/MM/yyyy') : '?'}</span>) },
@@ -178,7 +182,7 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
                         </div>
                         <div>
                             <label className={labelClass}>Loại hình đánh giá</label>
-                            <SearchableSelect options={auditTypeOptions} value={editingPlan.loai_danh_gia} onChange={(val) => setEditingPlan({...editingPlan, loai_danh_gia: String(val)})} placeholder="-- Chọn loại --"/>
+                            <SearchableSelect options={auditTypeOptions} value={editingPlan.id_loai_danh_gia} onChange={(val) => setEditingPlan({...editingPlan, id_loai_danh_gia: String(val)})} placeholder="-- Chọn loại --"/>
                         </div>
                         <div>
                             <label className={labelClass}>Trạng thái</label>
