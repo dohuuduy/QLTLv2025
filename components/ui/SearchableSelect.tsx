@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useId } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Search, Check, User } from 'lucide-react';
+import { ChevronDown, Search, Check, User, X } from 'lucide-react';
 
 interface Option {
   value: string | number;
@@ -32,51 +32,62 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
   
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   
   // Generate stable unique ID
   const uniqueId = useId();
   const portalId = `dropdown-portal-${uniqueId.replace(/:/g, '')}`;
 
-  // Use useLayoutEffect to calculate position BEFORE paint -> No flickering/lag
-  useLayoutEffect(() => {
-    if (isOpen && containerRef.current) {
+  const calculatePosition = () => {
+    if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const spaceBelow = viewportHeight - rect.bottom;
       const dropdownHeight = 300; 
 
-      const placement = spaceBelow < dropdownHeight ? 'top' : 'bottom';
+      const placement = spaceBelow < dropdownHeight && rect.top > dropdownHeight ? 'top' : 'bottom';
       
       setPosition({
         top: placement === 'bottom' ? rect.bottom + window.scrollY + 4 : rect.top + window.scrollY - 4,
         left: rect.left + window.scrollX,
-        width: rect.width, // We keep this as min-width in styles below
+        width: rect.width,
         placement
       });
     }
-  }, [isOpen]);
+  };
 
-  // Handle Focus and Events separately
-  useEffect(() => {
+  // Use useLayoutEffect to calculate position BEFORE paint
+  useLayoutEffect(() => {
     if (isOpen) {
-      // Use requestAnimationFrame for smoother focus than setTimeout
-      requestAnimationFrame(() => {
-        if (searchInputRef.current) searchInputRef.current.focus();
-      });
-      
-      const handleScroll = () => setIsOpen(false);
-      // Capture phase to handle scroll events from any parent
-      window.addEventListener('scroll', handleScroll, true);
-      window.addEventListener('resize', handleScroll);
-      return () => {
-        window.removeEventListener('scroll', handleScroll, true);
-        window.removeEventListener('resize', handleScroll);
-      };
+      calculatePosition();
     }
   }, [isOpen]);
 
+  // Handle Scroll/Resize to update position instead of closing
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    if (!isOpen) return;
+
+    const handleReposition = () => {
+        requestAnimationFrame(calculatePosition);
+    };
+
+    window.addEventListener('scroll', handleReposition, true);
+    window.addEventListener('resize', handleReposition);
+
+    // Focus input when opened
+    requestAnimationFrame(() => {
+        if (searchInputRef.current) searchInputRef.current.focus();
+    });
+
+    return () => {
+      window.removeEventListener('scroll', handleReposition, true);
+      window.removeEventListener('resize', handleReposition);
+    };
+  }, [isOpen]);
+
+  // Handle Click Outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (!isOpen) return;
       
       const target = event.target as Node;
@@ -85,16 +96,21 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
       if (containerRef.current && containerRef.current.contains(target)) return;
       
       // 2. Click inside portal dropdown -> Ignore
-      const dropdownEl = document.getElementById(portalId);
-      if (dropdownEl && dropdownEl.contains(target)) return;
+      if (dropdownRef.current && dropdownRef.current.contains(target)) return;
 
       // 3. Click outside -> Close
       setIsOpen(false);
+      setSearchTerm("");
     };
     
+    // Use mousedown/touchstart for faster response than click
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, portalId]);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [isOpen]);
 
   const filteredOptions = useMemo(() => {
     if (!searchTerm) return options;
@@ -117,25 +133,25 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
 
   const handleClear = (e: React.MouseEvent) => {
       e.stopPropagation();
-      onChange(""); // Assuming empty string clears selection
+      onChange(""); 
       setIsOpen(false);
-  }
+  };
+
+  const toggleOpen = (e: React.MouseEvent) => {
+      if (disabled) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setIsOpen(!isOpen);
+  };
 
   return (
     <>
-      {/* Trigger Button */}
+      {/* Trigger Button - Changed onMouseDown to onClick for better mobile support */}
       <div
         ref={containerRef}
-        onMouseDown={(e) => {
-            if (!disabled) {
-                // Use onMouseDown to trigger before blur events elsewhere
-                e.stopPropagation();
-                if (!isOpen) setIsOpen(true);
-                else setIsOpen(false);
-            }
-        }}
+        onClick={toggleOpen}
         className={`
-          w-full h-10 px-3 rounded-lg border flex items-center justify-between cursor-pointer transition-all bg-background
+          w-full h-10 px-3 rounded-lg border flex items-center justify-between cursor-pointer transition-all bg-background select-none
           ${isOpen ? 'border-primary ring-1 ring-primary/20' : 'border-input'}
           ${disabled ? 'opacity-50 cursor-not-allowed bg-muted' : 'hover:border-primary'}
           ${className}
@@ -153,14 +169,12 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
         </div>
         
         <div className="flex items-center gap-1">
-            {/* Clear Button (only show if value exists and not disabled) */}
             {value && !disabled && (
                 <div 
                     onClick={handleClear}
                     className="p-1 text-muted-foreground hover:text-destructive rounded-full transition-colors z-10"
                 >
-                    <Search size={0} className="hidden" /> {/* Dummy to keep imports valid if unused */}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    <X size={14} />
                 </div>
             )}
             <ChevronDown size={16} className={`text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
@@ -171,16 +185,17 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
       {isOpen && createPortal(
         <div
           id={portalId}
+          ref={dropdownRef}
           style={{ 
               top: position.top, 
               left: position.left, 
-              minWidth: position.width, // Changed from width to minWidth
-              maxWidth: '90vw', // Prevent going offscreen too much
+              minWidth: position.width, 
+              maxWidth: '90vw',
               transform: position.placement === 'top' ? 'translateY(-100%)' : 'none',
-              willChange: 'transform, opacity'
           }}
-          className="fixed z-[9999] bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-          onMouseDown={(e) => e.stopPropagation()} 
+          // Removed animate-in zoom-in to prevent visual jitter on desktop/weird artifacts
+          className="fixed z-[9999] bg-popover text-popover-foreground border border-border rounded-xl shadow-xl flex flex-col overflow-hidden animate-in fade-in duration-150"
+          onClick={(e) => e.stopPropagation()} 
         >
           {/* Search Header */}
           <div className="p-2 border-b border-border bg-muted/30 w-full">
@@ -197,17 +212,22 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
                 }}
                 className="w-full h-8 pl-8 pr-3 text-xs rounded-lg border border-input bg-background focus:ring-1 focus:ring-primary outline-none text-foreground placeholder:text-muted-foreground"
                 placeholder="Tìm kiếm..."
+                // Prevent zoom on mobile by ensuring font-size is 16px if needed, or handle meta tag
+                style={{ fontSize: '14px' }} 
               />
             </div>
           </div>
 
           {/* Options List */}
-          <div className="max-h-[250px] overflow-y-auto p-1 custom-scrollbar w-full">
+          <div 
+            className="max-h-[250px] overflow-y-auto p-1 custom-scrollbar w-full"
+            onTouchStart={(e) => e.stopPropagation()} // Prevent closing when scrolling on mobile
+          >
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <div
                   key={option.value}
-                  onMouseDown={(e) => {
+                  onClick={(e) => {
                       e.stopPropagation();
                       handleSelect(option.value);
                   }}

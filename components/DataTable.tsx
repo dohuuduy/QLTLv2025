@@ -27,13 +27,10 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
 
   const [exportColumnState, setExportColumnState] = useState<Record<string, boolean>>({});
   
-  // Update initialization to set default sort
   const [sortConfig, setSortConfig] = useState<{ key: keyof T; direction: SortDirection } | null>(() => {
-    // Priority 1: Default sort by 'thu_tu' ASC (for Master Data)
     if (columns.some(col => String(col.key) === 'thu_tu')) {
         return { key: 'thu_tu' as keyof T, direction: 'asc' };
     }
-    // Priority 2: Default sort by 'ngay_tao' DESC (for Logs, Docs, Records)
     if (columns.some(col => String(col.key) === 'ngay_tao')) {
         return { key: 'ngay_tao' as keyof T, direction: 'desc' };
     }
@@ -52,27 +49,25 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
 
   const toggleColumnSelector = () => {
     if (!showColumnSelector && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + 4,
-        right: document.documentElement.clientWidth - rect.right,
-      });
+      updateDropdownPosition();
     }
     setShowColumnSelector(!showColumnSelector);
+  };
+
+  const updateDropdownPosition = () => {
+      if (buttonRef.current) {
+         const rect = buttonRef.current.getBoundingClientRect();
+         setDropdownPosition({
+            top: rect.bottom + window.scrollY + 4,
+            right: document.documentElement.clientWidth - rect.right,
+         });
+      }
   };
 
   useEffect(() => {
     if (!showColumnSelector) return;
     const handleScrollOrResize = () => {
-      if (buttonRef.current) {
-         const rect = buttonRef.current.getBoundingClientRect();
-         setDropdownPosition({
-            top: rect.bottom + 4,
-            right: document.documentElement.clientWidth - rect.right,
-         });
-      } else {
-        setShowColumnSelector(false);
-      }
+        requestAnimationFrame(updateDropdownPosition);
     };
     window.addEventListener('scroll', handleScrollOrResize, true);
     window.addEventListener('resize', handleScrollOrResize);
@@ -83,14 +78,16 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
   }, [showColumnSelector]);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (buttonRef.current && buttonRef.current.contains(event.target as Node)) return;
       if (dropdownRef.current && dropdownRef.current.contains(event.target as Node)) return;
       setShowColumnSelector(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
   }, []);
 
@@ -107,7 +104,6 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
         const aVal = (a[sortConfig.key] as any) ?? '';
         const bVal = (b[sortConfig.key] as any) ?? '';
         
-        // Handle numeric sorting correctly
         if (typeof aVal === 'number' && typeof bVal === 'number') {
             return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
         }
@@ -243,8 +239,9 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                   {showColumnSelector && dropdownPosition && createPortal(
                     <div 
                       ref={dropdownRef}
-                      className="fixed z-[80] mt-1 w-60 bg-popover text-popover-foreground border border-border rounded-md shadow-lg p-1 animate-in fade-in zoom-in-95 duration-100 flex flex-col"
+                      className="fixed z-[80] mt-1 w-60 bg-popover text-popover-foreground border border-border rounded-md shadow-lg p-1 animate-in fade-in duration-150 flex flex-col"
                       style={{ top: dropdownPosition.top, right: dropdownPosition.right }}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <div className="text-xs font-semibold px-2 py-2 text-muted-foreground uppercase tracking-wider bg-muted/50 border-b border-border mb-1 rounded-t-sm">
                         Hiển thị cột
@@ -312,7 +309,6 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                   {visibleColumns.map((col, colIndex) => (
                     <td 
                       key={String(col.key as any)} 
-                      // Automatic native tooltip if it's a string value and no custom render is present
                       title={!col.render && typeof (item as any)[col.key] === 'string' ? String((item as any)[col.key]) : undefined}
                       className={`px-4 py-3 text-sm truncate max-w-[300px] ${getStickyClass(colIndex, visibleColumns.length, false)}`}
                     >
