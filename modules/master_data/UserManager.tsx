@@ -65,17 +65,17 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
 
   const handleSave = async () => {
     if (!editingUser.ho_ten) {
-      dialog.alert("Vui lòng nhập họ tên!", { type: 'warning' });
+      toast.warning("Vui lòng nhập họ tên!", "Thiếu thông tin");
       return;
     }
     
     if (!editingUser.id && createAuthUser) {
         if (!editingUser.email) {
-            dialog.alert("Vui lòng nhập Email để tạo tài khoản!", { type: 'warning' });
+            toast.warning("Vui lòng nhập Email để tạo tài khoản!", "Thiếu thông tin");
             return;
         }
         if (!password || password.length < 6) {
-            dialog.alert("Mật khẩu phải có ít nhất 6 ký tự!", { type: 'warning' });
+            toast.warning("Mật khẩu phải có ít nhất 6 ký tự!", "Mật khẩu yếu");
             return;
         }
     }

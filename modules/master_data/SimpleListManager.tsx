@@ -139,7 +139,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
 
   const handleSave = async () => {
     if (!formState.ten.trim()) {
-      dialog.alert("Vui lòng nhập tên danh mục!", { type: 'warning' });
+      toast.warning("Vui lòng nhập tên danh mục!", "Thiếu thông tin");
       return;
     }
     setIsLoading(true);

@@ -7,6 +7,7 @@ import { MultiSelect } from '../../components/ui/MultiSelect';
 import { Info, Calendar, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, RefreshCw, Lock, Unlock, Layers, Tag, Save, ArrowRight, FileBox, User, Minus, Plus, GitCommit, Hash, AlertCircle } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
+import { useToast } from '../../components/ui/Toast';
 
 interface TaiLieuFormProps {
   initialData?: TaiLieu | null;
@@ -43,6 +44,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const [isCodeLocked, setIsCodeLocked] = useState(false);
   const [isReviewEnabled, setIsReviewEnabled] = useState(false);
   const dialog = useDialog();
+  const toast = useToast();
 
   // --- FILTER PARENT DOCUMENTS LOGIC ---
   const availableParents = useMemo(() => {
@@ -212,7 +214,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
   const handleAddFile = (type: 'pdf' | 'doc' | 'excel' | 'link') => {
     if (!urlInput.trim()) {
-      dialog.alert("Vui lòng dán đường dẫn (Link) trước!", { type: 'warning' });
+      toast.warning("Vui lòng dán đường dẫn (Link) trước!", "Thiếu thông tin");
       return;
     }
     const file: DinhKem = {
@@ -235,19 +237,19 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     
     // 1. Kiểm tra trường bắt buộc
     if (!formData.ma_tai_lieu || !formData.ten_tai_lieu) {
-        dialog.alert("Vui lòng nhập Mã và Tên tài liệu!", { type: 'warning' });
+        toast.warning("Vui lòng nhập Mã và Tên tài liệu!", "Thiếu thông tin");
         return;
     }
     
     if (!formData.id_loai_tai_lieu) {
-        dialog.alert("Vui lòng chọn Loại tài liệu!", { type: 'warning' });
+        toast.warning("Vui lòng chọn Loại tài liệu!", "Thiếu thông tin");
         return;
     }
     
     // Validate Dates
     if (formData.ngay_ban_hanh && formData.ngay_hieu_luc) {
         if (new Date(formData.ngay_hieu_luc) < new Date(formData.ngay_ban_hanh)) {
-            dialog.alert("Ngày hiệu lực phải sau hoặc bằng ngày ban hành!", { type: 'warning' });
+            toast.warning("Ngày hiệu lực phải sau hoặc bằng ngày ban hành!", "Lỗi ngày tháng");
             return;
         }
     }

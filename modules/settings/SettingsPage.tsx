@@ -6,6 +6,7 @@ import { MasterDataState, TaiLieu, HoSo, KeHoachDanhGia, BackupData } from '../.
 import { MOCK_SYSTEM_LOGS } from '../../constants';
 import { format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
+import { useToast } from '../../components/ui/Toast';
 
 interface SettingsPageProps {
   masterData: MasterDataState;
@@ -23,6 +24,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dialog = useDialog();
+  const toast = useToast();
 
   // --- Mock Local Settings State ---
   const [settings, setSettings] = useState({
@@ -41,7 +43,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   // --- Handlers ---
   const handleSaveSettings = () => {
     // In real app, save to Backend/LocalStorage
-    dialog.alert('Đã lưu cấu hình thành công!', { type: 'success' });
+    toast.success('Đã lưu cấu hình hệ thống thành công!', 'Cấu hình');
   };
 
   const handleBackup = () => {
@@ -61,6 +63,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
+    toast.info('Đang tải xuống bản sao lưu...');
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,13 +82,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
            );
            if(confirmed) {
               onRestore(json);
-              dialog.alert('Khôi phục dữ liệu thành công!', { type: 'success' });
+              toast.success('Khôi phục dữ liệu thành công!', 'Khôi phục');
            }
         } else {
-           dialog.alert('File backup không hợp lệ!', { type: 'error' });
+           toast.error('File backup không hợp lệ hoặc bị lỗi.', 'Lỗi Khôi phục');
         }
       } catch (error) {
-        dialog.alert('Lỗi đọc file backup!', { type: 'error' });
+        toast.error('Không thể đọc file backup. Vui lòng kiểm tra lại.', 'Lỗi File');
         console.error(error);
       }
     };
