@@ -198,8 +198,8 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const reviewerOptions = masterData.nhanSu.filter(u => u.roles.includes('XEM_XET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
   const approverOptions = masterData.nhanSu.filter(u => u.roles.includes('PHE_DUYET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
 
-  // Styling
-  const inputClass = "w-full h-10 px-3 rounded-lg border border-input bg-background focus:ring-2 ring-primary/20 focus:border-primary outline-none transition-all text-sm disabled:opacity-60 placeholder:text-muted-foreground text-foreground";
+  // Styling (Fixed Dark Mode Color)
+  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 ring-primary/20 focus:border-primary outline-none transition-all text-sm disabled:opacity-60 disabled:bg-gray-100 dark:disabled:bg-slate-800 placeholder:text-gray-400 dark:placeholder:text-gray-500";
   const labelClass = "text-xs font-bold text-muted-foreground uppercase mb-1.5 block tracking-wide";
   const cardClass = "bg-card text-card-foreground rounded-xl border border-border shadow-sm p-5 h-full flex flex-col";
 

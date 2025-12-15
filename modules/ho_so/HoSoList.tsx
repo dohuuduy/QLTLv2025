@@ -151,7 +151,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
     { key: 'ma_tai_lieu_lien_quan', header: 'Theo quy trình', visible: true, render: (val) => val ? (<span className="text-xs bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded font-mono border border-indigo-100 dark:border-indigo-800">{val}</span>) : <span className="text-gray-400 text-xs">--</span> },
     { key: 'id_phong_ban', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded text-gray-600 dark:text-gray-300 whitespace-nowrap">{getDeptName(val as string)}</span> },
     { key: 'ngay_tao', header: 'Ngày lập', visible: true, render: (val) => val ? <span className="text-xs">{format(new Date(val), 'dd/MM/yyyy')}</span> : ''},
-    { key: 'thoi_gian_luu_tru', header: 'Hạn lưu', visible: true, render: (val, item) => (<div className="text-xs"><div className="font-medium">{val === 0 ? 'Vĩnh viễn' : `${val} tháng`}</div>{item.ngay_het_han && <div className="text-[10px] text-gray-400">Đến: {format(new Date(item.ngay_het_han), 'dd/MM/yyyy')}</div>}</div>)},
+    { key: 'thoi_gian_luu_tru', header: 'Hạn lưu', visible: true, render: (val, item) => (<div className="text-xs text-gray-900 dark:text-white"><div className="font-medium">{val === 0 ? 'Vĩnh viễn' : `${val} tháng`}</div>{item.ngay_het_han && <div className="text-[10px] text-gray-400">Đến: {format(new Date(item.ngay_het_han), 'dd/MM/yyyy')}</div>}</div>)},
     { key: 'vi_tri_luu_tru', header: 'Vị trí', visible: true, render: (val, item) => (<div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400" title={val}><MapPin size={12} className="shrink-0" /> <span className="truncate max-w-[120px]">{val}</span></div>)},
     { key: 'trang_thai', header: 'Trạng thái', visible: true, render: (_, item) => getStatusBadge(item)},
     { key: 'id', header: 'Xóa', visible: true, render: (_, item) => (<Button variant="ghost" size="icon" onClick={(e) => handleDelete(item.id, e)} className="text-gray-400 hover:text-red-500 h-8 w-8"><Trash2 size={14} /></Button>)}
@@ -159,8 +159,8 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
 
   const boPhanOptions = masterData.boPhan.map(bp => ({ value: bp.id, label: bp.ten }));
 
-  // Shared Styles
-  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm";
+  // Shared Styles (Updated with correct dark mode text color)
+  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 ring-primary/20 outline-none transition-all text-sm disabled:opacity-60 disabled:bg-gray-100 dark:disabled:bg-slate-800 placeholder:text-gray-400 dark:placeholder:text-gray-500";
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5 block";
 
   const renderFilters = (

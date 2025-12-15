@@ -37,9 +37,6 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dialog = useDialog();
 
-  // ... (Keep existing logic for toggleColumnSelector, useEffects for resize/click outside, sorting, pagination) ...
-  // RE-IMPLEMENTING LOGIC TO KEEP FUNCTIONALITY INTACT
-  
   const toggleColumnSelector = () => {
     if (!showColumnSelector && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
@@ -175,7 +172,6 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
     }
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-    // ... (Keep existing print HTML generation) ...
     const htmlContent = `
       <!DOCTYPE html><html><head><title>In: ${title}</title>
       <style>body { font-family: sans-serif; padding: 20px; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; } th { background: #f0f0f0; }</style>
@@ -201,25 +197,18 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
     return "";
   };
 
-  // --- REDESIGN RENDERING ---
-
   return (
     <div className="bg-card text-card-foreground rounded-lg shadow-sm border border-border flex flex-col h-full overflow-hidden max-w-full">
       {/* Toolbar */}
       <div className="p-3 border-b border-border bg-muted/20 shrink-0">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          
-          {/* Filters Area */}
           <div className="flex-1 w-full lg:w-auto min-w-0">
             {filters && <div className="flex flex-wrap gap-2 w-full">{filters}</div>}
           </div>
-
-          {/* Actions & Tools */}
           <div className="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-end shrink-0">
              <div className="flex-1 lg:flex-none">{actions}</div>
              <div className="h-5 w-px bg-border mx-1 hidden sm:block"></div>
              <div className="flex gap-2 shrink-0">
-                {/* Column Selector Button */}
                 <div className="relative">
                   <Button 
                     ref={buttonRef} 
@@ -232,7 +221,6 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                     <Settings2 size={16} /> 
                   </Button>
                   
-                  {/* Portal Dropdown */}
                   {showColumnSelector && dropdownPosition && createPortal(
                     <div 
                       ref={dropdownRef}
@@ -305,6 +293,8 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                   {visibleColumns.map((col, colIndex) => (
                     <td 
                       key={String(col.key as any)} 
+                      // Automatic native tooltip if it's a string value and no custom render is present
+                      title={!col.render && typeof (item as any)[col.key] === 'string' ? String((item as any)[col.key]) : undefined}
                       className={`px-4 py-3 text-sm truncate max-w-[300px] ${getStickyClass(colIndex, visibleColumns.length, false)}`}
                     >
                       {col.render ? col.render((item as any)[col.key], item) : String((item as any)[col.key] ?? '')}
@@ -361,7 +351,7 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
         </div>
       </div>
 
-      {/* Export Modal (Simplified visual) */}
+      {/* Export Modal */}
       {showExportModal && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-card border border-border rounded-lg shadow-lg max-w-md w-full flex flex-col max-h-[80vh]">

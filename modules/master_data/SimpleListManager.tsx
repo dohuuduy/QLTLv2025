@@ -61,8 +61,8 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
     do_dai_so: 2
   });
 
-  // Unified Styles
-  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none transition-all text-sm";
+  // Unified Styles (Fixed Dark Mode)
+  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 ring-primary/20 outline-none transition-all text-sm";
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5 block";
 
   const handleAddNew = () => {
