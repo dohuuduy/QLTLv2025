@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
+import { MultiSelect } from '../../components/ui/MultiSelect';
 import { Info, Calendar, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, RefreshCw, Lock, Unlock, Layers, Tag, Save, ArrowRight, FileBox, User, Minus, Plus, GitCommit, Hash, AlertCircle } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
@@ -66,6 +67,13 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const loaiTaiLieuOptions = useMemo(() => masterData.loaiTaiLieu.map(i => ({ value: i.id, label: i.ten, subLabel: `Cấp ${i.cap_do || '?'}` })), [masterData.loaiTaiLieu]);
   const linhVucOptions = useMemo(() => masterData.linhVuc.map(i => ({ value: i.id, label: i.ten })), [masterData.linhVuc]);
   
+  const tieuChuanOptions = useMemo(() => masterData.tieuChuan.map(i => ({ 
+      value: i.id, 
+      label: i.ten,
+      icon: Tag,
+      style: { badgeColor: '#3b82f6', iconColor: '#fff' } // Blue default
+  })), [masterData.tieuChuan]);
+
   const mapUserToOption = (u: NhanSu) => ({ value: u.id, label: u.ho_ten, subLabel: u.chuc_vu });
   
   const drafterOptions = useMemo(() => masterData.nhanSu.filter(u => u.roles.includes('SOAN_THAO') || u.roles.includes('QUAN_TRI')).map(mapUserToOption), [masterData.nhanSu]);
@@ -179,15 +187,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
       } else {
           setFormData(prev => ({ ...prev, [key]: value }));
       }
-  };
-
-  const toggleTieuChuan = (id: string) => {
-    const currentList = formData.id_tieu_chuan || [];
-    if (currentList.includes(id)) {
-      setFormData(prev => ({ ...prev, id_tieu_chuan: currentList.filter(item => item !== id) }));
-    } else {
-      setFormData(prev => ({ ...prev, id_tieu_chuan: [...currentList, id] }));
-    }
   };
 
   const toggleReview = () => {
@@ -482,14 +481,14 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             <SearchableSelect options={linhVucOptions} value={formData.id_linh_vuc} onChange={(val) => handleSelectChange('id_linh_vuc', String(val))} placeholder="-- Chọn lĩnh vực --" className="h-8 text-xs"/>
                         </div>
                         <div>
-                            <label className={labelClass}>Tiêu chuẩn</label>
-                            <div className="flex flex-wrap gap-1.5">
-                               {masterData.tieuChuan.map(tc => (
-                                 <button key={tc.id} type="button" onClick={() => toggleTieuChuan(tc.id)} className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all ${formData.id_tieu_chuan?.includes(tc.id) ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300' : 'bg-gray-50 border-gray-200 text-gray-500 dark:bg-slate-800 dark:border-slate-700'}`}>
-                                    {tc.ten}
-                                 </button>
-                               ))}
-                            </div>
+                            <label className={labelClass}>Tiêu chuẩn áp dụng</label>
+                            <MultiSelect 
+                                options={tieuChuanOptions}
+                                value={formData.id_tieu_chuan || []}
+                                onValueChange={(val) => setFormData(prev => ({...prev, id_tieu_chuan: val}))}
+                                placeholder="Chọn tiêu chuẩn..."
+                                className="text-xs"
+                            />
                         </div>
                     </div>
                 </div>
