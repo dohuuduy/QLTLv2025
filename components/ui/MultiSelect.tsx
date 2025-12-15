@@ -1,7 +1,7 @@
 
-import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useId } from "react";
+import React, { useState, useRef, useEffect, useMemo, useId } from "react";
 import { createPortal } from "react-dom";
-import { X, Check, ChevronDown, Search, Plus } from "lucide-react";
+import { X, Check, ChevronDown, Search } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 // --- Types ---
@@ -89,13 +89,14 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   }, []);
 
   // Calculate Popover Position
-  const calculatePosition = () => {
+  const updatePosition = () => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const spaceBelow = viewportHeight - rect.bottom;
       const dropdownHeight = 300; // Estimated max height
 
+      // Flip logic: if not enough space below, show on top
       const placement = spaceBelow < dropdownHeight && rect.top > dropdownHeight ? 'top' : 'bottom';
       
       setPopoverPosition({
@@ -107,21 +108,24 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
     }
   };
 
-  useLayoutEffect(() => {
-    if (isPopoverOpen) calculatePosition();
-  }, [isPopoverOpen, selectedValues.length]);
-
   useEffect(() => {
     if (isPopoverOpen) {
-      window.addEventListener("resize", calculatePosition);
-      window.addEventListener("scroll", calculatePosition, true);
+      window.addEventListener("resize", updatePosition);
+      window.addEventListener("scroll", updatePosition, true);
+      
+      // Auto-focus search input when opened
       requestAnimationFrame(() => searchInputRef.current?.focus());
     }
     return () => {
-      window.removeEventListener("resize", calculatePosition);
-      window.removeEventListener("scroll", calculatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
     };
   }, [isPopoverOpen]);
+
+  // Update position if values change while open (height might change)
+  useEffect(() => {
+      if (isPopoverOpen) updatePosition();
+  }, [selectedValues.length]);
 
   const handleToggleOption = (optionValue: string) => {
     const newSelectedValues = selectedValues.includes(optionValue)
@@ -140,12 +144,17 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   const handleTogglePopover = (e: React.MouseEvent) => {
     if (disabled) return;
     e.preventDefault();
-    setIsPopoverOpen((prev) => !prev);
+    if (!isPopoverOpen) {
+        // Calculate position BEFORE showing to prevent "flying" effect
+        updatePosition();
+        setIsPopoverOpen(true);
+    } else {
+        setIsPopoverOpen(false);
+    }
   };
 
   const handleSelectAll = () => {
       const allValues = filteredOptions.map(o => o.value);
-      // Determine if we should select all or deselect all visible
       const allVisibleSelected = allValues.every(v => selectedValues.includes(v));
       
       let newSelection: string[];
@@ -166,7 +175,6 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
       return options.filter(o => o.label.toLowerCase().includes(lower) || (o.subLabel && o.subLabel.toLowerCase().includes(lower)));
   }, [options, searchTerm]);
 
-  // --- Badge Styles ---
   const badgeVariantStyles = {
     default: "bg-primary/10 text-primary hover:bg-primary/20 border-primary/10",
     secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
@@ -180,8 +188,8 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         ref={containerRef}
         onClick={handleTogglePopover}
         className={cn(
-          "relative flex min-h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background transition-all cursor-pointer hover:border-primary/50",
-          isPopoverOpen && "ring-2 ring-ring ring-offset-2 border-primary",
+          "relative flex min-h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background transition-all cursor-pointer select-none",
+          isPopoverOpen ? "ring-2 ring-ring ring-offset-2 border-primary" : "hover:border-primary/50",
           disabled && "cursor-not-allowed opacity-50 bg-muted",
           className
         )}
@@ -257,9 +265,10 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
               top: popoverPosition.top,
               left: popoverPosition.left,
               width: popoverPosition.width,
+              // Using transform to adjust for "top" placement instead of changing top directly avoids layout thrashing
               transform: popoverPosition.placement === 'top' ? 'translateY(-100%)' : 'none',
             }}
-            className="fixed z-[9999] min-w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl animate-in fade-in zoom-in-95 duration-200"
+            className="fixed z-[9999] min-w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg shadow-black/5 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Search & Actions Header */}
