@@ -215,20 +215,21 @@ export const fetchDocumentsFromDB = async (): Promise<TaiLieu[] | null> => {
             nguoi_soan_thao: d.id_nguoi_soan_thao || d.nguoi_soan_thao,
             nguoi_xem_xet: d.id_nguoi_xem_xet || d.nguoi_xem_xet,
             nguoi_phe_duyet: d.id_nguoi_phe_duyet || d.nguoi_phe_duyet,
-            nguoi_tao: d.id_nguoi_tao || d.nguoi_tao
+            nguoi_tao: d.id_nguoi_tao || d.nguoi_tao,
+            nguoi_cap_nhat_cuoi: d.id_nguoi_cap_nhat_cuoi || d.nguoi_cap_nhat_cuoi
         })) as TaiLieu[];
     } catch { return null; }
 };
 
 export const upsertDocument = async (doc: TaiLieu) => {
     // Transform Frontend types to DB columns
-    // Remove fields that shouldn't be sent or need renaming
+    // Destructure to remove frontend-specific keys that don't match DB columns
     const { 
-        nguoi_cap_nhat_cuoi, 
         nguoi_soan_thao,
         nguoi_xem_xet,
         nguoi_phe_duyet,
         nguoi_tao,
+        nguoi_cap_nhat_cuoi,
         ...rest 
     } = doc as any;
 
@@ -237,7 +238,8 @@ export const upsertDocument = async (doc: TaiLieu) => {
         id_nguoi_soan_thao: nguoi_soan_thao || null,
         id_nguoi_xem_xet: nguoi_xem_xet || null,
         id_nguoi_phe_duyet: nguoi_phe_duyet || null,
-        id_nguoi_tao: nguoi_tao
+        id_nguoi_tao: nguoi_tao,
+        id_nguoi_cap_nhat_cuoi: nguoi_cap_nhat_cuoi
     };
     
     const { error } = await supabase.from('tai_lieu').upsert(payload);
