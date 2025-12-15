@@ -23,7 +23,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     id_linh_vuc: '',
     id_tieu_chuan: [],
     tai_lieu_cha_id: '',
-    thu_tu: 0,
+    thu_tu: 1,
     phien_ban: '1.0',
     lan_ban_hanh: 1,
     ngay_ban_hanh: '',
@@ -139,6 +139,24 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
   }, [formData.tai_lieu_cha_id, formData.id_loai_tai_lieu, isCodeLocked, fullList, masterData.loaiTaiLieu, initialData]);
 
+  // NEW: Auto-calculate "Thứ tự hiển thị" based on Type & Parent
+  useEffect(() => {
+      if (initialData) return; // Don't override if editing
+      
+      // Calculate based on siblings (Same Type AND Same Parent)
+      const siblings = fullList.filter(d => 
+          d.id_loai_tai_lieu === formData.id_loai_tai_lieu &&
+          d.tai_lieu_cha_id === formData.tai_lieu_cha_id
+      );
+
+      const maxOrder = siblings.length > 0 
+          ? Math.max(...siblings.map(d => d.thu_tu || 0)) 
+          : 0;
+      
+      setFormData(prev => ({ ...prev, thu_tu: maxOrder + 1 }));
+
+  }, [formData.id_loai_tai_lieu, formData.tai_lieu_cha_id, fullList, initialData]);
+
 
   useEffect(() => {
     if (isReviewEnabled && formData.ngay_hieu_luc && formData.chu_ky_ra_soat) {
@@ -171,10 +189,11 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     });
   };
 
-  const adjustNumber = (field: 'lan_ban_hanh' | 'chu_ky_ra_soat', amount: number) => {
+  const adjustNumber = (field: 'lan_ban_hanh' | 'chu_ky_ra_soat' | 'thu_tu', amount: number) => {
       setFormData(prev => {
           const current = (prev[field] as number) || 0;
           const next = current + amount;
+          if (field === 'thu_tu' && next < 1) return prev; // Don't allow order < 1
           return { ...prev, [field]: next < 0 ? 0 : next };
       });
   };
@@ -268,235 +287,197 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     <div className="flex flex-col h-full bg-background">
       <form id="document-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-6">
         
-        {/* --- BLOCK 1: IDENTITY (Header) --- */}
-        <div className="mb-6 bg-card text-card-foreground p-5 rounded-xl border border-border shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-                <div className="md:col-span-8">
-                    <label className={labelClass}><FileBox size={14} className="text-primary inline mr-1"/> Tên tài liệu <span className="text-destructive">*</span></label>
-                    <input required name="ten_tai_lieu" value={formData.ten_tai_lieu} onChange={handleChange} className={`${inputClass} text-lg font-semibold h-11 placeholder:font-normal`} placeholder="VD: Quy trình kiểm soát chất lượng đầu vào" autoFocus />
-                </div>
-                <div className="md:col-span-4">
-                    <label className={labelClass}><Fingerprint size={14} className="text-purple-500 inline mr-1"/> Mã tài liệu <span className="text-destructive">*</span></label>
-                    <div className="relative">
-                        <input 
-                            required name="ma_tai_lieu" value={formData.ma_tai_lieu} onChange={handleChange} 
-                            className={`${inputClass} text-lg font-mono font-bold text-primary h-11 uppercase`} 
-                            placeholder="Tự động sinh..." readOnly={isCodeLocked} 
-                        />
-                        <button type="button" onClick={() => setIsCodeLocked(!isCodeLocked)} className="absolute right-3 top-3 text-muted-foreground hover:text-primary transition-colors">
-                            {isCodeLocked ? <Lock size={18} /> : <Unlock size={18} />}
-                        </button>
+        {/* --- BLOCK 1: MAIN INFO --- */}
+        <div className="space-y-6">
+            <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <FileBox size={18} className="text-primary"/>
+                <h3 className="text-sm font-bold text-foreground uppercase">Thông tin định danh</h3>
+            </div>
+
+            <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 md:col-span-8 space-y-4">
+                    <div>
+                        <label className={labelClass}>Tên tài liệu <span className="text-red-500">*</span></label>
+                        <input name="ten_tai_lieu" className={`${inputClass} text-base font-medium`} value={formData.ten_tai_lieu} onChange={handleChange} placeholder="Nhập tên tài liệu..." autoFocus />
                     </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className={labelClass}>Loại tài liệu <span className="text-red-500">*</span></label>
+                            <SearchableSelect options={loaiTaiLieuOptions} value={formData.id_loai_tai_lieu} onChange={(val) => handleSelectChange('id_loai_tai_lieu', String(val))} placeholder="-- Chọn loại --" />
+                        </div>
+                        <div>
+                            <label className={labelClass}>Tài liệu cha (Nếu có)</label>
+                            <SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', String(val))} placeholder="-- Chọn tài liệu cấp trên --" disabled={!formData.id_loai_tai_lieu} />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="col-span-12 md:col-span-4 space-y-4">
+                     <div className="bg-muted/30 p-4 rounded-xl border border-border">
+                         <label className={labelClass}>Mã tài liệu (Auto)</label>
+                         <div className="flex gap-2 mb-2">
+                             <input name="ma_tai_lieu" className={`${inputClass} font-mono font-bold text-primary`} value={formData.ma_tai_lieu} onChange={handleChange} readOnly={isCodeLocked} placeholder="QT-..." />
+                             <button type="button" onClick={() => setIsCodeLocked(!isCodeLocked)} className="p-2 bg-background border border-border rounded-lg text-muted-foreground hover:text-foreground transition-colors" title={isCodeLocked ? "Mở khóa chỉnh sửa" : "Khóa tự động"}>
+                                 {isCodeLocked ? <Lock size={16}/> : <Unlock size={16}/>}
+                             </button>
+                         </div>
+                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <Info size={12}/> Mã số được sinh tự động theo quy tắc.
+                         </div>
+                     </div>
+                     
+                     {/* CUSTOM ORDER INPUT */}
+                     <div>
+                        <label className={labelClass}>Thứ tự hiển thị <span className="font-normal text-[10px] text-muted-foreground lowercase ml-1">(auto tăng)</span></label>
+                        <div className="flex items-center h-10 rounded-lg border border-input bg-background overflow-hidden focus-within:ring-2 ring-primary/20 transition-shadow">
+                            <button type="button" onClick={() => adjustNumber('thu_tu', -1)} className="px-3 h-full hover:bg-muted border-r border-border flex items-center justify-center text-muted-foreground transition-colors"><Minus size={14}/></button>
+                            <input 
+                                type="number" 
+                                min="1" 
+                                className="flex-1 w-full h-full text-center bg-transparent outline-none text-sm font-bold text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                value={formData.thu_tu} 
+                                onChange={(e) => setFormData({...formData, thu_tu: parseInt(e.target.value) || 1})}
+                            />
+                            <button type="button" onClick={() => adjustNumber('thu_tu', 1)} className="px-3 h-full hover:bg-muted border-l border-border flex items-center justify-center text-muted-foreground transition-colors"><Plus size={14}/></button>
+                        </div>
+                     </div>
                 </div>
             </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            
-            {/* --- BLOCK 2: CLASSIFICATION (Left) --- */}
+        {/* --- BLOCK 2: DETAILS --- */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className={cardClass}>
-                <h4 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border pb-3 mb-4">
-                    <Layers size={16} className="text-primary"/> Phân loại & Phạm vi
-                </h4>
+                <div className="flex items-center gap-2 pb-2 mb-4 border-b border-border">
+                    <Layers size={18} className="text-purple-500"/>
+                    <h3 className="text-sm font-bold text-foreground uppercase">Phân loại & Tiêu chuẩn</h3>
+                </div>
                 <div className="space-y-4 flex-1">
-                    <div><label className={labelClass}>Loại tài liệu</label><SearchableSelect options={loaiTaiLieuOptions} value={formData.id_loai_tai_lieu} onChange={(val) => handleSelectChange('id_loai_tai_lieu', String(val))} placeholder="-- Chọn loại --" /></div>
-                    <div><label className={labelClass}>Lĩnh vực</label><SearchableSelect options={linhVucOptions} value={formData.id_linh_vuc} onChange={(val) => handleSelectChange('id_linh_vuc', String(val))} placeholder="-- Chọn lĩnh vực --" /></div>
-                    
-                    {/* Improved Parent Selection Logic */}
                     <div>
-                        <label className={labelClass}>Tài liệu cha (Parent)</label>
-                        <SearchableSelect 
-                            options={availableParents} 
-                            value={formData.tai_lieu_cha_id} 
-                            onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} 
-                            placeholder={!formData.id_loai_tai_lieu ? "Chọn loại tài liệu trước" : availableParents.length > 0 ? "-- Chọn tài liệu cấp trên --" : "-- Không có tài liệu cha phù hợp --"} 
-                            disabled={!formData.id_loai_tai_lieu}
-                        />
-                        {formData.id_loai_tai_lieu && (
-                            <p className="text-[10px] text-gray-400 mt-1 italic flex items-center gap-1">
-                                <Network size={10} /> Hệ thống tự động lọc các tài liệu cấp cao hơn.
-                            </p>
-                        )}
+                        <label className={labelClass}>Lĩnh vực hoạt động</label>
+                        <SearchableSelect options={linhVucOptions} value={formData.id_linh_vuc} onChange={(val) => handleSelectChange('id_linh_vuc', String(val))} placeholder="-- Chọn lĩnh vực --" />
                     </div>
-
                     <div>
                         <label className={labelClass}>Tiêu chuẩn áp dụng</label>
-                        <div className="flex flex-wrap gap-2 pt-1">{masterData.tieuChuan.map(item => (<button key={item.id} type="button" onClick={() => toggleTieuChuan(item.id)} className={`px-2.5 py-1.5 rounded-md text-[11px] font-semibold border transition-all flex items-center gap-1.5 ${formData.id_tieu_chuan?.includes(item.id) ? 'bg-primary/10 text-primary border-primary/20 shadow-sm' : 'bg-background border-border text-muted-foreground hover:bg-muted'}`}>{formData.id_tieu_chuan?.includes(item.id) && <Tag size={10} className="fill-current" />} {item.ten}</button>))}</div>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                           {masterData.tieuChuan.map(tc => (
+                             <button key={tc.id} type="button" onClick={() => toggleTieuChuan(tc.id)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1 ${formData.id_tieu_chuan?.includes(tc.id) ? 'bg-blue-100 border-blue-200 text-blue-700 dark:bg-blue-900/40 dark:border-blue-800 dark:text-blue-300' : 'bg-background border-input text-muted-foreground hover:bg-muted'}`}>
+                                <Tag size={12}/> {tc.ten}
+                             </button>
+                           ))}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* --- BLOCK 3: CONTROL (Center) --- */}
             <div className={cardClass}>
-                <h4 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border pb-3 mb-4">
-                    <Calendar size={16} className="text-green-500"/> Kiểm soát hiệu lực
-                </h4>
+                <div className="flex items-center gap-2 pb-2 mb-4 border-b border-border">
+                    <User size={18} className="text-orange-500"/>
+                    <h3 className="text-sm font-bold text-foreground uppercase">Trách nhiệm</h3>
+                </div>
                 <div className="space-y-4 flex-1">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div><label className={labelClass}>Phiên bản</label><input name="phien_ban" value={formData.phien_ban} onChange={handleChange} className={`${inputClass} text-center font-mono font-bold`} placeholder="1.0" /></div>
-                        
-                        {/* Custom Numeric Input for Edition */}
-                        <div>
-                            <label className={labelClass}>Lần ban hành</label>
-                            <div className="flex items-center h-10 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 ring-primary/20">
-                                <button type="button" onClick={() => adjustNumber('lan_ban_hanh', -1)} className="px-2 h-full hover:bg-gray-100 dark:hover:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500"><Minus size={12}/></button>
-                                <input 
-                                    type="number" min="0" 
-                                    name="lan_ban_hanh" 
-                                    value={formData.lan_ban_hanh} 
-                                    onChange={handleChange} 
-                                    className="flex-1 w-full h-full text-center outline-none bg-transparent text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                />
-                                <button type="button" onClick={() => adjustNumber('lan_ban_hanh', 1)} className="px-2 h-full hover:bg-gray-100 dark:hover:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500"><Plus size={12}/></button>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className={labelClass}>Ngày ban hành</label>
-                            <input type="date" name="ngay_ban_hanh" value={formData.ngay_ban_hanh} onChange={handleChange} className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`} />
-                        </div>
-                        <div>
-                            <label className={labelClass}>Ngày hiệu lực</label>
-                            {/* ADDED MIN DATE CONSTRAINT */}
-                            <input 
-                                type="date" 
-                                name="ngay_hieu_luc" 
-                                value={formData.ngay_hieu_luc} 
-                                onChange={handleChange} 
-                                min={formData.ngay_ban_hanh} // Cannot be earlier than Issue Date
-                                className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`} 
-                            />
-                        </div>
-                    </div>
-                    
-                    {/* Dark mode friendly Periodic Review Box */}
-                    <div className={`p-3 rounded-xl border transition-all ${isReviewEnabled ? 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800/50' : 'bg-muted/50 border-border'}`}>
-                        <label className="flex items-center justify-between cursor-pointer mb-2">
-                            <span className={`text-xs font-bold flex items-center gap-1.5 ${isReviewEnabled ? 'text-orange-700 dark:text-orange-300' : 'text-muted-foreground'}`}><RefreshCw size={14}/> Rà soát định kỳ</span>
-                            <div className={`w-8 h-4 rounded-full relative transition-colors ${isReviewEnabled ? 'bg-orange-500' : 'bg-muted-foreground/30'}`}>
-                                <input type="checkbox" className="hidden" checked={isReviewEnabled} onChange={toggleReview} />
-                                <div className={`w-2.5 h-2.5 bg-background rounded-full absolute top-0.5 transition-all shadow-sm ${isReviewEnabled ? 'left-5' : 'left-0.5'}`}></div>
-                            </div>
-                        </label>
-                        {isReviewEnabled && (
-                            <div className="flex items-end gap-2 animate-in fade-in">
-                                <div className="flex-1">
-                                    {/* Custom Cycle Month Input */}
-                                    <div className="flex items-center h-8 rounded-lg border border-orange-300 dark:border-orange-700/50 bg-background focus-within:ring-2 focus-within:ring-orange-500/20 overflow-hidden">
-                                        <button type="button" onClick={() => adjustNumber('chu_ky_ra_soat', -6)} className="px-1.5 h-full hover:bg-orange-100 dark:hover:bg-orange-900/50 border-r border-orange-200 dark:border-orange-800 text-orange-600 flex items-center justify-center"><Minus size={10}/></button>
-                                        <input 
-                                            type="number" 
-                                            min="1" 
-                                            name="chu_ky_ra_soat" 
-                                            value={formData.chu_ky_ra_soat || ''} 
-                                            onChange={handleChange} 
-                                            className="flex-1 w-full h-full text-center outline-none bg-transparent text-xs font-bold text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
-                                            placeholder="12" 
-                                        />
-                                        <button type="button" onClick={() => adjustNumber('chu_ky_ra_soat', 6)} className="px-1.5 h-full hover:bg-orange-100 dark:hover:bg-orange-900/50 border-l border-orange-200 dark:border-orange-800 text-orange-600 flex items-center justify-center"><Plus size={10}/></button>
-                                    </div>
-                                    <span className="text-[9px] text-orange-600/80 dark:text-orange-400/80 block text-center mt-1 font-medium">Tháng/lần</span>
-                                </div>
-                                <div className="flex-[2]">
-                                    <input 
-                                        type="date" 
-                                        name="ngay_ra_soat_tiep_theo" 
-                                        value={formData.ngay_ra_soat_tiep_theo || ''} 
-                                        onChange={handleChange} 
-                                        min={formData.ngay_hieu_luc} // Should be after Effective Date
-                                        className="w-full h-8 px-2 rounded-lg border border-orange-300 dark:border-orange-700/50 bg-background outline-none text-xs text-foreground dark:[color-scheme:dark]" 
-                                    />
-                                    <span className="text-[9px] text-orange-600/80 dark:text-orange-400/80 block text-center mt-1 font-medium">Lần tới</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* --- BLOCK 4: ATTACHMENTS (Right) --- */}
-            <div className={cardClass}>
-                <h4 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border pb-3 mb-4">
-                    <Paperclip size={16} className="text-orange-500"/> Tài liệu đính kèm
-                </h4>
-                <div className="flex-1 flex flex-col min-h-0">
-                    <div className="bg-muted/30 rounded-lg border border-dashed border-input p-3 mb-3 hover:border-primary/50 hover:bg-primary/5 transition-all">
-                        <div className="w-full relative mb-2">
-                            <LinkIcon size={14} className="absolute left-2.5 top-2.5 text-muted-foreground"/>
-                            <input value={urlInput} onChange={(e) => setUrlInput(e.target.value)} className={`${inputClass} pl-8 text-xs h-8`} placeholder="Dán link Drive/SharePoint..." />
-                        </div>
-                        <div className="flex gap-2">
-                            <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('pdf')} className="flex-1 h-7 text-[10px] px-1 gap-1"><FileType size={12} className="text-red-500"/> PDF</Button>
-                            <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('doc')} className="flex-1 h-7 text-[10px] px-1 gap-1"><FileText size={12} className="text-blue-500"/> Word</Button>
-                            <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('excel')} className="flex-1 h-7 text-[10px] px-1 gap-1"><FileSpreadsheet size={12} className="text-green-500"/> Excel</Button>
-                        </div>
-                    </div>
-                    <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2 max-h-[180px]">
-                        {formData.dinh_kem?.map(file => (
-                            <div key={file.id} className="flex items-center gap-2 p-2 rounded-lg border border-border bg-card shadow-sm group hover:border-primary/50 transition-all">
-                                <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${file.loai === 'pdf' ? 'bg-red-50 text-red-600 dark:bg-red-900/20' : 'bg-muted text-muted-foreground'}`}>{file.loai === 'pdf' ? <FileType size={16}/> : <File size={16}/>}</div>
-                                <div className="flex-1 min-w-0"><a href={file.url} target="_blank" rel="noreferrer" className="text-xs font-medium text-foreground truncate block hover:text-primary underline-offset-2 hover:underline">{file.ten_file}</a><span className="text-[10px] text-muted-foreground">{format(new Date(file.ngay_upload), 'dd/MM/yyyy')}</span></div>
-                                <button type="button" onClick={() => removeFile(file.id)} className="p-1.5 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
-                            </div>
-                        ))}
-                    </div>
+                    <div><label className={labelClass}>Người soạn thảo</label><SearchableSelect options={drafterOptions} value={formData.nguoi_soan_thao} onChange={(val) => handleSelectChange('nguoi_soan_thao', String(val))} placeholder="-- Chọn nhân sự --"/></div>
+                    <div><label className={labelClass}>Người xem xét</label><SearchableSelect options={reviewerOptions} value={formData.nguoi_xem_xet} onChange={(val) => handleSelectChange('nguoi_xem_xet', String(val))} placeholder="-- Chọn nhân sự --"/></div>
+                    <div><label className={labelClass}>Người phê duyệt</label><SearchableSelect options={approverOptions} value={formData.nguoi_phe_duyet} onChange={(val) => handleSelectChange('nguoi_phe_duyet', String(val))} placeholder="-- Chọn nhân sự --"/></div>
                 </div>
             </div>
         </div>
 
-        {/* --- BLOCK 5: CONTENT (Full Width) --- */}
-        <div className="mb-6 bg-card text-card-foreground p-5 rounded-xl border border-border shadow-sm">
-            <h4 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border pb-3 mb-4">
-                <Info size={16} className="text-blue-500"/> Nội dung tóm tắt
-            </h4>
-            <textarea name="mo_ta_tom_tat" value={formData.mo_ta_tom_tat} onChange={handleChange} className={`${inputClass} h-auto min-h-[100px] resize-none p-3`} placeholder="Mô tả phạm vi áp dụng, mục đích và các nội dung chính của tài liệu..." />
-        </div>
-
-        {/* --- BLOCK 6: WORKFLOW (Horizontal Process) --- */}
-        <div className="bg-card text-card-foreground p-6 rounded-xl border border-border shadow-sm">
-            <h4 className="text-sm font-bold text-foreground flex items-center gap-2 mb-6">
-                <GitCommit size={16} className="text-purple-500"/> Ma trận trách nhiệm (Workflow)
-            </h4>
-            
-            <div className="flex flex-col md:flex-row gap-4 items-stretch">
-                {/* Step 1 */}
-                <div className="flex-1 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900 p-4 relative group hover:shadow-md transition-all">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300 flex items-center justify-center font-bold shadow-sm"><PenTool size={18}/></div>
-                        <div><p className="text-[10px] font-bold text-blue-500 dark:text-blue-400 uppercase tracking-wider">Bước 1</p><p className="text-sm font-bold text-foreground">Soạn thảo</p></div>
-                    </div>
-                    <SearchableSelect options={drafterOptions} value={formData.nguoi_soan_thao} onChange={(val) => handleSelectChange('nguoi_soan_thao', val)} placeholder="Chọn nhân sự..." />
-                    <div className="hidden md:block absolute top-1/2 -right-6 transform -translate-y-1/2 text-blue-200 dark:text-blue-800 z-10"><ArrowRight size={24}/></div>
+        {/* --- BLOCK 3: DATE & REVIEW --- */}
+        <div className="mt-8">
+            <div className="flex items-center gap-2 pb-2 mb-4 border-b border-border">
+                <Calendar size={18} className="text-green-500"/>
+                <h3 className="text-sm font-bold text-foreground uppercase">Hiệu lực & Kiểm soát</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                   <label className={labelClass}>Phiên bản / Lần BH</label>
+                   <div className="flex gap-4">
+                      <div className="relative flex-1"><GitCommit size={14} className="absolute left-3 top-3 text-muted-foreground"/><input className={`${inputClass} pl-9 font-mono`} value={formData.phien_ban} onChange={handleChange} name="phien_ban" placeholder="1.0" /></div>
+                      <div className="flex items-center h-10 w-24 rounded-lg border border-input bg-background overflow-hidden">
+                          <button type="button" onClick={() => adjustNumber('lan_ban_hanh', -1)} className="px-2 h-full hover:bg-muted border-r border-border text-muted-foreground"><Minus size={12}/></button>
+                          <div className="flex-1 text-center text-xs font-bold">{formData.lan_ban_hanh}</div>
+                          <button type="button" onClick={() => adjustNumber('lan_ban_hanh', 1)} className="px-2 h-full hover:bg-muted border-l border-border text-muted-foreground"><Plus size={12}/></button>
+                      </div>
+                   </div>
                 </div>
 
-                {/* Step 2 */}
-                <div className="flex-1 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-900 p-4 relative group hover:shadow-md transition-all">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300 flex items-center justify-center font-bold shadow-sm"><SearchIcon size={18}/></div>
-                        <div><p className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider">Bước 2</p><p className="text-sm font-bold text-foreground">Xem xét</p></div>
-                    </div>
-                    <SearchableSelect options={reviewerOptions} value={formData.nguoi_xem_xet} onChange={(val) => handleSelectChange('nguoi_xem_xet', val)} placeholder="Chọn nhân sự..." />
-                    <div className="hidden md:block absolute top-1/2 -right-6 transform -translate-y-1/2 text-indigo-200 dark:text-indigo-800 z-10"><ArrowRight size={24}/></div>
+                <div>
+                   <label className={labelClass}>Ngày ban hành / Hiệu lực</label>
+                   <div className="flex items-center gap-2">
+                       <input type="date" name="ngay_ban_hanh" className={`${inputClass} dark:[color-scheme:dark]`} value={formData.ngay_ban_hanh} onChange={handleChange}/>
+                       <ArrowRight size={16} className="text-muted-foreground"/>
+                       <input type="date" name="ngay_hieu_luc" className={`${inputClass} dark:[color-scheme:dark]`} value={formData.ngay_hieu_luc} onChange={handleChange}/>
+                   </div>
                 </div>
 
-                {/* Step 3 */}
-                <div className="flex-1 bg-green-50/50 dark:bg-green-900/10 rounded-xl border border-green-100 dark:border-green-900 p-4 relative group hover:shadow-md transition-all">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300 flex items-center justify-center font-bold shadow-sm"><FileSignature size={18}/></div>
-                        <div><p className="text-[10px] font-bold text-green-500 dark:text-green-400 uppercase tracking-wider">Bước 3</p><p className="text-sm font-bold text-foreground">Phê duyệt</p></div>
+                <div className={`p-4 rounded-xl border transition-all ${isReviewEnabled ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-900/50' : 'bg-muted/30 border-border'}`}>
+                    <div className="flex justify-between items-center mb-2">
+                        <label className="text-xs font-bold text-foreground uppercase flex items-center gap-2"><RefreshCw size={14}/> Định kỳ rà soát</label>
+                        <div onClick={toggleReview} className={`w-10 h-5 rounded-full p-0.5 cursor-pointer transition-colors ${isReviewEnabled ? 'bg-orange-500' : 'bg-muted-foreground'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${isReviewEnabled ? 'translate-x-5' : ''}`}></div></div>
                     </div>
-                    <SearchableSelect options={approverOptions} value={formData.nguoi_phe_duyet} onChange={(val) => handleSelectChange('nguoi_phe_duyet', val)} placeholder="Chọn lãnh đạo..." />
+                    {isReviewEnabled && (
+                        <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                            <div className="flex items-center h-9 bg-background rounded border border-input overflow-hidden w-28">
+                                <button type="button" onClick={() => adjustNumber('chu_ky_ra_soat', -6)} className="px-2 h-full hover:bg-muted border-r border-border text-muted-foreground"><Minus size={12}/></button>
+                                <input className="w-full text-center text-sm font-bold bg-transparent outline-none" value={formData.chu_ky_ra_soat} readOnly />
+                                <button type="button" onClick={() => adjustNumber('chu_ky_ra_soat', 6)} className="px-2 h-full hover:bg-muted border-l border-border text-muted-foreground"><Plus size={12}/></button>
+                            </div>
+                            <span className="text-xs text-muted-foreground">Tháng / lần</span>
+                        </div>
+                    )}
+                    {isReviewEnabled && formData.ngay_ra_soat_tiep_theo && <div className="mt-2 text-[10px] text-orange-600 dark:text-orange-400 font-medium">Tiếp theo: {format(new Date(formData.ngay_ra_soat_tiep_theo), 'dd/MM/yyyy')}</div>}
                 </div>
             </div>
         </div>
 
-        <button type="submit" className="hidden"></button>
+        {/* --- BLOCK 4: CONTENT & FILES --- */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-border">
+                   <FileText size={18} className="text-blue-500"/>
+                   <h3 className="text-sm font-bold text-foreground uppercase">Nội dung tóm tắt</h3>
+                </div>
+                <textarea name="mo_ta_tom_tat" className="w-full h-40 p-3 rounded-xl border border-input bg-background focus:ring-2 ring-primary/20 focus:border-primary outline-none text-sm resize-none" placeholder="Mô tả phạm vi, mục đích của tài liệu..." value={formData.mo_ta_tom_tat} onChange={handleChange}></textarea>
+            </div>
+
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-border">
+                   <Paperclip size={18} className="text-indigo-500"/>
+                   <h3 className="text-sm font-bold text-foreground uppercase">Đính kèm file</h3>
+                </div>
+                
+                <div className="flex gap-2">
+                   <div className="relative flex-1">
+                      <LinkIcon size={16} className="absolute left-3 top-2.5 text-muted-foreground"/>
+                      <input className={`${inputClass} pl-9`} placeholder="Dán link Google Drive / SharePoint..." value={urlInput} onChange={(e) => setUrlInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFile('link'))} />
+                   </div>
+                   <button type="button" onClick={() => handleAddFile('pdf')} className="p-2 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 dark:bg-red-900/20 dark:border-red-900 dark:text-red-400" title="Link PDF"><FileType size={20}/></button>
+                   <button type="button" onClick={() => handleAddFile('doc')} className="p-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg hover:bg-blue-100 dark:bg-blue-900/20 dark:border-blue-900 dark:text-blue-400" title="Link Word"><FileText size={20}/></button>
+                   <button type="button" onClick={() => handleAddFile('excel')} className="p-2 bg-green-50 text-green-600 border border-green-100 rounded-lg hover:bg-green-100 dark:bg-green-900/20 dark:border-green-900 dark:text-green-400" title="Link Excel"><FileSpreadsheet size={20}/></button>
+                </div>
+
+                <div className="space-y-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                   {formData.dinh_kem && formData.dinh_kem.length > 0 ? (
+                      formData.dinh_kem.map(file => (
+                         <div key={file.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/40 border border-border group">
+                             <div className="flex items-center gap-2 overflow-hidden">
+                                {file.loai === 'pdf' ? <FileType size={14} className="text-red-500 shrink-0"/> : file.loai === 'excel' ? <FileSpreadsheet size={14} className="text-green-500 shrink-0"/> : <FileText size={14} className="text-blue-500 shrink-0"/>}
+                                <a href={file.url} target="_blank" rel="noreferrer" className="text-xs font-medium text-foreground hover:underline truncate">{file.ten_file}</a>
+                             </div>
+                             <button type="button" onClick={() => removeFile(file.id)} className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={14}/></button>
+                         </div>
+                      ))
+                   ) : <div className="text-center text-xs text-muted-foreground py-4 italic">Chưa có file đính kèm</div>}
+                </div>
+            </div>
+        </div>
       </form>
-      
-      <div className="flex justify-end gap-3 mt-4 pt-4 px-6 pb-4 border-t border-border bg-card">
-            <Button variant="secondary" onClick={onCancel}>Hủy bỏ</Button>
-            <Button onClick={() => handleSubmit()} leftIcon={<Save size={16} />} className="shadow-lg shadow-primary/20 px-6">Lưu dữ liệu</Button>
+
+      {/* Footer Actions */}
+      <div className="p-4 border-t border-border bg-muted/20 flex justify-end gap-3 shrink-0">
+         <Button variant="ghost" onClick={onCancel}>Hủy bỏ</Button>
+         <Button onClick={() => handleSubmit()} leftIcon={<Save size={16}/>}>Lưu tài liệu</Button>
       </div>
     </div>
   );
