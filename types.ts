@@ -40,7 +40,6 @@ export interface TaiLieu {
   ma_tai_lieu: string;
   ten_tai_lieu: string;
   loai_tai_lieu: string; // VD: Quy trình, Hướng dẫn, Biểu mẫu
-  linh_vuc: string; // VD: HCNS, Kế toán, Sản xuất
   tieu_chuan?: string[]; // UPDATED: Cho phép nhiều tiêu chuẩn (Array)
   
   // HIERARCHY (QUAN HỆ CHA CON)
@@ -205,7 +204,7 @@ export interface BackupData {
 // Master Data State Structure
 export interface MasterDataState {
   loaiTaiLieu: DanhMucItem[];
-  linhVuc: DanhMucItem[];
+  // Removed linhVuc
   boPhan: DanhMucItem[];
   chucVu: DanhMucItem[]; // NEW: Chức vụ
   tieuChuan: DanhMucItem[];

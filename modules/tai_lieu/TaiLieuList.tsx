@@ -361,7 +361,24 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
               </select>
               <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
            </div>
-           {/* ... Other Filters same as before */}
+           <div className="relative group shrink-0">
+              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.bo_phan || ''} onChange={(e) => setFilters(prev => ({ ...prev, bo_phan: e.target.value || undefined }))}>
+                 <option value="">Bộ phận: Tất cả</option>
+                 {masterData.boPhan.map(bp => (
+                    <option key={bp.id} value={bp.ten}>{bp.ten}</option>
+                 ))}
+              </select>
+              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           </div>
+           <div className="relative group shrink-0">
+              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.loai_tai_lieu || ''} onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}>
+                 <option value="">Loại tài liệu: Tất cả</option>
+                 {masterData.loaiTaiLieu.map(lt => (
+                    <option key={lt.id} value={lt.ten}>{lt.ten}</option>
+                 ))}
+              </select>
+              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           </div>
        </div>
        {(filters.trang_thai || filters.bo_phan || filters.loai_tai_lieu) && (
           <button onClick={() => setFilters({})} className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 ml-1" title="Xóa tất cả bộ lọc"><X size={16} /></button>
@@ -493,7 +510,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                    </div>
                                    <div className="p-4 space-y-4">
                                        <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Loại tài liệu</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedDoc.loai_tai_lieu}</p></div>
-                                       <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Lĩnh vực</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedDoc.linh_vuc || '---'}</p></div>
                                        <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Bộ phận sở hữu</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getDept(selectedDoc.id_nguoi_soan_thao)}</p></div>
                                        {selectedDoc.tieu_chuan && selectedDoc.tieu_chuan.length > 0 && (
                                            <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Tiêu chuẩn áp dụng</p><div className="flex flex-wrap gap-1.5">{selectedDoc.tieu_chuan.map(t => (<span key={t} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"><Tag size={10} /> {t}</span>))}</div></div>

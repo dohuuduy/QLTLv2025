@@ -54,7 +54,6 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ document }) => {
       Mã: ${document.ma_tai_lieu}
       Tên: ${document.ten_tai_lieu}
       Loại: ${document.loai_tai_lieu}
-      Lĩnh vực: ${document.linh_vuc}
       Mô tả tóm tắt: ${document.mo_ta_tom_tat}
       Phiên bản: ${document.phien_ban}
       Ngày hiệu lực: ${document.ngay_hieu_luc}

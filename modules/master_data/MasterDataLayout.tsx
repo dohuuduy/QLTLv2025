@@ -10,7 +10,7 @@ interface MasterDataLayoutProps {
   onUpdate: (newData: MasterDataState) => void;
 }
 
-type TabType = 'users' | 'docTypes' | 'departments' | 'positions' | 'fields' | 'standards' | 'auditOrgs' | 'auditors' | 'auditTypes';
+type TabType = 'users' | 'docTypes' | 'departments' | 'positions' | 'standards' | 'auditOrgs' | 'auditors' | 'auditTypes';
 
 export const MasterDataLayout: React.FC<MasterDataLayoutProps> = ({ data, onUpdate }) => {
   const [activeTab, setActiveTab] = useState<TabType>('users');
@@ -19,8 +19,7 @@ export const MasterDataLayout: React.FC<MasterDataLayoutProps> = ({ data, onUpda
     { id: 'users', label: 'Người dùng & Quyền', icon: Users },
     { id: 'docTypes', label: 'Loại tài liệu', icon: Layers },
     { id: 'departments', label: 'Phòng ban / Bộ phận', icon: Database },
-    { id: 'positions', label: 'Chức vụ', icon: Briefcase }, // New Tab
-    { id: 'fields', label: 'Lĩnh vực', icon: Tag },
+    { id: 'positions', label: 'Chức vụ', icon: Briefcase }, 
     { id: 'standards', label: 'Tiêu chuẩn', icon: Bookmark },
     // New Tabs
     { id: 'auditOrgs', label: 'Tổ chức đánh giá', icon: Award },
@@ -87,14 +86,6 @@ export const MasterDataLayout: React.FC<MasterDataLayoutProps> = ({ data, onUpda
             title="Danh mục Chức vụ"
             data={data.chucVu || []}
             onUpdate={(newData) => onUpdate({...data, chucVu: newData})}
-          />
-        )}
-
-        {activeTab === 'fields' && (
-          <SimpleListManager 
-            title="Danh mục Lĩnh vực"
-            data={data.linhVuc}
-            onUpdate={(newData) => onUpdate({...data, linhVuc: newData})}
           />
         )}
 

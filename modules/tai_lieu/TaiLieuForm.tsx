@@ -20,7 +20,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     ma_tai_lieu: '',
     ten_tai_lieu: '',
     loai_tai_lieu: '',
-    linh_vuc: '',
     tieu_chuan: [],
     tai_lieu_cha_id: '',
     thu_tu: 0,
@@ -191,7 +190,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   };
 
   const loaiTaiLieuOptions = masterData.loaiTaiLieu.map(i => ({ value: i.ten, label: i.ten }));
-  const linhVucOptions = masterData.linhVuc.map(i => ({ value: i.ten, label: i.ten }));
+  // linhVucOptions removed
   
   const mapUserToOption = (u: NhanSu) => ({ value: u.id, label: u.ho_ten, subLabel: u.chuc_vu });
   const drafterOptions = masterData.nhanSu.filter(u => u.roles.includes('SOAN_THAO') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
@@ -239,7 +238,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                 </h4>
                 <div className="space-y-4 flex-1">
                     <div><label className={labelClass}>Loại tài liệu</label><SearchableSelect options={loaiTaiLieuOptions} value={formData.loai_tai_lieu} onChange={(val) => handleSelectChange('loai_tai_lieu', val)} placeholder="-- Chọn loại --" /></div>
-                    <div><label className={labelClass}>Lĩnh vực hoạt động</label><SearchableSelect options={linhVucOptions} value={formData.linh_vuc} onChange={(val) => handleSelectChange('linh_vuc', val)} placeholder="-- Chọn lĩnh vực --" /></div>
                     <div><label className={labelClass}>Tài liệu gốc (Parent)</label><SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} placeholder="-- Không có --" /></div>
                     <div>
                         <label className={labelClass}>Tiêu chuẩn áp dụng</label>
