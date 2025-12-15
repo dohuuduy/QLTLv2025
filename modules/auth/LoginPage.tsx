@@ -5,6 +5,7 @@ import { Modal } from '../../components/ui/Modal';
 import { signIn, signUpNewUser, upsertProfile, checkSystemHasAdmin } from '../../services/supabaseService';
 import { ShieldCheck, Mail, Lock, Loader2, Wrench, Key, Eye, EyeOff, CheckCircle2, XCircle, ArrowRight, Headset, ShieldAlert } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { useToast } from '../../components/ui/Toast';
 
 type VerificationStatus = 'idle' | 'verifying' | 'success' | 'error';
 
@@ -27,6 +28,8 @@ export const LoginPage: React.FC = () => {
   const [isSetupMode, setIsSetupMode] = useState(false);
   const [setupToken, setSetupToken] = useState('');
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+
+  const toast = useToast();
 
   useEffect(() => {
       const initPage = async () => {
@@ -96,6 +99,7 @@ export const LoginPage: React.FC = () => {
             : "Lỗi đăng nhập: " + authError.message);
         setIsLoading(false);
     } else {
+        toast.success("Đăng nhập thành công!");
         if (rememberMe) {
             localStorage.setItem('iso_remember_email', email);
         } else {

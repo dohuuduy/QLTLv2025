@@ -80,11 +80,11 @@ const AppContent: React.FC = () => {
          setRecords([]);
          setAuditPlans([]);
          setCurrentUser({ id: 'guest', ho_ten: 'Khách', email: '', chuc_vu: '', phong_ban: '', roles: [] });
-      } else if (event === 'SIGNED_IN') {
-         toast.success("Đăng nhập thành công!");
       } else if (event === 'SIGNED_OUT') {
          toast.info("Đã đăng xuất hệ thống.");
       }
+      // Note: Removed 'SIGNED_IN' toast here to prevent it showing on page reload.
+      // It is now handled explicitly in LoginPage.tsx
     });
 
     return () => subscription.unsubscribe();
