@@ -50,7 +50,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   const [selectedValues, setSelectedValues] = useState<string[]>(value || defaultValue);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0, width: 0, placement: 'bottom' });
+  const [popoverPosition, setPopoverPosition] = useState<{ top: number; left: number; width: number; placement: string } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -117,6 +117,8 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
       
       // Auto-focus search input when opened
       requestAnimationFrame(() => searchInputRef.current?.focus());
+    } else {
+      setPopoverPosition(null); // Reset position
     }
     return () => {
       window.removeEventListener("resize", updatePosition);
@@ -256,7 +258,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         </div>
       </div>
 
-      {isPopoverOpen &&
+      {isPopoverOpen && popoverPosition &&
         createPortal(
           <div
             ref={popoverRef}

@@ -28,7 +28,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 0, placement: 'bottom' });
+  // Initialize as null to prevent rendering at 0,0 before calculation
+  const [position, setPosition] = useState<{ top: number; left: number; width: number; placement: 'bottom' | 'top' } | null>(null);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -60,12 +61,14 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
   useLayoutEffect(() => {
     if (isOpen) {
       calculatePosition();
+    } else {
+      setPosition(null); // Reset position on close
     }
   }, [isOpen]);
 
   // Handle Scroll/Resize to update position instead of closing
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !position) return;
 
     const handleReposition = () => {
         requestAnimationFrame(calculatePosition);
@@ -74,7 +77,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
     window.addEventListener('scroll', handleReposition, true);
     window.addEventListener('resize', handleReposition);
 
-    // Focus input when opened
+    // Focus input when opened and positioned
     requestAnimationFrame(() => {
         if (searchInputRef.current) searchInputRef.current.focus();
     });
@@ -83,7 +86,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
       window.removeEventListener('scroll', handleReposition, true);
       window.removeEventListener('resize', handleReposition);
     };
-  }, [isOpen]);
+  }, [isOpen, !!position]); // Depend on position existence
 
   // Handle Click Outside
   useEffect(() => {
@@ -181,8 +184,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
         </div>
       </div>
 
-      {/* Portal Dropdown Menu */}
-      {isOpen && createPortal(
+      {/* Portal Dropdown Menu - Only render if position is calculated */}
+      {isOpen && position && createPortal(
         <div
           id={portalId}
           ref={dropdownRef}
@@ -193,7 +196,6 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
               maxWidth: '90vw',
               transform: position.placement === 'top' ? 'translateY(-100%)' : 'none',
           }}
-          // Removed animate-in zoom-in to prevent visual jitter on desktop/weird artifacts
           className="fixed z-[9999] bg-popover text-popover-foreground border border-border rounded-xl shadow-xl flex flex-col overflow-hidden animate-in fade-in duration-150"
           onClick={(e) => e.stopPropagation()} 
         >
@@ -212,7 +214,6 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
                 }}
                 className="w-full h-8 pl-8 pr-3 text-xs rounded-lg border border-input bg-background focus:ring-1 focus:ring-primary outline-none text-foreground placeholder:text-muted-foreground"
                 placeholder="Tìm kiếm..."
-                // Prevent zoom on mobile by ensuring font-size is 16px if needed, or handle meta tag
                 style={{ fontSize: '14px' }} 
               />
             </div>
