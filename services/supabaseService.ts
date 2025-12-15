@@ -34,7 +34,6 @@ export const signUpNewUser = async (email: string, password: string, metaData: a
 export const getCurrentSession = async () => {
   try {
     const { data, error } = await supabase.auth.getSession();
-    // Safety check: data might be null if service is down, preventing crash on destructuring
     return { session: data?.session || null, error };
   } catch (error) {
     console.warn("Auth Session Error:", error);
@@ -51,12 +50,11 @@ export const checkSystemHasAdmin = async (): Promise<boolean> => {
         
         if (error) {
              console.warn("⚠️ Check Admin Error (Using Mock Mode - Defaulting to TRUE to disable setup):", error.message);
-             // Return true to be safe and avoid showing Setup Screen if DB is just unreachable but exists
              return true; 
         }
         return (count || 0) > 0;
     } catch (e) {
-        return true; // Fail safe
+        return true; 
     }
 };
 
@@ -69,27 +67,33 @@ const mapCategoryToItem = (record: any): DanhMucItem => ({
   thu_tu: record.thu_tu || 0,
   ma_viet_tat: record.ma_viet_tat,
   parentId: record.id_cha,
-  // Mapping 'cap_do' directly from DB column if available, fallback to cai_dat for backward compat
+  // Fix: Prioritize 'cap_do' column from DB, fallback to 'cai_dat.cap_do' for legacy data
   cap_do: record.cap_do !== undefined && record.cap_do !== null ? record.cap_do : record.cai_dat?.cap_do,
   ...(record.cai_dat || {}) 
 });
 
-const mapItemToCategoryPayload = (item: DanhMucItem, type: string) => ({
-    id: item.id,
-    loai: type,
-    ten: item.ten,
-    hoat_dong: item.active,
-    thu_tu: item.thu_tu,
-    ma_viet_tat: item.ma_viet_tat,
-    id_cha: item.parentId,
-    // Explicitly write to 'cap_do' column
-    cap_do: item.cap_do, 
-    cai_dat: {
-        ky_tu_noi: item.ky_tu_noi,
-        do_dai_so: item.do_dai_so,
-        // Removed cap_do from here to avoid duplication, strictly use column now
+const mapItemToCategoryPayload = (item: DanhMucItem, type: string) => {
+    const payload: any = {
+        id: item.id,
+        loai: type,
+        ten: item.ten,
+        hoat_dong: item.active,
+        thu_tu: item.thu_tu,
+        ma_viet_tat: item.ma_viet_tat,
+        id_cha: item.parentId,
+        cai_dat: {
+            ky_tu_noi: item.ky_tu_noi,
+            do_dai_so: item.do_dai_so,
+        }
+    };
+
+    // Explicitly map cap_do to the root level if it exists
+    if (item.cap_do !== undefined && item.cap_do !== null) {
+        payload.cap_do = item.cap_do;
     }
-});
+
+    return payload;
+};
 
 const mapProfileToUser = (record: any, depts: DanhMucItem[], positions: DanhMucItem[]): NhanSu => {
   const deptName = depts.find(d => d.id === record.id_phong_ban)?.ten || '';
@@ -131,13 +135,13 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
   try {
     const { data: categoriesData, error: catError } = await supabase.from('danh_muc').select('*');
     if (catError) {
-        console.warn("⚠️ Failed to load Categories (Returning NULL to trigger Mock Data):", catError.message);
+        console.warn("⚠️ Failed to load Categories:", catError.message);
         return null; 
     }
 
     const { data: profilesData, error: profError } = await supabase.from('nhan_su').select('*');
     if (profError) {
-        console.warn("⚠️ Failed to load Profiles (Returning NULL to trigger Mock Data):", profError.message);
+        console.warn("⚠️ Failed to load Profiles:", profError.message);
         return null;
     }
 
@@ -147,7 +151,7 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
     const sortIt = (arr: any[]) => arr.sort(sortByOrder);
 
     const loaiTaiLieu = sortIt(categories.filter((c: any) => c.loai === 'LOAI_TAI_LIEU').map(mapCategoryToItem));
-    const linhVuc = sortIt(categories.filter((c: any) => c.loai === 'LINH_VUC').map(mapCategoryToItem)); // Restored
+    const linhVuc = sortIt(categories.filter((c: any) => c.loai === 'LINH_VUC').map(mapCategoryToItem));
     const boPhan = sortIt(categories.filter((c: any) => c.loai === 'BO_PHAN').map(mapCategoryToItem));
     const chucVu = sortIt(categories.filter((c: any) => c.loai === 'CHUC_VU').map(mapCategoryToItem));
     const tieuChuan = sortIt(categories.filter((c: any) => c.loai === 'TIEU_CHUAN').map(mapCategoryToItem));
@@ -157,7 +161,6 @@ export const fetchMasterDataFromDB = async (): Promise<MasterDataState | null> =
 
     const nhanSu = profiles.map((p: any) => mapProfileToUser(p, boPhan, chucVu));
 
-    // If tables are empty (first run), return null to use initial constants
     if (categories.length === 0 && profiles.length === 0) return null;
 
     return {
@@ -213,7 +216,6 @@ export const fetchDocumentsFromDB = async (): Promise<TaiLieu[] | null> => {
         const { data, error } = await supabase.from('tai_lieu').select('*').order('ngay_tao', { ascending: false });
         if (error) { console.warn("Fetch Docs Error:", error.message); return null; }
         
-        // Map DB columns (id_*) back to Frontend types (nguoi_*) for compatibility
         return (data || []).map((d: any) => ({
             ...d,
             nguoi_soan_thao: d.id_nguoi_soan_thao || d.nguoi_soan_thao,
@@ -226,8 +228,6 @@ export const fetchDocumentsFromDB = async (): Promise<TaiLieu[] | null> => {
 };
 
 export const upsertDocument = async (doc: TaiLieu) => {
-    // Transform Frontend types to DB columns
-    // Destructure to remove frontend-specific keys that don't match DB columns
     const { 
         nguoi_soan_thao,
         nguoi_xem_xet,

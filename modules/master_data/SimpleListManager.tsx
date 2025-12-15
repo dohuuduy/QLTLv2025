@@ -63,7 +63,6 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
     cap_do: 1
   });
 
-  // Unified Styles (Fixed Dark Mode)
   const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 ring-primary/20 outline-none transition-all text-sm";
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5 block";
 
@@ -71,7 +70,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
     setEditingItem(null);
     setFormState({ 
         ten: '', 
-        thu_tu: 1, // Will be auto-calced by useEffect
+        thu_tu: 1,
         parentId: '', 
         active: true,
         ma_viet_tat: '',
@@ -86,15 +85,13 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
   useEffect(() => {
       if (!isModalOpen) return;
 
-      // If user is editing an item and hasn't changed the parent, do not override
       if (editingItem && editingItem.parentId === formState.parentId) {
           return;
       }
 
-      // Filter siblings based on Parent ID
       const siblings = data.filter(i => {
           if (formState.parentId) return i.parentId === formState.parentId;
-          return !i.parentId; // Root level items
+          return !i.parentId;
       });
 
       const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(i => i.thu_tu || 0)) : 0;
@@ -145,7 +142,6 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
     }
     setIsLoading(true);
 
-    // UUID Generation logic
     let itemId = editingItem ? editingItem.id : undefined;
     if (!itemId) {
         if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -175,7 +171,6 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
 
     try {
         await upsertCategory(newItem, type);
-        // const tempItem = { ...newItem, id: newItem.id || Date.now().toString() }; 
         if (editingItem) {
             onUpdate(data.map(item => item.id === editingItem.id ? newItem : item));
         } else {
@@ -206,7 +201,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
           const next = current + amount;
           
           if (field === 'cap_do' && (next < 1 || next > 5)) return prev;
-          if (field === 'thu_tu' && next < 1) return prev; // Prevent negative order
+          if (field === 'thu_tu' && next < 1) return prev; 
 
           return { ...prev, [field]: next };
       });
@@ -264,7 +259,6 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
         <DataTable data={data} columns={columns} onRowClick={handleEdit} actions={<Button onClick={handleAddNew} leftIcon={<Plus size={16} />} size="sm">Thêm mới</Button>}/>
       </div>
       
-      {/* Modal Form */}
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
@@ -279,7 +273,6 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
                 <div className="space-y-4">
                   <div><label className={labelClass}>Tên hiển thị <span className="text-red-500">*</span></label><input autoFocus className={inputClass} value={formState.ten} onChange={(e) => setFormState({...formState, ten: e.target.value})} placeholder="Nhập tên danh mục..." onKeyDown={(e) => e.key === 'Enter' && handleSave()}/></div>
                   
-                  {/* Updated Order Input with Custom Controls */}
                   <div>
                       <label className={labelClass}>Thứ tự hiển thị <span className="font-normal text-[10px] text-gray-400 lowercase ml-1">(auto tăng theo nhóm)</span></label>
                       <div className="flex items-center h-10 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 ring-primary/20 transition-shadow">
@@ -303,7 +296,6 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
                         <div className="grid grid-cols-2 gap-4">
                            <div className="col-span-2"><label className={labelClass}>Mã viết tắt (Prefix)</label><input className={`${inputClass} uppercase font-mono`} value={formState.ma_viet_tat} onChange={(e) => setFormState({...formState, ma_viet_tat: e.target.value.toUpperCase()})} placeholder="VD: QT, BM, HD..."/></div>
                            
-                           {/* Improved Number Input with Custom Buttons */}
                            <div><label className={labelClass}>Phân cấp (Level)</label>
                                <div className="flex items-center h-10 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 ring-primary/20 transition-shadow">
                                    <button type="button" onClick={() => adjustNumber('cap_do', -1)} className="px-3 h-full hover:bg-gray-100 dark:hover:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 transition-colors"><Minus size={14}/></button>
