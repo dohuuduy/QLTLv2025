@@ -5,6 +5,7 @@ import { HoSo, ColumnDefinition, TrangThaiHoSo, MasterDataState, NhanSu, TaiLieu
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
+import { MultiSelect } from '../../components/ui/MultiSelect'; // Import MultiSelect
 import { format, addMonths, isPast, differenceInDays } from 'date-fns';
 import { Archive, Plus, Trash2, Clock, MapPin, ShieldAlert, FileBox, Calendar, HardDrive, Hash, AlignLeft, Link as LinkIcon, Filter, X, Database, Building2 } from 'lucide-react';
 import { upsertRecord, deleteRecord } from '../../services/supabaseService';
@@ -27,10 +28,14 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
   const getDeptName = (id: string) => masterData.boPhan.find(bp => bp.id === id)?.ten || '---';
 
   const [filters, setFilters] = useState<{ 
-      trang_thai?: string; 
-      id_phong_ban?: string; 
-      dang_luu_tru?: string;
-  }>({});
+      trang_thai: string[]; 
+      id_phong_ban: string[]; 
+      dang_luu_tru: string[];
+  }>({
+      trang_thai: [],
+      id_phong_ban: [],
+      dang_luu_tru: []
+  });
 
   const docOptions = useMemo(() => {
     return documents.map(d => ({
@@ -42,17 +47,17 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
 
   const filteredData = useMemo(() => {
     return data.filter(item => {
-        if (filters.trang_thai) {
+        if (filters.trang_thai.length > 0) {
             let currentStatus = item.trang_thai;
             if (item.ngay_het_han && currentStatus === TrangThaiHoSo.LUU_TRU) {
                 const daysLeft = differenceInDays(new Date(item.ngay_het_han), new Date());
                 if (daysLeft < 0) currentStatus = TrangThaiHoSo.CHO_HUY;
                 else if (daysLeft < 30) currentStatus = TrangThaiHoSo.SAP_HET_HAN;
             }
-            if (currentStatus !== filters.trang_thai) return false;
+            if (!filters.trang_thai.includes(currentStatus)) return false;
         }
-        if (filters.id_phong_ban && item.id_phong_ban !== filters.id_phong_ban) return false;
-        if (filters.dang_luu_tru && item.dang_luu_tru !== filters.dang_luu_tru) return false;
+        if (filters.id_phong_ban.length > 0 && !filters.id_phong_ban.includes(item.id_phong_ban)) return false;
+        if (filters.dang_luu_tru.length > 0 && !filters.dang_luu_tru.includes(item.dang_luu_tru)) return false;
         return true;
     });
   }, [data, filters]);
@@ -89,7 +94,6 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
        expiryDate = format(addMonths(start, editingItem.thoi_gian_luu_tru), 'yyyy-MM-dd');
     }
 
-    // UUID Generation logic
     let recordId = editingItem.id;
     if (!recordId) {
         if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -172,42 +176,57 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
 
   const boPhanOptions = masterData.boPhan.map(bp => ({ value: bp.id, label: bp.ten }));
 
-  // Shared Styles (Updated with correct dark mode text color)
   const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 ring-primary/20 outline-none transition-all text-sm disabled:opacity-60 disabled:bg-gray-100 dark:disabled:bg-slate-800 placeholder:text-gray-400 dark:placeholder:text-gray-500";
   const labelClass = "text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1.5 block";
 
   const renderFilters = (
     <div className="flex items-center gap-2 w-full">
        <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar min-w-0">
-           <div className="relative group shrink-0">
-              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.id_phong_ban || ''} onChange={(e) => setFilters(prev => ({ ...prev, id_phong_ban: e.target.value || undefined }))}>
-                 <option value="">Bộ phận: Tất cả</option>
-                 {masterData.boPhan.map(bp => (<option key={bp.id} value={bp.id}>{bp.ten}</option>))}
-              </select>
-              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           
+           <div className="min-w-[180px] max-w-[250px]">
+               <MultiSelect 
+                  options={boPhanOptions}
+                  value={filters.id_phong_ban}
+                  onValueChange={(val) => setFilters(prev => ({...prev, id_phong_ban: val}))}
+                  placeholder="Lọc theo bộ phận"
+                  maxCount={1}
+                  className="h-9 text-xs"
+               />
            </div>
-           <div className="relative group shrink-0">
-              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.trang_thai || ''} onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}>
-                 <option value="">Trạng thái: Tất cả</option>
-                 <option value={TrangThaiHoSo.LUU_TRU}>Đang lưu trữ</option>
-                 <option value={TrangThaiHoSo.SAP_HET_HAN}>Sắp hết hạn</option>
-                 <option value={TrangThaiHoSo.CHO_HUY}>Chờ tiêu hủy</option>
-                 <option value={TrangThaiHoSo.DA_HUY}>Đã hủy</option>
-              </select>
-              <Archive size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+
+           <div className="min-w-[180px] max-w-[250px]">
+               <MultiSelect 
+                  options={[
+                      { value: TrangThaiHoSo.LUU_TRU, label: 'Đang lưu trữ' },
+                      { value: TrangThaiHoSo.SAP_HET_HAN, label: 'Sắp hết hạn' },
+                      { value: TrangThaiHoSo.CHO_HUY, label: 'Chờ tiêu hủy' },
+                      { value: TrangThaiHoSo.DA_HUY, label: 'Đã hủy' }
+                  ]}
+                  value={filters.trang_thai}
+                  onValueChange={(val) => setFilters(prev => ({...prev, trang_thai: val}))}
+                  placeholder="Lọc trạng thái"
+                  maxCount={1}
+                  className="h-9 text-xs"
+               />
            </div>
-           <div className="relative group shrink-0">
-              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.dang_luu_tru || ''} onChange={(e) => setFilters(prev => ({ ...prev, dang_luu_tru: e.target.value || undefined }))}>
-                 <option value="">Lưu trữ: Tất cả</option>
-                 <option value="BAN_CUNG">Bản cứng</option>
-                 <option value="BAN_MEM">Bản mềm</option>
-                 <option value="CA_HAI">Cả hai</option>
-              </select>
-              <Database size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+
+           <div className="min-w-[150px] max-w-[200px]">
+               <MultiSelect 
+                  options={[
+                      { value: "BAN_CUNG", label: 'Bản cứng' },
+                      { value: "BAN_MEM", label: 'Bản mềm' },
+                      { value: "CA_HAI", label: 'Cả hai' }
+                  ]}
+                  value={filters.dang_luu_tru}
+                  onValueChange={(val) => setFilters(prev => ({...prev, dang_luu_tru: val}))}
+                  placeholder="Lọc hình thức"
+                  maxCount={1}
+                  className="h-9 text-xs"
+               />
            </div>
        </div>
-       {(filters.trang_thai || filters.id_phong_ban || filters.dang_luu_tru) && (
-          <button onClick={() => setFilters({})} className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all ml-1" title="Xóa tất cả bộ lọc"><X size={16} /></button>
+       {(filters.trang_thai.length > 0 || filters.id_phong_ban.length > 0 || filters.dang_luu_tru.length > 0) && (
+          <button onClick={() => setFilters({ trang_thai: [], id_phong_ban: [], dang_luu_tru: [] })} className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all ml-1" title="Xóa tất cả bộ lọc"><X size={16} /></button>
        )}
     </div>
   );

@@ -5,10 +5,11 @@ import { DataTable } from '../../components/DataTable';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
+import { MultiSelect } from '../../components/ui/MultiSelect'; // Import MultiSelect
 import { TaiLieuForm } from './TaiLieuForm';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
 import { AIChatWidget } from '../../components/AIChatWidget';
-import { Plus, Filter, FileText, Eye, Pencil, Send, FileUp, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, FileType, FileSpreadsheet, Lock, History, Shield, UserCheck, Tag, RefreshCw, Paperclip, ExternalLink, Archive, Info, LayoutDashboard, Zap, GitMerge, Check, AlertTriangle } from 'lucide-react';
+import { Plus, Filter, FileText, Eye, Pencil, Send, FileUp, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, FileType, FileSpreadsheet, Lock, History, Shield, UserCheck, Tag, RefreshCw, Paperclip, ExternalLink, LayoutDashboard, Zap, GitMerge, Check, AlertTriangle, Info } from 'lucide-react';
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 import { format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
@@ -29,7 +30,11 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const [isTreeView, setIsTreeView] = useState(true); 
   const [selectedDoc, setSelectedDoc] = useState<TaiLieu | null>(null);
   
-  const [filters, setFilters] = useState<{ trang_thai?: string; id_loai_tai_lieu?: string }>(initialFilters || {});
+  // Refactored filters state to array for MultiSelect
+  const [filters, setFilters] = useState<{ trang_thai: string[]; id_loai_tai_lieu: string[] }>({
+      trang_thai: [],
+      id_loai_tai_lieu: []
+  });
   
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -41,12 +46,28 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const isAdmin = currentUser.roles.includes('QUAN_TRI');
 
   useEffect(() => {
-    if (initialFilters) setFilters(prev => ({ ...prev, ...initialFilters }));
+    if (initialFilters) {
+        setFilters(prev => ({
+            ...prev,
+            trang_thai: initialFilters.trang_thai ? [initialFilters.trang_thai] : []
+        }));
+    }
   }, [initialFilters]);
+
+  // Options for MultiSelect
+  const statusOptions = [
+      { value: TrangThaiTaiLieu.SOAN_THAO, label: 'Đang soạn thảo' },
+      { value: TrangThaiTaiLieu.CHO_DUYET, label: 'Chờ duyệt' },
+      { value: TrangThaiTaiLieu.DA_BAN_HANH, label: 'Đã ban hành' },
+      { value: TrangThaiTaiLieu.HET_HIEU_LUC, label: 'Hết hiệu lực' },
+  ];
+
+  const docTypeOptions = useMemo(() => 
+      masterData.loaiTaiLieu.map(lt => ({ value: lt.id, label: lt.ten }))
+  , [masterData.loaiTaiLieu]);
 
   // Helper to resolve names
   const getUserName = (id: string) => masterData.nhanSu.find(u => u.id === id)?.ho_ten || '---';
-  const getDept = (userId: string) => masterData.nhanSu.find(u => u.id === userId)?.phong_ban || '---';
   const getDocTypeName = (id: string) => masterData.loaiTaiLieu.find(t => t.id === id)?.ten || id || '---';
   const getStandardNames = (ids?: string[]) => {
       if (!ids || ids.length === 0) return [];
@@ -102,8 +123,8 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
   const filteredData = useMemo(() => {
     let result = data.filter(doc => {
-      if (filters.trang_thai && doc.trang_thai !== filters.trang_thai) return false;
-      if (filters.id_loai_tai_lieu && doc.id_loai_tai_lieu !== filters.id_loai_tai_lieu) return false;
+      if (filters.trang_thai.length > 0 && !filters.trang_thai.includes(doc.trang_thai)) return false;
+      if (filters.id_loai_tai_lieu.length > 0 && !filters.id_loai_tai_lieu.includes(doc.id_loai_tai_lieu)) return false;
       return true;
     });
 
@@ -200,14 +221,11 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
   const handleSaveDoc = async (docData: Partial<TaiLieu>) => {
     setIsLoading(true);
-    
-    // Generate UUID if new
     let docId = docData.id;
     if (!docId) {
         if (typeof crypto !== 'undefined' && crypto.randomUUID) {
             docId = crypto.randomUUID();
         } else {
-            // Fallback for older browsers
             docId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
                 var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
@@ -227,7 +245,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
     if (!docData.id) {
        newDoc.lich_su?.push({
-         id: `H${Date.now()}`, // History IDs can be strings if not a strict relation, but usually safer as UUID too. For now keeping simple.
+         id: `H${Date.now()}`,
          nguoi_thuc_hien: currentUser.ho_ten, 
          hanh_dong: 'TAO_MOI',
          thoi_gian: new Date().toISOString(),
@@ -326,7 +344,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
        }]
     };
 
-    // Generate UUID for new version
     let newDocId;
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
         newDocId = crypto.randomUUID();
@@ -377,29 +394,32 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
        </button>
        <div className="h-6 w-px bg-gray-200 dark:bg-slate-700 shrink-0 mx-1"></div>
        <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar min-w-0">
-           <div className="relative group shrink-0">
-              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.trang_thai || ''} onChange={(e) => setFilters(prev => ({ ...prev, trang_thai: e.target.value || undefined }))}>
-                 <option value="">Trạng thái: Tất cả</option>
-                 <option value={TrangThaiTaiLieu.SOAN_THAO}>Đang soạn thảo</option>
-                 <option value={TrangThaiTaiLieu.CHO_DUYET}>Chờ duyệt</option>
-                 <option value={TrangThaiTaiLieu.DA_BAN_HANH}>Đã ban hành</option>
-                 <option value={TrangThaiTaiLieu.HET_HIEU_LUC}>Hết hiệu lực</option>
-              </select>
-              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           {/* MultiSelect for Status */}
+           <div className="min-w-[180px] max-w-[250px]">
+               <MultiSelect 
+                  options={statusOptions}
+                  value={filters.trang_thai}
+                  onValueChange={(val) => setFilters(prev => ({...prev, trang_thai: val}))}
+                  placeholder="Lọc theo trạng thái"
+                  maxCount={1}
+                  className="h-9 text-xs"
+               />
            </div>
            
-           <div className="relative group shrink-0">
-              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.id_loai_tai_lieu || ''} onChange={(e) => setFilters(prev => ({ ...prev, id_loai_tai_lieu: e.target.value || undefined }))}>
-                 <option value="">Loại tài liệu: Tất cả</option>
-                 {masterData.loaiTaiLieu.map(lt => (
-                    <option key={lt.id} value={lt.id}>{lt.ten}</option>
-                 ))}
-              </select>
-              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+           {/* MultiSelect for Document Type */}
+           <div className="min-w-[180px] max-w-[250px]">
+               <MultiSelect 
+                  options={docTypeOptions}
+                  value={filters.id_loai_tai_lieu}
+                  onValueChange={(val) => setFilters(prev => ({...prev, id_loai_tai_lieu: val}))}
+                  placeholder="Lọc loại tài liệu"
+                  maxCount={1}
+                  className="h-9 text-xs"
+               />
            </div>
        </div>
-       {(filters.trang_thai || filters.id_loai_tai_lieu) && (
-          <button onClick={() => setFilters({})} className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 ml-1" title="Xóa tất cả bộ lọc"><X size={16} /></button>
+       {(filters.trang_thai.length > 0 || filters.id_loai_tai_lieu.length > 0) && (
+          <button onClick={() => setFilters({ trang_thai: [], id_loai_tai_lieu: [] })} className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 ml-1" title="Xóa tất cả bộ lọc"><X size={16} /></button>
        )}
     </div>
   );
@@ -528,8 +548,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                    <div className="p-4 space-y-4">
                                        <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Loại tài liệu</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getDocTypeName(selectedDoc.id_loai_tai_lieu)}</p></div>
                                        
-                                       {/* REMOVED DEPARTMENT FIELD HERE AS REQUESTED */}
-
                                        {selectedDoc.id_tieu_chuan && selectedDoc.id_tieu_chuan.length > 0 && (
                                            <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Tiêu chuẩn áp dụng</p><div className="flex flex-wrap gap-1.5">{getStandardNames(selectedDoc.id_tieu_chuan).map((t, idx) => (<span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"><Tag size={10} /> {t}</span>))}</div></div>
                                        )}
