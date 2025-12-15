@@ -233,8 +233,15 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    
+    // 1. Kiểm tra trường bắt buộc
     if (!formData.ma_tai_lieu || !formData.ten_tai_lieu) {
         dialog.alert("Vui lòng nhập Mã và Tên tài liệu!", { type: 'warning' });
+        return;
+    }
+    
+    if (!formData.id_loai_tai_lieu) {
+        dialog.alert("Vui lòng chọn Loại tài liệu!", { type: 'warning' });
         return;
     }
     
@@ -249,10 +256,11 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     // SANITIZE DATA (Fix 400 Bad Request for UUIDs)
     const cleanData: any = { ...formData };
     
-    // Fields that must be null if empty string
+    // Fields that must be null if empty string (UUIDs foreign keys)
     const nullableFields = [
         'tai_lieu_cha_id', 
         'id_linh_vuc', 
+        'nguoi_soan_thao', // Thêm người soạn thảo
         'nguoi_xem_xet', 
         'nguoi_phe_duyet',
         'ngay_ban_hanh',
@@ -270,6 +278,9 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     cleanData.thu_tu = Number(cleanData.thu_tu) || 0;
     cleanData.lan_ban_hanh = Number(cleanData.lan_ban_hanh) || 0;
     cleanData.chu_ky_ra_soat = Number(cleanData.chu_ky_ra_soat) || 0;
+    
+    // Ensure array fields
+    cleanData.id_tieu_chuan = cleanData.id_tieu_chuan || [];
 
     onSave(cleanData);
   };
