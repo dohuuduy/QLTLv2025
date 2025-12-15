@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { DanhMucItem, ColumnDefinition } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { DataTable } from '../../components/DataTable';
@@ -69,12 +69,9 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
 
   const handleAddNew = () => {
     setEditingItem(null);
-    // Auto-calculate next order: Max + 1
-    const nextOrder = data.length > 0 ? Math.max(...data.map(i => i.thu_tu || 0)) + 1 : 1;
-    
     setFormState({ 
         ten: '', 
-        thu_tu: nextOrder, 
+        thu_tu: 1, // Will be auto-calced by useEffect
         parentId: '', 
         active: true,
         ma_viet_tat: '',
@@ -84,6 +81,30 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
     });
     setIsModalOpen(true);
   };
+
+  // --- AUTO INCREMENT LOGIC (SCOPED) ---
+  useEffect(() => {
+      if (!isModalOpen) return;
+
+      // If user is editing an item and hasn't changed the parent, do not override
+      if (editingItem && editingItem.parentId === formState.parentId) {
+          return;
+      }
+
+      // Filter siblings based on Parent ID
+      const siblings = data.filter(i => {
+          if (formState.parentId) return i.parentId === formState.parentId;
+          return !i.parentId; // Root level items
+      });
+
+      const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(i => i.thu_tu || 0)) : 0;
+      
+      setFormState(prev => ({
+          ...prev,
+          thu_tu: maxOrder + 1
+      }));
+
+  }, [formState.parentId, isModalOpen, data, editingItem]);
 
   const handleEdit = (item: DanhMucItem) => {
     setEditingItem({ ...item });
@@ -247,7 +268,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
                   
                   {/* Updated Order Input with Custom Controls */}
                   <div>
-                      <label className={labelClass}>Thứ tự hiển thị <span className="font-normal text-[10px] text-gray-400 lowercase ml-1">(tự động tăng)</span></label>
+                      <label className={labelClass}>Thứ tự hiển thị <span className="font-normal text-[10px] text-gray-400 lowercase ml-1">(auto tăng theo nhóm)</span></label>
                       <div className="flex items-center h-10 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 ring-primary/20 transition-shadow">
                            <button type="button" onClick={() => adjustNumber('thu_tu', -1)} className="px-3 h-full hover:bg-gray-100 dark:hover:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 transition-colors"><Minus size={14}/></button>
                            <input 
@@ -276,7 +297,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
                                    <input 
                                         type="number" 
                                         min="1" max="5" 
-                                        className="flex-1 w-full h-full text-center bg-transparent outline-none text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                        className="flex-1 w-full h-full text-center bg-transparent outline-none text-sm font-bold text-gray-800 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                                         value={formState.cap_do} 
                                         onChange={(e) => setFormState({...formState, cap_do: parseInt(e.target.value) || 1})}
                                    />

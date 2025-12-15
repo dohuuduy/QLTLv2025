@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { DataTable } from '../../components/DataTable';
 import { Modal } from '../../components/ui/Modal';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { Plus, Trash2, Pencil, Shield, User, Check, Lock, Info, FileBox } from 'lucide-react';
+import { Plus, Trash2, Pencil, Shield, User, Check, Lock, Info, FileBox, Minus } from 'lucide-react';
 import { upsertProfile, deleteProfile, signUpNewUser } from '../../services/supabaseService';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -143,6 +143,13 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
     }
   };
 
+  const adjustOrder = (amount: number) => {
+      setEditingUser(prev => ({
+          ...prev,
+          thu_tu: Math.max(0, (prev.thu_tu || 0) + amount)
+      }));
+  };
+
   const getRoleBadge = (role: UserRole) => {
     const map = {
       'SOAN_THAO': { label: 'Soạn thảo', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
@@ -155,7 +162,7 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
   };
 
   const columns: ColumnDefinition<NhanSu>[] = useMemo(() => [
-    { key: 'thu_tu', header: 'Thứ tự', visible: true, render: (val) => <span className="text-gray-500 font-mono text-xs">{val || 0}</span> },
+    { key: 'thu_tu', header: 'Thứ tự', visible: true, render: (val) => <span className="text-gray-500 font-mono text-xs font-bold bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded">{val || 0}</span> },
     { key: 'ho_ten', header: 'Họ tên & Email', visible: true, render: (_, item) => (<div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold text-sm">{item.ho_ten.charAt(0)}</div><div><div className="font-bold text-gray-800 dark:text-gray-200">{item.ho_ten}</div><div className="text-xs text-gray-500">{item.email}</div></div></div>) },
     { key: 'chuc_vu', header: 'Chức vụ', visible: true, render: (val) => <span className="text-sm font-medium">{val}</span> },
     { key: 'phong_ban', header: 'Phòng ban', visible: true, render: (val) => <span className="text-sm text-gray-600 dark:text-gray-400">{val}</span> },
@@ -207,7 +214,22 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
                 <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><FileBox size={16} className="text-green-500"/> Thông tin cá nhân</h4>
                 <div className="grid grid-cols-4 gap-4">
                   <div className="col-span-3"><label className={labelClass}>Họ và tên <span className="text-red-500">*</span></label><input className={inputClass} value={editingUser.ho_ten || ''} onChange={e => setEditingUser({...editingUser, ho_ten: e.target.value})} placeholder="Nguyễn Văn A"/></div>
-                  <div className="col-span-1"><label className={labelClass}>Thứ tự</label><input type="number" className={inputClass} value={editingUser.thu_tu || 0} onChange={e => setEditingUser({...editingUser, thu_tu: parseInt(e.target.value) || 0})}/></div>
+                  
+                  {/* Updated Order Input */}
+                  <div className="col-span-1">
+                      <label className={labelClass}>Thứ tự</label>
+                      <div className="flex items-center h-10 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 ring-primary/20 transition-shadow">
+                           <button type="button" onClick={() => adjustOrder(-1)} className="px-2 h-full hover:bg-gray-100 dark:hover:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 transition-colors"><Minus size={12}/></button>
+                           <input 
+                                type="number" 
+                                min="0"
+                                className="flex-1 w-full h-full text-center bg-transparent outline-none text-sm font-bold text-gray-800 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                value={editingUser.thu_tu || 0} 
+                                onChange={(e) => setEditingUser({...editingUser, thu_tu: parseInt(e.target.value) || 0})}
+                           />
+                           <button type="button" onClick={() => adjustOrder(1)} className="px-2 h-full hover:bg-gray-100 dark:hover:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 transition-colors"><Plus size={12}/></button>
+                      </div>
+                  </div>
                 </div>
               </div>
 
