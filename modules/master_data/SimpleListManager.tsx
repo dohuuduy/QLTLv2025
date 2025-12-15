@@ -4,7 +4,7 @@ import { DanhMucItem, ColumnDefinition } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { DataTable } from '../../components/DataTable';
 import { Modal } from '../../components/ui/Modal';
-import { Trash2, Pencil, Plus, CheckCircle, XCircle, Link as LinkIcon, Layers, Hash, FileBox, Network, Minus } from 'lucide-react';
+import { Trash2, Pencil, Plus, CheckCircle, XCircle, Link as LinkIcon, Layers, Hash, FileBox, Network, Minus, ArrowUpDown } from 'lucide-react';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { upsertCategory, deleteCategory } from '../../services/supabaseService';
 import { useDialog } from '../../contexts/DialogContext';
@@ -69,7 +69,9 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
 
   const handleAddNew = () => {
     setEditingItem(null);
+    // Auto-calculate next order: Max + 1
     const nextOrder = data.length > 0 ? Math.max(...data.map(i => i.thu_tu || 0)) + 1 : 1;
+    
     setFormState({ 
         ten: '', 
         thu_tu: nextOrder, 
@@ -168,14 +170,17 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
       setFormState(prev => {
           const current = prev[field] || 0;
           const next = current + amount;
+          
           if (field === 'cap_do' && (next < 1 || next > 5)) return prev;
+          if (field === 'thu_tu' && next < 1) return prev; // Prevent negative order
+
           return { ...prev, [field]: next };
       });
   };
 
   const columns: ColumnDefinition<DanhMucItem>[] = useMemo(() => {
     const cols: ColumnDefinition<DanhMucItem>[] = [
-      { key: 'thu_tu', header: 'Thứ tự', visible: true, render: (val) => <span className="text-gray-500 font-mono text-xs">{val || 0}</span> },
+      { key: 'thu_tu', header: 'Thứ tự', visible: true, render: (val) => <span className="text-gray-500 font-mono text-xs font-bold bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded">{val || 0}</span> },
       { key: 'ten', header: 'Tên danh mục', visible: true, render: (val) => <span className="font-medium text-gray-800 dark:text-gray-200">{val}</span> },
     ];
 
@@ -239,7 +244,23 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
                 
                 <div className="space-y-4">
                   <div><label className={labelClass}>Tên hiển thị <span className="text-red-500">*</span></label><input autoFocus className={inputClass} value={formState.ten} onChange={(e) => setFormState({...formState, ten: e.target.value})} placeholder="Nhập tên danh mục..." onKeyDown={(e) => e.key === 'Enter' && handleSave()}/></div>
-                  <div><label className={labelClass}>Thứ tự hiển thị</label><input type="number" className={inputClass} value={formState.thu_tu} onChange={(e) => setFormState({...formState, thu_tu: parseInt(e.target.value) || 0})}/></div>
+                  
+                  {/* Updated Order Input with Custom Controls */}
+                  <div>
+                      <label className={labelClass}>Thứ tự hiển thị <span className="font-normal text-[10px] text-gray-400 lowercase ml-1">(tự động tăng)</span></label>
+                      <div className="flex items-center h-10 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 ring-primary/20 transition-shadow">
+                           <button type="button" onClick={() => adjustNumber('thu_tu', -1)} className="px-3 h-full hover:bg-gray-100 dark:hover:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 transition-colors"><Minus size={14}/></button>
+                           <input 
+                                type="number" 
+                                min="1" 
+                                className="flex-1 w-full h-full text-center bg-transparent outline-none text-sm font-bold text-gray-800 dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                value={formState.thu_tu} 
+                                onChange={(e) => setFormState({...formState, thu_tu: parseInt(e.target.value) || 1})}
+                           />
+                           <button type="button" onClick={() => adjustNumber('thu_tu', 1)} className="px-3 h-full hover:bg-gray-100 dark:hover:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 transition-colors"><Plus size={14}/></button>
+                      </div>
+                  </div>
+
                   {parentOptions && parentOptions.length > 0 && (<div><label className={labelClass}>{parentLabel}</label><SearchableSelect options={parentOptions} value={formState.parentId} onChange={(val) => setFormState({...formState, parentId: String(val)})} placeholder={`-- Chọn ${parentLabel.toLowerCase()} --`}/></div>)}
                   
                   {showDocTypeConfig && (
