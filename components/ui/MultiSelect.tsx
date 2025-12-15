@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, useMemo, useId } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useId } from "react";
 import { createPortal } from "react-dom";
 import { X, Check, ChevronDown, Search } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -108,8 +108,10 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
     }
   };
 
-  useEffect(() => {
+  // Use useLayoutEffect to prevent visual "flying" glitch (render 0,0 then jump)
+  useLayoutEffect(() => {
     if (isPopoverOpen) {
+      updatePosition();
       window.addEventListener("resize", updatePosition);
       window.addEventListener("scroll", updatePosition, true);
       
@@ -123,7 +125,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   }, [isPopoverOpen]);
 
   // Update position if values change while open (height might change)
-  useEffect(() => {
+  useLayoutEffect(() => {
       if (isPopoverOpen) updatePosition();
   }, [selectedValues.length]);
 
@@ -145,8 +147,6 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
     if (disabled) return;
     e.preventDefault();
     if (!isPopoverOpen) {
-        // Calculate position BEFORE showing to prevent "flying" effect
-        updatePosition();
         setIsPopoverOpen(true);
     } else {
         setIsPopoverOpen(false);
