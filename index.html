@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ISO DocManager Pro</title>
     
+    <!-- Favicon: Blue Shield ISO Icon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232563eb%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z%22/><path d=%22M8 11h8%22/><path d=%22M8 15h8%22/><path d=%22M12 7v8%22/></svg>" type="image/svg+xml">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -71,9 +74,10 @@
               'drawer': '50',
               'mobile-menu': '60',
               'modal': '70',
-              'dropdown': '80',
+              'dropdown': '80', // Dropdowns use Portal now, so this z-index is for inline elements
               'notification': '90',
               'widget': '100',
+              'portal': '9999', // Highest priority for Portals
             }
           },
         },
@@ -157,20 +161,6 @@
         --ring: 224.3 76.3% 48%;
       }
 
-      @media (forced-colors: active) {
-        :root {
-          --primary: CanvasText;
-          --primary-foreground: Canvas;
-          --secondary: Canvas;
-          --secondary-foreground: CanvasText;
-          --muted: Canvas;
-          --muted-foreground: CanvasText;
-          --accent: Highlight;
-          --accent-foreground: HighlightText;
-          --border: CanvasText;
-        }
-      }
-
       html, body, #root {
         height: 100%;
         margin: 0;
@@ -201,31 +191,9 @@
       .fade-in { --tw-enter-opacity: 0; }
       .zoom-in-95 { --tw-enter-scale: 0.95; }
       .slide-in-from-top-2 { --tw-enter-translate-y: -0.5rem; }
-      .slide-in-from-bottom-2 { --tw-enter-translate-y: 0.5rem; }
       @keyframes enter { from { opacity: var(--tw-enter-opacity, 1); transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), 1) rotate(var(--tw-enter-rotate, 0)); } }
-      @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
-      .animate-slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
     </style>
     
-    <script>
-      window.onerror = function(message, source, lineno, colno, error) {
-        console.error("Global Error:", message, source, lineno, colno, error);
-        const root = document.getElementById('root');
-        if (root && root.innerHTML.trim() === '') {
-           document.body.innerHTML = `
-             <div style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f8fafc; color: #334155; padding: 20px; text-align: center;">
-               <h1 style="font-size: 24px; color: #ef4444; margin-bottom: 10px;">Lỗi khởi động ứng dụng</h1>
-               <p style="margin-bottom: 20px;">Không thể tải thư viện React. Vui lòng kiểm tra kết nối mạng.</p>
-               <pre style="background: #e2e8f0; padding: 15px; border-radius: 8px; overflow: auto; max-width: 800px; text-align: left; font-size: 12px; color: #b91c1c;">${message}\nAt: ${source}:${lineno}</pre>
-               <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Tải lại trang</button>
-             </div>
-           `;
-        }
-      };
-    </script>
-
     <script type="importmap">
 {
   "imports": {
@@ -239,8 +207,8 @@
     "date-fns": "https://esm.sh/date-fns@4.1.0",
     "lunar-javascript": "https://esm.sh/lunar-javascript@1.7.7",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
 }
 </script>
