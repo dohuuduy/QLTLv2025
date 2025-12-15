@@ -50,7 +50,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
       setPosition({
         top: placement === 'bottom' ? rect.bottom + window.scrollY + 4 : rect.top + window.scrollY - 4,
         left: rect.left + window.scrollX,
-        width: rect.width,
+        width: rect.width, // We keep this as min-width in styles below
         placement
       });
     }
@@ -115,15 +115,23 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
     setSearchTerm("");
   };
 
+  const handleClear = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onChange(""); // Assuming empty string clears selection
+      setIsOpen(false);
+  }
+
   return (
     <>
       {/* Trigger Button */}
       <div
         ref={containerRef}
-        onClick={(e) => {
+        onMouseDown={(e) => {
             if (!disabled) {
+                // Use onMouseDown to trigger before blur events elsewhere
                 e.stopPropagation();
-                setIsOpen(!isOpen);
+                if (!isOpen) setIsOpen(true);
+                else setIsOpen(false);
             }
         }}
         className={`
@@ -133,7 +141,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
           ${className}
         `}
       >
-        <div className="flex items-center gap-2 overflow-hidden">
+        <div className="flex items-center gap-2 overflow-hidden flex-1">
             {selectedOption && selectedOption.subLabel && (
                 <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
                     {selectedOption.label.charAt(0)}
@@ -143,7 +151,20 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
                 {selectedOption ? selectedOption.label : placeholder}
             </span>
         </div>
-        <ChevronDown size={16} className={`text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
+        
+        <div className="flex items-center gap-1">
+            {/* Clear Button (only show if value exists and not disabled) */}
+            {value && !disabled && (
+                <div 
+                    onClick={handleClear}
+                    className="p-1 text-muted-foreground hover:text-destructive rounded-full transition-colors z-10"
+                >
+                    <Search size={0} className="hidden" /> {/* Dummy to keep imports valid if unused */}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </div>
+            )}
+            <ChevronDown size={16} className={`text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
+        </div>
       </div>
 
       {/* Portal Dropdown Menu */}
@@ -153,22 +174,27 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
           style={{ 
               top: position.top, 
               left: position.left, 
-              width: position.width,
+              minWidth: position.width, // Changed from width to minWidth
+              maxWidth: '90vw', // Prevent going offscreen too much
               transform: position.placement === 'top' ? 'translateY(-100%)' : 'none',
-              // Optimize compositing
               willChange: 'transform, opacity'
           }}
           className="fixed z-[9999] bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
           onMouseDown={(e) => e.stopPropagation()} 
         >
           {/* Search Header */}
-          <div className="p-2 border-b border-border bg-muted/30">
+          <div className="p-2 border-b border-border bg-muted/30 w-full">
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-2.5 text-muted-foreground" />
               <input
                 ref={searchInputRef}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' && filteredOptions.length > 0) {
+                        handleSelect(filteredOptions[0].value);
+                    }
+                }}
                 className="w-full h-8 pl-8 pr-3 text-xs rounded-lg border border-input bg-background focus:ring-1 focus:ring-primary outline-none text-foreground placeholder:text-muted-foreground"
                 placeholder="Tìm kiếm..."
               />
@@ -176,36 +202,36 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
           </div>
 
           {/* Options List */}
-          <div className="max-h-[250px] overflow-y-auto p-1 custom-scrollbar">
+          <div className="max-h-[250px] overflow-y-auto p-1 custom-scrollbar w-full">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <div
                   key={option.value}
-                  onClick={(e) => {
+                  onMouseDown={(e) => {
                       e.stopPropagation();
                       handleSelect(option.value);
                   }}
                   className={`
-                    px-3 py-2.5 rounded-lg cursor-pointer flex items-center justify-between group transition-colors mb-0.5
+                    px-3 py-2.5 rounded-lg cursor-pointer flex items-center justify-between group transition-colors mb-0.5 whitespace-nowrap
                     ${option.value === value 
                       ? 'bg-primary/10' 
                       : 'hover:bg-accent hover:text-accent-foreground'}
                   `}
                 >
-                  <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="flex items-center gap-3">
                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${option.value === value ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                         {option.subLabel ? option.label.charAt(0) : <User size={14}/>}
                      </div>
-                     <div className="flex flex-col min-w-0">
-                        <span className={`text-sm truncate ${option.value === value ? 'font-bold text-primary' : 'text-foreground'}`}>
+                     <div className="flex flex-col">
+                        <span className={`text-sm ${option.value === value ? 'font-bold text-primary' : 'text-foreground'}`}>
                             {option.label}
                         </span>
                         {option.subLabel && (
-                            <span className="text-[10px] text-muted-foreground truncate">{option.subLabel}</span>
+                            <span className="text-[10px] text-muted-foreground">{option.subLabel}</span>
                         )}
                      </div>
                   </div>
-                  {option.value === value && <Check size={16} className="text-primary shrink-0" />}
+                  {option.value === value && <Check size={16} className="text-primary shrink-0 ml-4" />}
                 </div>
               ))
             ) : (

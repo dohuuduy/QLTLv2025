@@ -42,7 +42,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const [isReviewEnabled, setIsReviewEnabled] = useState(false);
   const dialog = useDialog();
 
-  // MEMOIZE OPTIONS: Prevents re-calculation on every keystroke
+  // MEMOIZE OPTIONS
   const availableParents = useMemo(() => fullList.filter(d => d.id !== initialData?.id).map(d => ({
       value: d.id,
       label: d.ten_tai_lieu,
@@ -69,32 +69,42 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     }
   }, [initialData]);
 
-  // Auto-generate code logic
+  // FIX: Auto-generate code logic (Now supports Root documents)
   useEffect(() => {
+      // Only run if not manually editing (Locked) and document type is selected
       if (initialData || !isCodeLocked) return;
       if (!formData.loai_tai_lieu) return;
 
       const docTypeConfig = masterData.loaiTaiLieu.find(t => t.ten === formData.loai_tai_lieu);
       if (!docTypeConfig) return;
 
-      const prefix = docTypeConfig.ma_viet_tat || '';
+      const prefix = docTypeConfig.ma_viet_tat || 'TL';
       const separator = docTypeConfig.ky_tu_noi || '.';
       const digitCount = docTypeConfig.do_dai_so || 2;
 
       let newCode = '';
 
+      // Count siblings to determine number
+      const siblings = fullList.filter(d => {
+          const isSameType = d.loai_tai_lieu === formData.loai_tai_lieu;
+          const isSameParent = formData.tai_lieu_cha_id 
+              ? d.tai_lieu_cha_id === formData.tai_lieu_cha_id 
+              : !d.tai_lieu_cha_id; // Both have no parent (Root)
+          return isSameType && isSameParent && d.id !== initialData?.id;
+      });
+
+      const nextNum = siblings.length + 1;
+      const paddedNum = String(nextNum).padStart(digitCount, '0');
+
       if (formData.tai_lieu_cha_id) {
+          // Child Document: ParentCode + Separator + TypePrefix + Number
           const parentDoc = fullList.find(d => d.id === formData.tai_lieu_cha_id);
           if (parentDoc) {
-             const siblings = fullList.filter(d => 
-                d.tai_lieu_cha_id === parentDoc.id && 
-                d.loai_tai_lieu === formData.loai_tai_lieu &&
-                d.id !== initialData?.id 
-             );
-             const nextNum = siblings.length + 1;
-             const paddedNum = String(nextNum).padStart(digitCount, '0');
              newCode = `${parentDoc.ma_tai_lieu}${separator}${prefix}${paddedNum}`;
           }
+      } else {
+          // Root Document: TypePrefix + Number (e.g., QT01)
+          newCode = `${prefix}${paddedNum}`;
       }
 
       if (newCode && newCode !== formData.ma_tai_lieu) {
@@ -126,7 +136,11 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
     setFormData(prev => {
         const newData = { ...prev, [name]: finalValue };
-        if (name === 'ngay_ban_hanh') newData.ngay_hieu_luc = value; 
+        
+        // Auto-set Effective Date if Issue Date is set and Effective Date is empty
+        if (name === 'ngay_ban_hanh' && !prev.ngay_hieu_luc) {
+            newData.ngay_hieu_luc = value; 
+        }
         return newData;
     });
   };
@@ -191,6 +205,14 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
         dialog.alert("Vui lòng nhập Mã và Tên tài liệu!", { type: 'warning' });
         return;
     }
+    // Validation: Effective Date must be >= Issue Date
+    if (formData.ngay_ban_hanh && formData.ngay_hieu_luc) {
+        if (new Date(formData.ngay_hieu_luc) < new Date(formData.ngay_ban_hanh)) {
+            dialog.alert("Ngày hiệu lực phải sau hoặc bằng ngày ban hành!", { type: 'warning' });
+            return;
+        }
+    }
+
     const cleanData = { ...formData };
     if (cleanData.ngay_ra_soat_tiep_theo === '') cleanData.ngay_ra_soat_tiep_theo = null as any;
     if (cleanData.ngay_ban_hanh === '') cleanData.ngay_ban_hanh = null as any;
@@ -239,7 +261,8 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                 </h4>
                 <div className="space-y-4 flex-1">
                     <div><label className={labelClass}>Loại tài liệu</label><SearchableSelect options={loaiTaiLieuOptions} value={formData.loai_tai_lieu} onChange={(val) => handleSelectChange('loai_tai_lieu', val)} placeholder="-- Chọn loại --" /></div>
-                    <div><label className={labelClass}>Tài liệu gốc (Parent)</label><SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} placeholder="-- Không có --" /></div>
+                    {/* Changed label from "Tài liệu gốc" to "Tài liệu cha" */}
+                    <div><label className={labelClass}>Tài liệu cha (Parent)</label><SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} placeholder="-- Không có --" /></div>
                     <div>
                         <label className={labelClass}>Tiêu chuẩn áp dụng</label>
                         <div className="flex flex-wrap gap-2 pt-1">{masterData.tieuChuan.map(item => (<button key={item.id} type="button" onClick={() => toggleTieuChuan(item.ten)} className={`px-2.5 py-1.5 rounded-md text-[11px] font-semibold border transition-all flex items-center gap-1.5 ${formData.tieu_chuan?.includes(item.ten) ? 'bg-primary/10 text-primary border-primary/20 shadow-sm' : 'bg-background border-border text-muted-foreground hover:bg-muted'}`}>{formData.tieu_chuan?.includes(item.ten) && <Tag size={10} className="fill-current" />} {item.ten}</button>))}</div>
@@ -258,8 +281,22 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                         <div><label className={labelClass}>Lần ban hành</label><input type="number" min="0" name="lan_ban_hanh" value={formData.lan_ban_hanh} onChange={handleChange} className={`${inputClass} text-center font-mono`} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div><label className={labelClass}>Ngày ban hành</label><input type="date" name="ngay_ban_hanh" value={formData.ngay_ban_hanh} onChange={handleChange} className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`} /></div>
-                        <div><label className={labelClass}>Ngày hiệu lực</label><input type="date" name="ngay_hieu_luc" value={formData.ngay_hieu_luc} onChange={handleChange} className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`} /></div>
+                        <div>
+                            <label className={labelClass}>Ngày ban hành</label>
+                            <input type="date" name="ngay_ban_hanh" value={formData.ngay_ban_hanh} onChange={handleChange} className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`} />
+                        </div>
+                        <div>
+                            <label className={labelClass}>Ngày hiệu lực</label>
+                            {/* ADDED MIN DATE CONSTRAINT */}
+                            <input 
+                                type="date" 
+                                name="ngay_hieu_luc" 
+                                value={formData.ngay_hieu_luc} 
+                                onChange={handleChange} 
+                                min={formData.ngay_ban_hanh} // Cannot be earlier than Issue Date
+                                className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`} 
+                            />
+                        </div>
                     </div>
                     
                     {/* Dark mode friendly Periodic Review Box */}
@@ -291,6 +328,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                                         name="ngay_ra_soat_tiep_theo" 
                                         value={formData.ngay_ra_soat_tiep_theo || ''} 
                                         onChange={handleChange} 
+                                        min={formData.ngay_hieu_luc} // Should be after Effective Date
                                         className="w-full h-8 px-2 rounded-lg border border-orange-300 dark:border-orange-700/50 bg-background outline-none text-xs text-foreground dark:[color-scheme:dark]" 
                                     />
                                     <span className="text-[9px] text-orange-600/80 dark:text-orange-400/80 block text-center mt-1 font-medium">Lần tới</span>
