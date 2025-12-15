@@ -1,12 +1,12 @@
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Search, Check, User } from 'lucide-react';
 
 interface Option {
   value: string | number;
   label: string;
-  subLabel?: string; // Ví dụ: Email hoặc chức vụ
+  subLabel?: string;
 }
 
 interface SearchableSelectProps {
@@ -32,16 +32,19 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Generate stable unique ID for this instance
+  const uniqueId = useId();
+  const portalId = `dropdown-portal-${uniqueId.replace(/:/g, '')}`;
 
-  // Tính toán vị trí khi mở dropdown
+  // Tính toán vị trí
   const calculatePosition = () => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const spaceBelow = viewportHeight - rect.bottom;
-      const dropdownHeight = 300; // Chiều cao ước tính tối đa của dropdown
+      const dropdownHeight = 300; 
 
-      // Nếu bên dưới không đủ chỗ (nhỏ hơn 300px) thì mở lên trên
       const placement = spaceBelow < dropdownHeight ? 'top' : 'bottom';
       
       setPosition({
@@ -56,10 +59,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   useEffect(() => {
     if (isOpen) {
       calculatePosition();
-      // Auto focus search input
       setTimeout(() => searchInputRef.current?.focus(), 50);
       
-      // Close on scroll/resize
       const handleScroll = () => setIsOpen(false);
       window.addEventListener('scroll', handleScroll, true);
       window.addEventListener('resize', handleScroll);
@@ -70,25 +71,25 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }
   }, [isOpen]);
 
-  // Close when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      // Check click inside Trigger Button
+      
+      // 1. Click inside trigger button -> Ignore (handled by onClick of trigger)
       if (containerRef.current && containerRef.current.contains(target)) return;
       
-      // Check click inside Portal Dropdown
-      const dropdownEl = document.getElementById(`dropdown-portal-${containerRef.current?.id || 'select'}`);
+      // 2. Click inside portal dropdown -> Ignore
+      const dropdownEl = document.getElementById(portalId);
       if (dropdownEl && dropdownEl.contains(target)) return;
 
+      // 3. Click outside -> Close
       setIsOpen(false);
     };
     
     if (isOpen) document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
+  }, [isOpen, portalId]);
 
-  // Filter options
   const filteredOptions = useMemo(() => {
     if (!searchTerm) return options;
     const lowerTerm = searchTerm.toLowerCase();
@@ -111,8 +112,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       {/* Trigger Button */}
       <div
         ref={containerRef}
-        onClick={() => {
+        onClick={(e) => {
             if (!disabled) {
+                e.stopPropagation(); // Prevent bubbling issues
                 setIsOpen(!isOpen);
             }
         }}
@@ -139,6 +141,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       {/* Portal Dropdown Menu */}
       {isOpen && createPortal(
         <div
+          id={portalId}
           style={{ 
               top: position.top, 
               left: position.left, 
@@ -146,6 +149,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
               transform: position.placement === 'top' ? 'translateY(-100%)' : 'none'
           }}
           className="fixed z-[9999] bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+          onMouseDown={(e) => e.stopPropagation()} // Stop click propagation from inside dropdown
         >
           {/* Search Header */}
           <div className="p-2 border-b border-border bg-muted/30">
@@ -167,7 +171,10 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
               filteredOptions.map((option) => (
                 <div
                   key={option.value}
-                  onClick={() => handleSelect(option.value)}
+                  onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelect(option.value);
+                  }}
                   className={`
                     px-3 py-2.5 rounded-lg cursor-pointer flex items-center justify-between group transition-colors mb-0.5
                     ${option.value === value 
@@ -176,7 +183,6 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                   `}
                 >
                   <div className="flex items-center gap-3 overflow-hidden">
-                     {/* Smart Avatar Generation */}
                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${option.value === value ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                         {option.subLabel ? option.label.charAt(0) : <User size={14}/>}
                      </div>

@@ -29,7 +29,8 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const [isTreeView, setIsTreeView] = useState(true); 
   const [selectedDoc, setSelectedDoc] = useState<TaiLieu | null>(null);
   
-  const [filters, setFilters] = useState<{ trang_thai?: string; bo_phan?: string; loai_tai_lieu?: string }>(initialFilters || {});
+  // Removed bo_phan from filters state
+  const [filters, setFilters] = useState<{ trang_thai?: string; loai_tai_lieu?: string }>(initialFilters || {});
   
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -98,10 +99,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const filteredData = useMemo(() => {
     let result = data.filter(doc => {
       if (filters.trang_thai && doc.trang_thai !== filters.trang_thai) return false;
-      if (filters.bo_phan) {
-          const authorDept = masterData.nhanSu.find(u => u.id === doc.id_nguoi_soan_thao)?.phong_ban;
-          if (authorDept !== filters.bo_phan) return false;
-      }
       if (filters.loai_tai_lieu && doc.loai_tai_lieu !== filters.loai_tai_lieu) return false;
       return true;
     });
@@ -168,7 +165,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         }
     },
     { key: 'phien_ban', header: 'Ver', visible: true, render: (val) => <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-xs font-mono dark:text-gray-300">{val}</span> },
-    { key: 'id_nguoi_soan_thao', header: 'Bộ phận', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{getDept(val as string)}</span> },
+    // Removed "Bộ phận" column
     { key: 'ngay_ban_hanh', header: 'Ngày BH', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val ? format(new Date(val), 'dd/MM/yyyy') : '--'}</span> },
     { key: 'trang_thai', header: 'Trạng thái', visible: true, render: (val) => <Badge status={val as TrangThaiTaiLieu} /> },
     { key: 'id', header: 'Thao tác', visible: true, render: (_, item) => (
@@ -244,7 +241,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
     }
   };
 
-  // ... (Other handlers like handleSendRequest, handleVersionUpClick, confirmVersionUp remain same)
   const handleSendRequest = async () => {
     if (!selectedDoc) return;
     setIsLoading(true);
@@ -361,15 +357,9 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
               </select>
               <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
            </div>
-           <div className="relative group shrink-0">
-              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.bo_phan || ''} onChange={(e) => setFilters(prev => ({ ...prev, bo_phan: e.target.value || undefined }))}>
-                 <option value="">Bộ phận: Tất cả</option>
-                 {masterData.boPhan.map(bp => (
-                    <option key={bp.id} value={bp.ten}>{bp.ten}</option>
-                 ))}
-              </select>
-              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-           </div>
+           
+           {/* Removed 'Bộ phận' select filter */}
+
            <div className="relative group shrink-0">
               <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.loai_tai_lieu || ''} onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}>
                  <option value="">Loại tài liệu: Tất cả</option>
@@ -380,7 +370,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
               <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
            </div>
        </div>
-       {(filters.trang_thai || filters.bo_phan || filters.loai_tai_lieu) && (
+       {(filters.trang_thai || filters.loai_tai_lieu) && (
           <button onClick={() => setFilters({})} className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 ml-1" title="Xóa tất cả bộ lọc"><X size={16} /></button>
        )}
     </div>
@@ -450,7 +440,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                         {/* Content Grid */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                            <div className="lg:col-span-2 space-y-6">
-                              {/* Content & Attachments Sections same as before ... */}
                               {/* Content Card */}
                               <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-6">
                                   <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-3 mb-4">
@@ -501,7 +490,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                            </div>
 
                            <div className="space-y-6">
-                               {/* Meta Info, Control, Responsibilities Cards same as before... */}
+                               {/* Meta Info */}
                                <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
                                    <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
                                        <h4 className="font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
