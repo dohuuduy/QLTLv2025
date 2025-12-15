@@ -4,7 +4,7 @@ import { DanhMucItem, ColumnDefinition } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { DataTable } from '../../components/DataTable';
 import { Modal } from '../../components/ui/Modal';
-import { Trash2, Pencil, Plus, CheckCircle, XCircle, Link as LinkIcon, Layers, Hash, FileBox, Network } from 'lucide-react';
+import { Trash2, Pencil, Plus, CheckCircle, XCircle, Link as LinkIcon, Layers, Hash, FileBox, Network, Minus } from 'lucide-react';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { upsertCategory, deleteCategory } from '../../services/supabaseService';
 import { useDialog } from '../../contexts/DialogContext';
@@ -164,6 +164,15 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
       }
   };
 
+  const adjustNumber = (field: 'thu_tu' | 'cap_do', amount: number) => {
+      setFormState(prev => {
+          const current = prev[field] || 0;
+          const next = current + amount;
+          if (field === 'cap_do' && (next < 1 || next > 5)) return prev;
+          return { ...prev, [field]: next };
+      });
+  };
+
   const columns: ColumnDefinition<DanhMucItem>[] = useMemo(() => {
     const cols: ColumnDefinition<DanhMucItem>[] = [
       { key: 'thu_tu', header: 'Thứ tự', visible: true, render: (val) => <span className="text-gray-500 font-mono text-xs">{val || 0}</span> },
@@ -239,12 +248,21 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
                         <div className="grid grid-cols-2 gap-4">
                            <div className="col-span-2"><label className={labelClass}>Mã viết tắt (Prefix)</label><input className={`${inputClass} uppercase font-mono`} value={formState.ma_viet_tat} onChange={(e) => setFormState({...formState, ma_viet_tat: e.target.value.toUpperCase()})} placeholder="VD: QT, BM, HD..."/></div>
                            
+                           {/* Improved Number Input with Custom Buttons */}
                            <div><label className={labelClass}>Phân cấp (Level)</label>
-                               <div className="relative">
-                                   <input type="number" min="1" max="5" className={`${inputClass}`} value={formState.cap_do} onChange={(e) => setFormState({...formState, cap_do: parseInt(e.target.value) || 1})}/>
-                                   <Network size={14} className="absolute right-3 top-3 text-gray-400 pointer-events-none"/>
+                               <div className="flex items-center h-10 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 ring-primary/20 transition-shadow">
+                                   <button type="button" onClick={() => adjustNumber('cap_do', -1)} className="px-3 h-full hover:bg-gray-100 dark:hover:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 transition-colors"><Minus size={14}/></button>
+                                   <input 
+                                        type="number" 
+                                        min="1" max="5" 
+                                        className="flex-1 w-full h-full text-center bg-transparent outline-none text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                        value={formState.cap_do} 
+                                        onChange={(e) => setFormState({...formState, cap_do: parseInt(e.target.value) || 1})}
+                                   />
+                                   <button type="button" onClick={() => adjustNumber('cap_do', 1)} className="px-3 h-full hover:bg-gray-100 dark:hover:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 transition-colors"><Plus size={14}/></button>
                                </div>
                            </div>
+                           
                            <div><label className={labelClass}>Ký tự nối</label><select className={`${inputClass} font-mono`} value={formState.ky_tu_noi} onChange={(e) => setFormState({...formState, ky_tu_noi: e.target.value})}><option value=".">Dấu chấm (.)</option><option value="-">Gạch ngang (-)</option><option value="/">Gạch chéo (/)</option><option value="_">Gạch dưới (_)</option></select></div>
                            
                            <div className="col-span-2"><p className="text-[11px] text-gray-500 italic">Cấp 1: Chính sách/Quy định (Cha). Cấp 2: Quy trình (Con). Cấp 3: Hướng dẫn (Cháu)...</p></div>

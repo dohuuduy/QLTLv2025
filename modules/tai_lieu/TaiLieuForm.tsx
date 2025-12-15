@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { Info, Calendar, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, Lock, Unlock, Layers, Tag, UploadCloud, Save, PenTool, Search as SearchIcon, FileSignature, GitCommit, ArrowRight, Fingerprint, FileBox, User, Network } from 'lucide-react';
+import { Info, Calendar, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, Lock, Unlock, Layers, Tag, UploadCloud, Save, PenTool, Search as SearchIcon, FileSignature, GitCommit, ArrowRight, Fingerprint, FileBox, User, Network, Minus, Plus } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -171,6 +171,14 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     });
   };
 
+  const adjustNumber = (field: 'lan_ban_hanh' | 'chu_ky_ra_soat', amount: number) => {
+      setFormData(prev => {
+          const current = (prev[field] as number) || 0;
+          const next = current + amount;
+          return { ...prev, [field]: next < 0 ? 0 : next };
+      });
+  };
+
   const handleSelectChange = (key: keyof TaiLieu, value: any) => {
       // If changing document type, reset parent to avoid invalid hierarchy
       if (key === 'id_loai_tai_lieu') {
@@ -326,7 +334,22 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                 <div className="space-y-4 flex-1">
                     <div className="grid grid-cols-2 gap-4">
                         <div><label className={labelClass}>Phiên bản</label><input name="phien_ban" value={formData.phien_ban} onChange={handleChange} className={`${inputClass} text-center font-mono font-bold`} placeholder="1.0" /></div>
-                        <div><label className={labelClass}>Lần ban hành</label><input type="number" min="0" name="lan_ban_hanh" value={formData.lan_ban_hanh} onChange={handleChange} className={`${inputClass} text-center font-mono`} /></div>
+                        
+                        {/* Custom Numeric Input for Edition */}
+                        <div>
+                            <label className={labelClass}>Lần ban hành</label>
+                            <div className="flex items-center h-10 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 ring-primary/20">
+                                <button type="button" onClick={() => adjustNumber('lan_ban_hanh', -1)} className="px-2 h-full hover:bg-gray-100 dark:hover:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500"><Minus size={12}/></button>
+                                <input 
+                                    type="number" min="0" 
+                                    name="lan_ban_hanh" 
+                                    value={formData.lan_ban_hanh} 
+                                    onChange={handleChange} 
+                                    className="flex-1 w-full h-full text-center outline-none bg-transparent text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                                <button type="button" onClick={() => adjustNumber('lan_ban_hanh', 1)} className="px-2 h-full hover:bg-gray-100 dark:hover:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500"><Plus size={12}/></button>
+                            </div>
+                        </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -359,15 +382,20 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                         {isReviewEnabled && (
                             <div className="flex items-end gap-2 animate-in fade-in">
                                 <div className="flex-1">
-                                    <input 
-                                        type="number" 
-                                        min="1" 
-                                        name="chu_ky_ra_soat" 
-                                        value={formData.chu_ky_ra_soat || ''} 
-                                        onChange={handleChange} 
-                                        className="w-full h-8 px-2 rounded-lg border border-orange-300 dark:border-orange-700/50 bg-background focus:ring-2 focus:ring-orange-500/20 outline-none text-xs font-bold text-center text-foreground placeholder:text-muted-foreground" 
-                                        placeholder="12" 
-                                    />
+                                    {/* Custom Cycle Month Input */}
+                                    <div className="flex items-center h-8 rounded-lg border border-orange-300 dark:border-orange-700/50 bg-background focus-within:ring-2 focus-within:ring-orange-500/20 overflow-hidden">
+                                        <button type="button" onClick={() => adjustNumber('chu_ky_ra_soat', -6)} className="px-1.5 h-full hover:bg-orange-100 dark:hover:bg-orange-900/50 border-r border-orange-200 dark:border-orange-800 text-orange-600 flex items-center justify-center"><Minus size={10}/></button>
+                                        <input 
+                                            type="number" 
+                                            min="1" 
+                                            name="chu_ky_ra_soat" 
+                                            value={formData.chu_ky_ra_soat || ''} 
+                                            onChange={handleChange} 
+                                            className="flex-1 w-full h-full text-center outline-none bg-transparent text-xs font-bold text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                            placeholder="12" 
+                                        />
+                                        <button type="button" onClick={() => adjustNumber('chu_ky_ra_soat', 6)} className="px-1.5 h-full hover:bg-orange-100 dark:hover:bg-orange-900/50 border-l border-orange-200 dark:border-orange-800 text-orange-600 flex items-center justify-center"><Plus size={10}/></button>
+                                    </div>
                                     <span className="text-[9px] text-orange-600/80 dark:text-orange-400/80 block text-center mt-1 font-medium">Tháng/lần</span>
                                 </div>
                                 <div className="flex-[2]">
