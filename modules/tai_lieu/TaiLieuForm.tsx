@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { Info, Calendar, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, RefreshCw, Lock, Unlock, Layers, Tag, Save, ArrowRight, FileBox, User, Minus, Plus, GitCommit } from 'lucide-react';
+import { Info, Calendar, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, RefreshCw, Lock, Unlock, Layers, Tag, Save, ArrowRight, FileBox, User, Minus, Plus, GitCommit, Hash } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -249,23 +249,29 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     onSave(cleanData);
   };
 
-  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 ring-primary/20 focus:border-primary outline-none transition-all text-sm disabled:opacity-60 disabled:bg-gray-100 dark:disabled:bg-slate-800 placeholder:text-gray-400 dark:placeholder:text-gray-500";
+  const inputClass = "w-full h-9 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 ring-primary/20 focus:border-primary outline-none transition-all text-sm disabled:opacity-60 disabled:bg-gray-100 dark:disabled:bg-slate-800 placeholder:text-gray-400 dark:placeholder:text-gray-500";
   const labelClass = "text-xs font-bold text-muted-foreground uppercase mb-1.5 block tracking-wide";
   const cardClass = "bg-card text-card-foreground rounded-xl border border-border shadow-sm p-5 h-full flex flex-col";
 
-  // Reusable Compact Counter Component
-  const CompactCounter = ({ value, onChange, min = 0 }: { value: number, onChange: (val: number) => void, min?: number }) => (
-    <div className="flex items-center h-8 w-[120px] rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-sm hover:border-blue-400 transition-colors">
-        <button type="button" onClick={() => onChange(-1)} className="w-8 h-full flex items-center justify-center bg-gray-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-500 hover:text-blue-600 transition-colors border-r border-gray-200 dark:border-slate-700"><Minus size={12}/></button>
+  // SCIENTIFIC COMPACT COUNTER
+  // Layout: [ Button (-) ] [ Input Value ] [ Button (+) ]
+  // Style: Unified border, soft background for buttons to distinguish action area
+  const CompactCounter = ({ value, onChange, min = 0, className = "" }: { value: number, onChange: (val: number) => void, min?: number, className?: string }) => (
+    <div className={`flex items-center h-9 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 ring-primary/20 transition-all shadow-sm ${className}`}>
+        <button type="button" onClick={() => onChange(-1)} className="w-9 h-full flex items-center justify-center bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors border-r border-gray-200 dark:border-slate-700">
+            <Minus size={14}/>
+        </button>
         <input 
             type="number" 
             min={min} 
-            className="flex-1 w-full h-full text-center text-xs font-bold text-gray-700 dark:text-gray-200 bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+            className="flex-1 w-full h-full text-center text-sm font-bold text-gray-800 dark:text-gray-100 bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
             value={value} 
-            onChange={(e) => onChange(0)} // Dummy, handled by parent mostly or adjust
+            onChange={(e) => onChange(0)} // Dummy
             readOnly
         />
-        <button type="button" onClick={() => onChange(1)} className="w-8 h-full flex items-center justify-center bg-gray-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-500 hover:text-blue-600 transition-colors border-l border-gray-200 dark:border-slate-700"><Plus size={12}/></button>
+        <button type="button" onClick={() => onChange(1)} className="w-9 h-full flex items-center justify-center bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400 hover:text-blue-500 transition-colors border-l border-gray-200 dark:border-slate-700">
+            <Plus size={14}/>
+        </button>
     </div>
   );
 
@@ -284,38 +290,38 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                 <div className="col-span-12 md:col-span-8 space-y-4">
                     <div>
                         <label className={labelClass}>Tên tài liệu <span className="text-red-500">*</span></label>
-                        <input name="ten_tai_lieu" className={`${inputClass} text-base font-medium`} value={formData.ten_tai_lieu} onChange={handleChange} placeholder="Nhập tên tài liệu..." autoFocus />
+                        <input name="ten_tai_lieu" className={`${inputClass} text-base font-medium h-10`} value={formData.ten_tai_lieu} onChange={handleChange} placeholder="Nhập tên tài liệu chính xác..." autoFocus />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className={labelClass}>Loại tài liệu <span className="text-red-500">*</span></label>
-                            <SearchableSelect options={loaiTaiLieuOptions} value={formData.id_loai_tai_lieu} onChange={(val) => handleSelectChange('id_loai_tai_lieu', String(val))} placeholder="-- Chọn loại --" />
+                            <SearchableSelect options={loaiTaiLieuOptions} value={formData.id_loai_tai_lieu} onChange={(val) => handleSelectChange('id_loai_tai_lieu', String(val))} placeholder="-- Chọn loại --" className="h-10"/>
                         </div>
                         <div>
                             <label className={labelClass}>Tài liệu cha (Nếu có)</label>
-                            <SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', String(val))} placeholder="-- Chọn tài liệu cấp trên --" disabled={!formData.id_loai_tai_lieu} />
+                            <SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', String(val))} placeholder="-- Chọn tài liệu cấp trên --" disabled={!formData.id_loai_tai_lieu} className="h-10"/>
                         </div>
                     </div>
                 </div>
 
                 <div className="col-span-12 md:col-span-4 space-y-4">
-                     <div className="bg-muted/30 p-4 rounded-xl border border-border">
-                         <label className={labelClass}>Mã tài liệu (Auto)</label>
-                         <div className="flex gap-2 mb-2">
-                             <input name="ma_tai_lieu" className={`${inputClass} font-mono font-bold text-primary`} value={formData.ma_tai_lieu} onChange={handleChange} readOnly={isCodeLocked} placeholder="QT-..." />
-                             <button type="button" onClick={() => setIsCodeLocked(!isCodeLocked)} className="p-2 bg-background border border-border rounded-lg text-muted-foreground hover:text-foreground transition-colors" title={isCodeLocked ? "Mở khóa chỉnh sửa" : "Khóa tự động"}>
+                     <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                         <div className="flex justify-between items-start mb-2">
+                             <label className={labelClass}>Mã số (Auto)</label>
+                             <div className="flex items-center gap-1 text-[10px] text-gray-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-gray-100 dark:border-slate-700"><Info size={10}/> Sinh tự động</div>
+                         </div>
+                         <div className="flex gap-2 mb-4">
+                             <input name="ma_tai_lieu" className={`${inputClass} font-mono font-bold text-blue-700 dark:text-blue-400 bg-white dark:bg-slate-900 border-blue-200 dark:border-blue-900 h-10 text-base tracking-wide`} value={formData.ma_tai_lieu} onChange={handleChange} readOnly={isCodeLocked} placeholder="QT-..." />
+                             <button type="button" onClick={() => setIsCodeLocked(!isCodeLocked)} className="w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" title={isCodeLocked ? "Mở khóa chỉnh sửa" : "Khóa tự động"}>
                                  {isCodeLocked ? <Lock size={16}/> : <Unlock size={16}/>}
                              </button>
                          </div>
-                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                            <Info size={12}/> Mã số được sinh tự động theo quy tắc.
+                         
+                         {/* ALIGNED ORDER INPUT */}
+                         <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
+                            <label className={labelClass}>Thứ tự hiển thị <span className="font-normal text-[10px] text-gray-400 lowercase ml-1">(trong nhóm)</span></label>
+                            <CompactCounter value={formData.thu_tu || 1} onChange={(val) => adjustNumber('thu_tu', val)} min={1} className="w-full" />
                          </div>
-                     </div>
-                     
-                     {/* COMPACT ORDER INPUT */}
-                     <div>
-                        <label className={labelClass}>Thứ tự hiển thị</label>
-                        <CompactCounter value={formData.thu_tu || 1} onChange={(val) => adjustNumber('thu_tu', val)} min={1} />
                      </div>
                 </div>
             </div>
@@ -359,44 +365,55 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
             </div>
         </div>
 
-        {/* --- BLOCK 3: DATE & REVIEW --- */}
+        {/* --- BLOCK 3: DATE & REVIEW (SCIENTIFIC LAYOUT) --- */}
         <div className="mt-8">
             <div className="flex items-center gap-2 pb-2 mb-4 border-b border-border">
                 <Calendar size={18} className="text-green-500"/>
                 <h3 className="text-sm font-bold text-foreground uppercase">Hiệu lực & Kiểm soát</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                   <label className={labelClass}>Phiên bản / Lần BH</label>
-                   <div className="flex gap-4">
-                      <div className="relative flex-1"><GitCommit size={14} className="absolute left-3 top-2.5 text-muted-foreground"/><input className={`${inputClass} pl-9 font-mono`} value={formData.phien_ban} onChange={handleChange} name="phien_ban" placeholder="1.0" /></div>
-                      {/* COMPACT COUNTER */}
-                      <CompactCounter value={formData.lan_ban_hanh || 1} onChange={(val) => adjustNumber('lan_ban_hanh', val)} min={1} />
+                
+                {/* Column 1: Versioning (Merged for logic) */}
+                <div className="grid grid-cols-5 gap-3">
+                   <div className="col-span-3">
+                      <label className={labelClass}>Phiên bản (Ver)</label>
+                      <div className="relative">
+                          <GitCommit size={14} className="absolute left-3 top-2.5 text-gray-400"/>
+                          <input className={`${inputClass} pl-9 font-mono font-bold tracking-wide`} value={formData.phien_ban} onChange={handleChange} name="phien_ban" placeholder="1.0" />
+                      </div>
+                   </div>
+                   <div className="col-span-2">
+                      <label className={labelClass}>Lần BH</label>
+                      <CompactCounter value={formData.lan_ban_hanh || 1} onChange={(val) => adjustNumber('lan_ban_hanh', val)} min={1} className="w-full" />
                    </div>
                 </div>
 
+                {/* Column 2: Dates */}
                 <div>
-                   <label className={labelClass}>Ngày ban hành / Hiệu lực</label>
-                   <div className="flex items-center gap-2">
-                       <input type="date" name="ngay_ban_hanh" className={`${inputClass} dark:[color-scheme:dark]`} value={formData.ngay_ban_hanh} onChange={handleChange}/>
-                       <ArrowRight size={16} className="text-muted-foreground"/>
-                       <input type="date" name="ngay_hieu_luc" className={`${inputClass} dark:[color-scheme:dark]`} value={formData.ngay_hieu_luc} onChange={handleChange}/>
+                   <label className={labelClass}>Ngày ban hành &rarr; Hiệu lực</label>
+                   <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800 rounded-lg p-1 border border-gray-200 dark:border-slate-700 h-9">
+                       <input type="date" name="ngay_ban_hanh" className="bg-transparent border-none outline-none text-xs font-medium text-gray-700 dark:text-gray-200 w-full px-2 text-center dark:[color-scheme:dark]" value={formData.ngay_ban_hanh} onChange={handleChange}/>
+                       <div className="h-4 w-px bg-gray-300 dark:bg-slate-600"></div>
+                       <input type="date" name="ngay_hieu_luc" className="bg-transparent border-none outline-none text-xs font-bold text-blue-700 dark:text-blue-400 w-full px-2 text-center dark:[color-scheme:dark]" value={formData.ngay_hieu_luc} onChange={handleChange}/>
                    </div>
                 </div>
 
-                <div className={`p-4 rounded-xl border transition-all ${isReviewEnabled ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-900/50' : 'bg-muted/30 border-border'}`}>
-                    <div className="flex justify-between items-center mb-2">
-                        <label className="text-xs font-bold text-foreground uppercase flex items-center gap-2"><RefreshCw size={14}/> Định kỳ rà soát</label>
-                        <div onClick={toggleReview} className={`w-10 h-5 rounded-full p-0.5 cursor-pointer transition-colors ${isReviewEnabled ? 'bg-orange-500' : 'bg-muted-foreground'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${isReviewEnabled ? 'translate-x-5' : ''}`}></div></div>
+                {/* Column 3: Review Cycle */}
+                <div className={`px-4 py-2 rounded-xl border transition-all h-full flex flex-col justify-center ${isReviewEnabled ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-900/50' : 'bg-slate-50 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700'}`}>
+                    <div className="flex justify-between items-center mb-1">
+                        <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase flex items-center gap-2 cursor-pointer" onClick={toggleReview}>
+                            <RefreshCw size={14} className={isReviewEnabled ? "text-orange-500 animate-spin-slow" : "text-gray-400"}/> Định kỳ rà soát
+                        </label>
+                        <div onClick={toggleReview} className={`w-8 h-4 rounded-full p-0.5 cursor-pointer transition-colors ${isReviewEnabled ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'}`}><div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-transform ${isReviewEnabled ? 'translate-x-4' : ''}`}></div></div>
                     </div>
-                    {isReviewEnabled && (
-                        <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-                            {/* COMPACT COUNTER */}
-                            <CompactCounter value={formData.chu_ky_ra_soat || 12} onChange={(val) => adjustNumber('chu_ky_ra_soat', val === 1 ? 6 : -6)} min={0} />
-                            <span className="text-xs text-muted-foreground">Tháng / lần</span>
+                    {isReviewEnabled ? (
+                        <div className="flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
+                            <CompactCounter value={formData.chu_ky_ra_soat || 12} onChange={(val) => adjustNumber('chu_ky_ra_soat', val === 1 ? 6 : -6)} min={6} className="w-32 bg-white dark:bg-slate-900" />
+                            <span className="text-xs font-medium text-orange-700 dark:text-orange-400">Tháng / lần</span>
                         </div>
+                    ) : (
+                        <span className="text-[10px] text-gray-400 italic pl-6">Không áp dụng rà soát định kỳ</span>
                     )}
-                    {isReviewEnabled && formData.ngay_ra_soat_tiep_theo && <div className="mt-2 text-[10px] text-orange-600 dark:text-orange-400 font-medium">Tiếp theo: {format(new Date(formData.ngay_ra_soat_tiep_theo), 'dd/MM/yyyy')}</div>}
                 </div>
             </div>
         </div>
