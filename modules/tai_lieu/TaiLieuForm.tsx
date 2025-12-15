@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
@@ -42,11 +42,20 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const [isReviewEnabled, setIsReviewEnabled] = useState(false);
   const dialog = useDialog();
 
-  const availableParents = fullList.filter(d => d.id !== initialData?.id).map(d => ({
+  // MEMOIZE OPTIONS: Prevents re-calculation on every keystroke
+  const availableParents = useMemo(() => fullList.filter(d => d.id !== initialData?.id).map(d => ({
       value: d.id,
       label: d.ten_tai_lieu,
       subLabel: d.ma_tai_lieu
-  }));
+  })), [fullList, initialData]);
+
+  const loaiTaiLieuOptions = useMemo(() => masterData.loaiTaiLieu.map(i => ({ value: i.ten, label: i.ten })), [masterData.loaiTaiLieu]);
+  
+  const mapUserToOption = (u: NhanSu) => ({ value: u.id, label: u.ho_ten, subLabel: u.chuc_vu });
+  
+  const drafterOptions = useMemo(() => masterData.nhanSu.filter(u => u.roles.includes('SOAN_THAO') || u.roles.includes('QUAN_TRI')).map(mapUserToOption), [masterData.nhanSu]);
+  const reviewerOptions = useMemo(() => masterData.nhanSu.filter(u => u.roles.includes('XEM_XET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption), [masterData.nhanSu]);
+  const approverOptions = useMemo(() => masterData.nhanSu.filter(u => u.roles.includes('PHE_DUYET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption), [masterData.nhanSu]);
 
   useEffect(() => {
     if (initialData) {
@@ -188,14 +197,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     if (cleanData.ngay_hieu_luc === '') cleanData.ngay_hieu_luc = null as any;
     onSave(cleanData);
   };
-
-  const loaiTaiLieuOptions = masterData.loaiTaiLieu.map(i => ({ value: i.ten, label: i.ten }));
-  // linhVucOptions removed
-  
-  const mapUserToOption = (u: NhanSu) => ({ value: u.id, label: u.ho_ten, subLabel: u.chuc_vu });
-  const drafterOptions = masterData.nhanSu.filter(u => u.roles.includes('SOAN_THAO') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
-  const reviewerOptions = masterData.nhanSu.filter(u => u.roles.includes('XEM_XET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
-  const approverOptions = masterData.nhanSu.filter(u => u.roles.includes('PHE_DUYET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
 
   // Styling (Fixed Dark Mode Color)
   const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 ring-primary/20 focus:border-primary outline-none transition-all text-sm disabled:opacity-60 disabled:bg-gray-100 dark:disabled:bg-slate-800 placeholder:text-gray-400 dark:placeholder:text-gray-500";

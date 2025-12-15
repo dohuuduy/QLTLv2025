@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, useMemo, useId } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Search, Check, User } from 'lucide-react';
 
@@ -18,7 +18,7 @@ interface SearchableSelectProps {
   disabled?: boolean;
 }
 
-export const SearchableSelect: React.FC<SearchableSelectProps> = ({
+export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
   options,
   value,
   onChange,
@@ -33,13 +33,13 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
-  // Generate stable unique ID for this instance
+  // Generate stable unique ID
   const uniqueId = useId();
   const portalId = `dropdown-portal-${uniqueId.replace(/:/g, '')}`;
 
-  // Tính toán vị trí
-  const calculatePosition = () => {
-    if (containerRef.current) {
+  // Use useLayoutEffect to calculate position BEFORE paint -> No flickering/lag
+  useLayoutEffect(() => {
+    if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const spaceBelow = viewportHeight - rect.bottom;
@@ -54,14 +54,18 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         placement
       });
     }
-  };
+  }, [isOpen]);
 
+  // Handle Focus and Events separately
   useEffect(() => {
     if (isOpen) {
-      calculatePosition();
-      setTimeout(() => searchInputRef.current?.focus(), 50);
+      // Use requestAnimationFrame for smoother focus than setTimeout
+      requestAnimationFrame(() => {
+        if (searchInputRef.current) searchInputRef.current.focus();
+      });
       
       const handleScroll = () => setIsOpen(false);
+      // Capture phase to handle scroll events from any parent
       window.addEventListener('scroll', handleScroll, true);
       window.addEventListener('resize', handleScroll);
       return () => {
@@ -73,9 +77,11 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      if (!isOpen) return;
+      
       const target = event.target as Node;
       
-      // 1. Click inside trigger button -> Ignore (handled by onClick of trigger)
+      // 1. Click inside trigger -> Ignore (handled by trigger onClick)
       if (containerRef.current && containerRef.current.contains(target)) return;
       
       // 2. Click inside portal dropdown -> Ignore
@@ -86,7 +92,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       setIsOpen(false);
     };
     
-    if (isOpen) document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, portalId]);
 
@@ -99,7 +105,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     );
   }, [options, searchTerm]);
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedOption = useMemo(() => 
+    options.find(opt => opt.value === value), 
+  [options, value]);
 
   const handleSelect = (val: string | number) => {
     onChange(val);
@@ -114,7 +122,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         ref={containerRef}
         onClick={(e) => {
             if (!disabled) {
-                e.stopPropagation(); // Prevent bubbling issues
+                e.stopPropagation();
                 setIsOpen(!isOpen);
             }
         }}
@@ -135,7 +143,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 {selectedOption ? selectedOption.label : placeholder}
             </span>
         </div>
-        <ChevronDown size={16} className={`text-muted-foreground transition-transform ${isOpen ? 'rotate-180 text-primary' : ''}`} />
+        <ChevronDown size={16} className={`text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
       </div>
 
       {/* Portal Dropdown Menu */}
@@ -146,10 +154,12 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
               top: position.top, 
               left: position.left, 
               width: position.width,
-              transform: position.placement === 'top' ? 'translateY(-100%)' : 'none'
+              transform: position.placement === 'top' ? 'translateY(-100%)' : 'none',
+              // Optimize compositing
+              willChange: 'transform, opacity'
           }}
-          className="fixed z-[9999] bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100"
-          onMouseDown={(e) => e.stopPropagation()} // Stop click propagation from inside dropdown
+          className="fixed z-[9999] bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+          onMouseDown={(e) => e.stopPropagation()} 
         >
           {/* Search Header */}
           <div className="p-2 border-b border-border bg-muted/30">
@@ -210,4 +220,4 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       )}
     </>
   );
-};
+});
