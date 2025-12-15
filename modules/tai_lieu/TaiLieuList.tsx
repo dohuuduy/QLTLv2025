@@ -500,7 +500,9 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                    </div>
                                    <div className="p-4 space-y-4">
                                        <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Loại tài liệu</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getDocTypeName(selectedDoc.id_loai_tai_lieu)}</p></div>
-                                       <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Bộ phận sở hữu</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getDept(selectedDoc.nguoi_soan_thao)}</p></div>
+                                       
+                                       {/* REMOVED DEPARTMENT FIELD HERE AS REQUESTED */}
+
                                        {selectedDoc.id_tieu_chuan && selectedDoc.id_tieu_chuan.length > 0 && (
                                            <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Tiêu chuẩn áp dụng</p><div className="flex flex-wrap gap-1.5">{getStandardNames(selectedDoc.id_tieu_chuan).map((t, idx) => (<span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"><Tag size={10} /> {t}</span>))}</div></div>
                                        )}
