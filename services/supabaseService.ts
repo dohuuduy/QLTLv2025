@@ -213,8 +213,17 @@ export const fetchDocumentsFromDB = async (): Promise<TaiLieu[] | null> => {
 };
 
 export const upsertDocument = async (doc: TaiLieu) => {
-    const { error } = await supabase.from('tai_lieu').upsert(doc);
-    if (error) throw error;
+    // Sanitize Payload: Remove frontend-only fields or fields missing in DB
+    const { nguoi_cap_nhat_cuoi, ...payload } = doc as any;
+    
+    // Explicitly handle array fields if needed, but Supabase standard is JSONB
+    // 'nguoi_cap_nhat_cuoi' removed to fix PGRST204
+    
+    const { error } = await supabase.from('tai_lieu').upsert(payload);
+    if (error) {
+        console.error("Upsert Document Error:", error); 
+        throw error;
+    }
 };
 
 export const deleteDocument = async (id: string) => {
