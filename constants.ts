@@ -18,12 +18,12 @@ export const MENU_ITEMS = [
 
 export const INITIAL_MASTER_DATA: MasterDataState = {
   loaiTaiLieu: [
-    { id: '1', ten: "Quy trình (Process)", active: true, thu_tu: 1, ma_viet_tat: 'QT', ky_tu_noi: '.', do_dai_so: 2 },
-    { id: '2', ten: "Hướng dẫn công việc (Work Instruction)", active: true, thu_tu: 2, ma_viet_tat: 'HD', ky_tu_noi: '.', do_dai_so: 2 },
-    { id: '3', ten: "Biểu mẫu (Form)", active: true, thu_tu: 3, ma_viet_tat: 'BM', ky_tu_noi: '.', do_dai_so: 2 },
-    { id: '4', ten: "Quy định (Regulation)", active: true, thu_tu: 4, ma_viet_tat: 'QD', ky_tu_noi: '.', do_dai_so: 2 },
-    { id: '5', ten: "Chính sách (Policy)", active: true, thu_tu: 5, ma_viet_tat: 'CS', ky_tu_noi: '.', do_dai_so: 2 },
-    { id: '6', ten: "Kế hoạch (Plan)", active: true, thu_tu: 6, ma_viet_tat: 'KH', ky_tu_noi: '-', do_dai_so: 2 },
+    { id: '1', ten: "Quy trình (Process)", active: true, thu_tu: 1, ma_viet_tat: 'QT', ky_tu_noi: '.', do_dai_so: 2, cap_do: 2 },
+    { id: '2', ten: "Hướng dẫn công việc (Work Instruction)", active: true, thu_tu: 2, ma_viet_tat: 'HD', ky_tu_noi: '.', do_dai_so: 2, cap_do: 3 },
+    { id: '3', ten: "Biểu mẫu (Form)", active: true, thu_tu: 3, ma_viet_tat: 'BM', ky_tu_noi: '.', do_dai_so: 2, cap_do: 3 },
+    { id: '4', ten: "Quy định (Regulation)", active: true, thu_tu: 4, ma_viet_tat: 'QD', ky_tu_noi: '.', do_dai_so: 2, cap_do: 1 },
+    { id: '5', ten: "Chính sách (Policy)", active: true, thu_tu: 5, ma_viet_tat: 'CS', ky_tu_noi: '.', do_dai_so: 2, cap_do: 1 },
+    { id: '6', ten: "Kế hoạch (Plan)", active: true, thu_tu: 6, ma_viet_tat: 'KH', ky_tu_noi: '-', do_dai_so: 2, cap_do: 2 },
   ],
   linhVuc: [
     { id: '1', ten: "Quản trị nhân sự", active: true, thu_tu: 1 },
@@ -141,13 +141,13 @@ export const MOCK_TAI_LIEU: TaiLieu[] = [
     dinh_kem: [
       { id: 'DK1', ten_file: 'Quy_trinh_tuyen_dung_v3.pdf', url: '#', loai: 'pdf', ngay_upload: '2023-10-10' }
     ],
-    id_nguoi_soan_thao: 'NS001',
-    id_nguoi_xem_xet: 'NS001',
-    id_nguoi_phe_duyet: 'NS002',
+    nguoi_soan_thao: 'NS001',
+    nguoi_xem_xet: 'NS001',
+    nguoi_phe_duyet: 'NS002',
     ngay_tao: '2023-09-01T08:00:00Z',
-    id_nguoi_tao: 'NS001',
+    nguoi_tao: 'NS001',
     ngay_cap_nhat_cuoi: '2023-10-01T10:00:00Z',
-    id_nguoi_cap_nhat_cuoi: 'NS002',
+    nguoi_cap_nhat_cuoi: 'NS002',
     trang_thai: TrangThaiTaiLieu.DA_BAN_HANH,
     lich_su: [
         { id: 'H1', nguoi_thuc_hien: 'Nguyễn Văn A', hanh_dong: 'TAO_MOI', thoi_gian: '2023-09-01T08:00:00Z', ghi_chu: 'Khởi tạo tài liệu phiên bản 3.0' },
@@ -169,13 +169,13 @@ export const MOCK_TAI_LIEU: TaiLieu[] = [
     ngay_ban_hanh: '2023-10-12',
     ngay_hieu_luc: '2023-10-15',
     mo_ta_tom_tat: 'Chi tiết bộ câu hỏi và thang điểm phỏng vấn.',
-    id_nguoi_soan_thao: 'NS001',
-    id_nguoi_xem_xet: '',
-    id_nguoi_phe_duyet: '',
+    nguoi_soan_thao: 'NS001',
+    nguoi_xem_xet: '',
+    nguoi_phe_duyet: '',
     ngay_tao: '2023-10-11T08:00:00Z',
-    id_nguoi_tao: 'NS001',
+    nguoi_tao: 'NS001',
     ngay_cap_nhat_cuoi: '2023-10-11T08:00:00Z',
-    id_nguoi_cap_nhat_cuoi: 'NS001',
+    nguoi_cap_nhat_cuoi: 'NS001',
     trang_thai: TrangThaiTaiLieu.DA_BAN_HANH,
   },
   {
@@ -192,13 +192,13 @@ export const MOCK_TAI_LIEU: TaiLieu[] = [
     ngay_ban_hanh: '2023-10-12',
     ngay_hieu_luc: '2023-10-15',
     mo_ta_tom_tat: 'Form dùng để ghi điểm trong buổi phỏng vấn.',
-    id_nguoi_soan_thao: 'NS001',
-    id_nguoi_xem_xet: '',
-    id_nguoi_phe_duyet: '',
+    nguoi_soan_thao: 'NS001',
+    nguoi_xem_xet: '',
+    nguoi_phe_duyet: '',
     ngay_tao: '2023-10-11T09:00:00Z',
-    id_nguoi_tao: 'NS001',
+    nguoi_tao: 'NS001',
     ngay_cap_nhat_cuoi: '2023-10-11T09:00:00Z',
-    id_nguoi_cap_nhat_cuoi: 'NS001',
+    nguoi_cap_nhat_cuoi: 'NS001',
     trang_thai: TrangThaiTaiLieu.DA_BAN_HANH,
   },
   {
@@ -216,13 +216,13 @@ export const MOCK_TAI_LIEU: TaiLieu[] = [
     chu_ky_ra_soat: 24,
     ngay_ra_soat_tiep_theo: '2026-01-01',
     mo_ta_tom_tat: 'Các quy tắc an toàn bắt buộc khi vận hành máy cắt và máy dập.',
-    id_nguoi_soan_thao: 'NS003',
-    id_nguoi_xem_xet: 'NS001',
-    id_nguoi_phe_duyet: 'NS002',
+    nguoi_soan_thao: 'NS003',
+    nguoi_xem_xet: 'NS001',
+    nguoi_phe_duyet: 'NS002',
     ngay_tao: '2023-12-01T09:30:00Z',
-    id_nguoi_tao: 'NS003',
+    nguoi_tao: 'NS003',
     ngay_cap_nhat_cuoi: '2023-12-20T14:15:00Z',
-    id_nguoi_cap_nhat_cuoi: 'NS001',
+    nguoi_cap_nhat_cuoi: 'NS001',
     trang_thai: TrangThaiTaiLieu.DA_BAN_HANH,
     lich_su: [
         { id: 'H1', nguoi_thuc_hien: 'Lê Văn C', hanh_dong: 'TAO_MOI', thoi_gian: '2023-12-01T09:30:00Z' },
@@ -244,13 +244,13 @@ export const MOCK_TAI_LIEU: TaiLieu[] = [
     chu_ky_ra_soat: 12,
     ngay_ra_soat_tiep_theo: '2025-02-15',
     mo_ta_tom_tat: 'Dùng cho các khoản chi nội bộ dưới 20 triệu đồng.',
-    id_nguoi_soan_thao: 'NS003',
-    id_nguoi_xem_xet: 'NS001',
-    id_nguoi_phe_duyet: '',
+    nguoi_soan_thao: 'NS003',
+    nguoi_xem_xet: 'NS001',
+    nguoi_phe_duyet: '',
     ngay_tao: '2024-02-01T08:00:00Z',
-    id_nguoi_tao: 'NS003',
+    nguoi_tao: 'NS003',
     ngay_cap_nhat_cuoi: '2024-02-10T11:00:00Z',
-    id_nguoi_cap_nhat_cuoi: 'NS003',
+    nguoi_cap_nhat_cuoi: 'NS003',
     trang_thai: TrangThaiTaiLieu.CHO_DUYET,
     lich_su: [
          { id: 'H1', nguoi_thuc_hien: 'Phạm Thị E', hanh_dong: 'TAO_MOI', thoi_gian: '2024-02-01T08:00:00Z' },
@@ -270,13 +270,13 @@ export const MOCK_TAI_LIEU: TaiLieu[] = [
     ngay_ban_hanh: '',
     ngay_hieu_luc: '',
     mo_ta_tom_tat: 'Dự thảo kế hoạch doanh số và mở rộng thị trường miền Bắc.',
-    id_nguoi_soan_thao: 'NS003',
-    id_nguoi_xem_xet: '',
-    id_nguoi_phe_duyet: '',
+    nguoi_soan_thao: 'NS003',
+    nguoi_xem_xet: '',
+    nguoi_phe_duyet: '',
     ngay_tao: '2024-05-20T13:45:00Z',
-    id_nguoi_tao: 'NS003',
+    nguoi_tao: 'NS003',
     ngay_cap_nhat_cuoi: '2024-05-20T13:45:00Z',
-    id_nguoi_cap_nhat_cuoi: 'NS003',
+    nguoi_cap_nhat_cuoi: 'NS003',
     trang_thai: TrangThaiTaiLieu.SOAN_THAO,
     lich_su: [
         { id: 'H1', nguoi_thuc_hien: 'Vũ Văn F', hanh_dong: 'TAO_MOI', thoi_gian: '2024-05-20T13:45:00Z' }
@@ -293,7 +293,7 @@ export const MOCK_HO_SO: HoSo[] = [
     tieu_de: 'Biên bản họp xem xét lãnh đạo Q1/2024',
     ma_tai_lieu_lien_quan: 'QT-QL-01',
     id_phong_ban: '1', // Ban Giám Đốc (ID)
-    id_nguoi_tao: 'NS001', // Nguyễn Văn A
+    nguoi_tao: 'NS001', // Nguyễn Văn A
     ngay_tao: '2024-03-30',
     vi_tri_luu_tru: 'Tủ 01 - Ngăn 02 (Bản cứng)',
     dang_luu_tru: 'BAN_CUNG',
@@ -308,7 +308,7 @@ export const MOCK_HO_SO: HoSo[] = [
     tieu_de: 'Chứng từ kế toán tháng 05/2022',
     ma_tai_lieu_lien_quan: 'QT-TC-02',
     id_phong_ban: '3', // Phòng Kế Toán
-    id_nguoi_tao: 'NS003', // Lê Văn C (Giả sử)
+    nguoi_tao: 'NS003', // Lê Văn C (Giả sử)
     ngay_tao: '2022-05-31',
     vi_tri_luu_tru: 'Kho lưu trữ 2',
     dang_luu_tru: 'BAN_CUNG',
@@ -321,7 +321,7 @@ export const MOCK_HO_SO: HoSo[] = [
     ma_ho_so: 'HS-NS-OLD-2018',
     tieu_de: 'Hồ sơ nhân viên đã nghỉ việc 2018',
     id_phong_ban: '2', // Phòng HCNS
-    id_nguoi_tao: 'NS002', // Trần Thị B (Giả sử Admin cũ)
+    nguoi_tao: 'NS002', // Trần Thị B (Giả sử Admin cũ)
     ngay_tao: '2018-12-31',
     vi_tri_luu_tru: 'Kho số hóa',
     dang_luu_tru: 'BAN_MEM',
@@ -344,7 +344,7 @@ export const MOCK_KE_HOACH_AUDIT: KeHoachDanhGia[] = [
     thoi_gian_du_kien_end: '2024-10-30',
     muc_tieu: 'Kiểm tra sự tuân thủ quy trình ISO 9001:2015 tại các phòng ban khối Văn phòng.',
     pham_vi: 'Phòng HCNS, Kế toán, Kinh doanh',
-    id_nguoi_tao: 'NS001', // Changed to ID
+    nguoi_tao: 'NS001', // Changed to ID
     ngay_tao: '2024-10-01',
     trang_thai: 'dang_thuc_hien',
     danh_sach_phien: [

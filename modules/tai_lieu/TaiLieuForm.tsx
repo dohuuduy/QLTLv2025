@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { Info, Calendar, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, Lock, Unlock, Layers, Tag, UploadCloud, Save, PenTool, Search as SearchIcon, FileSignature, GitCommit, ArrowRight, Fingerprint, FileBox, User } from 'lucide-react';
+import { Info, Calendar, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, Lock, Unlock, Layers, Tag, UploadCloud, Save, PenTool, Search as SearchIcon, FileSignature, GitCommit, ArrowRight, Fingerprint, FileBox, User, Network } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -30,9 +30,9 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     ngay_hieu_luc: '',
     chu_ky_ra_soat: 0, // Default 0 (Disabled)
     ngay_ra_soat_tiep_theo: '',
-    id_nguoi_soan_thao: '',
-    id_nguoi_xem_xet: '',
-    id_nguoi_phe_duyet: '',
+    nguoi_soan_thao: '',
+    nguoi_xem_xet: '',
+    nguoi_phe_duyet: '',
     mo_ta_tom_tat: '',
     dinh_kem: [],
     trang_thai: TrangThaiTaiLieu.SOAN_THAO,
@@ -43,14 +43,37 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const [isReviewEnabled, setIsReviewEnabled] = useState(false);
   const dialog = useDialog();
 
-  // MEMOIZE OPTIONS
-  const availableParents = useMemo(() => fullList.filter(d => d.id !== initialData?.id).map(d => ({
-      value: d.id,
-      label: d.ten_tai_lieu,
-      subLabel: d.ma_tai_lieu
-  })), [fullList, initialData]);
+  // --- FILTER PARENT DOCUMENTS LOGIC ---
+  const availableParents = useMemo(() => {
+      // 1. Get current doc level
+      const currentType = masterData.loaiTaiLieu.find(t => t.id === formData.id_loai_tai_lieu);
+      const currentLevel = currentType?.cap_do || 99; // Default high level if not found
 
-  const loaiTaiLieuOptions = useMemo(() => masterData.loaiTaiLieu.map(i => ({ value: i.id, label: i.ten })), [masterData.loaiTaiLieu]);
+      // 2. Filter list
+      return fullList
+        .filter(d => {
+            // Exclude self
+            if (d.id === initialData?.id) return false;
+            
+            // Exclude undefined type docs
+            if (!d.id_loai_tai_lieu) return false;
+
+            // Find parent's level
+            const parentType = masterData.loaiTaiLieu.find(t => t.id === d.id_loai_tai_lieu);
+            const parentLevel = parentType?.cap_do || 99;
+
+            // Strict Rule: Parent must have smaller Level number (Higher Hierarchy)
+            // e.g. If creating Level 2 (Process), show Level 1 (Policy)
+            return parentLevel < currentLevel;
+        })
+        .map(d => ({
+            value: d.id,
+            label: d.ten_tai_lieu,
+            subLabel: `[${d.ma_tai_lieu}]`
+        }));
+  }, [fullList, initialData, formData.id_loai_tai_lieu, masterData.loaiTaiLieu]);
+
+  const loaiTaiLieuOptions = useMemo(() => masterData.loaiTaiLieu.map(i => ({ value: i.id, label: i.ten, subLabel: `Cấp ${i.cap_do || '?'}` })), [masterData.loaiTaiLieu]);
   const linhVucOptions = useMemo(() => masterData.linhVuc.map(i => ({ value: i.id, label: i.ten })), [masterData.linhVuc]);
   
   const mapUserToOption = (u: NhanSu) => ({ value: u.id, label: u.ho_ten, subLabel: u.chuc_vu });
@@ -149,7 +172,12 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   };
 
   const handleSelectChange = (key: keyof TaiLieu, value: any) => {
-      setFormData(prev => ({ ...prev, [key]: value }));
+      // If changing document type, reset parent to avoid invalid hierarchy
+      if (key === 'id_loai_tai_lieu') {
+          setFormData(prev => ({ ...prev, [key]: value, tai_lieu_cha_id: '' }));
+      } else {
+          setFormData(prev => ({ ...prev, [key]: value }));
+      }
   };
 
   const toggleTieuChuan = (id: string) => {
@@ -265,7 +293,24 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                 <div className="space-y-4 flex-1">
                     <div><label className={labelClass}>Loại tài liệu</label><SearchableSelect options={loaiTaiLieuOptions} value={formData.id_loai_tai_lieu} onChange={(val) => handleSelectChange('id_loai_tai_lieu', String(val))} placeholder="-- Chọn loại --" /></div>
                     <div><label className={labelClass}>Lĩnh vực</label><SearchableSelect options={linhVucOptions} value={formData.id_linh_vuc} onChange={(val) => handleSelectChange('id_linh_vuc', String(val))} placeholder="-- Chọn lĩnh vực --" /></div>
-                    <div><label className={labelClass}>Tài liệu cha (Parent)</label><SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} placeholder="-- Không có --" /></div>
+                    
+                    {/* Improved Parent Selection Logic */}
+                    <div>
+                        <label className={labelClass}>Tài liệu cha (Parent)</label>
+                        <SearchableSelect 
+                            options={availableParents} 
+                            value={formData.tai_lieu_cha_id} 
+                            onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} 
+                            placeholder={!formData.id_loai_tai_lieu ? "Chọn loại tài liệu trước" : availableParents.length > 0 ? "-- Chọn tài liệu cấp trên --" : "-- Không có tài liệu cha phù hợp --"} 
+                            disabled={!formData.id_loai_tai_lieu}
+                        />
+                        {formData.id_loai_tai_lieu && (
+                            <p className="text-[10px] text-gray-400 mt-1 italic flex items-center gap-1">
+                                <Network size={10} /> Hệ thống tự động lọc các tài liệu cấp cao hơn.
+                            </p>
+                        )}
+                    </div>
+
                     <div>
                         <label className={labelClass}>Tiêu chuẩn áp dụng</label>
                         <div className="flex flex-wrap gap-2 pt-1">{masterData.tieuChuan.map(item => (<button key={item.id} type="button" onClick={() => toggleTieuChuan(item.id)} className={`px-2.5 py-1.5 rounded-md text-[11px] font-semibold border transition-all flex items-center gap-1.5 ${formData.id_tieu_chuan?.includes(item.id) ? 'bg-primary/10 text-primary border-primary/20 shadow-sm' : 'bg-background border-border text-muted-foreground hover:bg-muted'}`}>{formData.id_tieu_chuan?.includes(item.id) && <Tag size={10} className="fill-current" />} {item.ten}</button>))}</div>
@@ -393,7 +438,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                         <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300 flex items-center justify-center font-bold shadow-sm"><PenTool size={18}/></div>
                         <div><p className="text-[10px] font-bold text-blue-500 dark:text-blue-400 uppercase tracking-wider">Bước 1</p><p className="text-sm font-bold text-foreground">Soạn thảo</p></div>
                     </div>
-                    <SearchableSelect options={drafterOptions} value={formData.id_nguoi_soan_thao} onChange={(val) => handleSelectChange('id_nguoi_soan_thao', val)} placeholder="Chọn nhân sự..." />
+                    <SearchableSelect options={drafterOptions} value={formData.nguoi_soan_thao} onChange={(val) => handleSelectChange('nguoi_soan_thao', val)} placeholder="Chọn nhân sự..." />
                     <div className="hidden md:block absolute top-1/2 -right-6 transform -translate-y-1/2 text-blue-200 dark:text-blue-800 z-10"><ArrowRight size={24}/></div>
                 </div>
 
@@ -403,7 +448,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                         <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300 flex items-center justify-center font-bold shadow-sm"><SearchIcon size={18}/></div>
                         <div><p className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider">Bước 2</p><p className="text-sm font-bold text-foreground">Xem xét</p></div>
                     </div>
-                    <SearchableSelect options={reviewerOptions} value={formData.id_nguoi_xem_xet} onChange={(val) => handleSelectChange('id_nguoi_xem_xet', val)} placeholder="Chọn nhân sự..." />
+                    <SearchableSelect options={reviewerOptions} value={formData.nguoi_xem_xet} onChange={(val) => handleSelectChange('nguoi_xem_xet', val)} placeholder="Chọn nhân sự..." />
                     <div className="hidden md:block absolute top-1/2 -right-6 transform -translate-y-1/2 text-indigo-200 dark:text-indigo-800 z-10"><ArrowRight size={24}/></div>
                 </div>
 
@@ -413,7 +458,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                         <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300 flex items-center justify-center font-bold shadow-sm"><FileSignature size={18}/></div>
                         <div><p className="text-[10px] font-bold text-green-500 dark:text-green-400 uppercase tracking-wider">Bước 3</p><p className="text-sm font-bold text-foreground">Phê duyệt</p></div>
                     </div>
-                    <SearchableSelect options={approverOptions} value={formData.id_nguoi_phe_duyet} onChange={(val) => handleSelectChange('id_nguoi_phe_duyet', val)} placeholder="Chọn lãnh đạo..." />
+                    <SearchableSelect options={approverOptions} value={formData.nguoi_phe_duyet} onChange={(val) => handleSelectChange('nguoi_phe_duyet', val)} placeholder="Chọn lãnh đạo..." />
                 </div>
             </div>
         </div>

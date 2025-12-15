@@ -4,7 +4,7 @@ import { DanhMucItem, ColumnDefinition } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { DataTable } from '../../components/DataTable';
 import { Modal } from '../../components/ui/Modal';
-import { Trash2, Pencil, Plus, CheckCircle, XCircle, Link as LinkIcon, Layers, Hash, FileBox } from 'lucide-react';
+import { Trash2, Pencil, Plus, CheckCircle, XCircle, Link as LinkIcon, Layers, Hash, FileBox, Network } from 'lucide-react';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { upsertCategory, deleteCategory } from '../../services/supabaseService';
 import { useDialog } from '../../contexts/DialogContext';
@@ -50,7 +50,8 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
     active: boolean,
     ma_viet_tat?: string,
     ky_tu_noi?: string,
-    do_dai_so?: number
+    do_dai_so?: number,
+    cap_do?: number
   }>({ 
     ten: '', 
     thu_tu: 0, 
@@ -58,7 +59,8 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
     active: true,
     ma_viet_tat: '',
     ky_tu_noi: '.',
-    do_dai_so: 2
+    do_dai_so: 2,
+    cap_do: 1
   });
 
   // Unified Styles (Fixed Dark Mode)
@@ -75,7 +77,8 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
         active: true,
         ma_viet_tat: '',
         ky_tu_noi: '.',
-        do_dai_so: 2 
+        do_dai_so: 2,
+        cap_do: 2 
     });
     setIsModalOpen(true);
   };
@@ -89,7 +92,8 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
       active: item.active,
       ma_viet_tat: item.ma_viet_tat || '',
       ky_tu_noi: item.ky_tu_noi || '.',
-      do_dai_so: item.do_dai_so || 2
+      do_dai_so: item.do_dai_so || 2,
+      cap_do: item.cap_do || 2
     });
     setIsModalOpen(true);
   };
@@ -128,7 +132,8 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
         ...(showDocTypeConfig ? {
             ma_viet_tat: formState.ma_viet_tat?.toUpperCase(),
             ky_tu_noi: formState.ky_tu_noi,
-            do_dai_so: formState.do_dai_so
+            do_dai_so: formState.do_dai_so,
+            cap_do: formState.cap_do
         } : {})
     };
 
@@ -168,12 +173,12 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
     if (showDocTypeConfig) {
         cols.push({
             key: 'ma_viet_tat',
-            header: 'Mã & Quy tắc',
+            header: 'Mã & Cấp',
             visible: true,
             render: (val, item) => (
-                <div className="text-xs">
+                <div className="flex items-center gap-2 text-xs">
                     <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{val || '---'}</span>
-                    {val && (<span className="text-gray-400 ml-1">(Nối '{item.ky_tu_noi}', {item.do_dai_so} số)</span>)}
+                    <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-[10px]">Cấp {item.cap_do || '?'}</span>
                 </div>
             )
         });
@@ -233,9 +238,16 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
                         <h4 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase border-b border-blue-100 dark:border-blue-900 pb-2 mb-3 flex items-center gap-2"><Hash size={14}/> Cấu hình sinh mã tự động</h4>
                         <div className="grid grid-cols-2 gap-4">
                            <div className="col-span-2"><label className={labelClass}>Mã viết tắt (Prefix)</label><input className={`${inputClass} uppercase font-mono`} value={formState.ma_viet_tat} onChange={(e) => setFormState({...formState, ma_viet_tat: e.target.value.toUpperCase()})} placeholder="VD: QT, BM, HD..."/></div>
+                           
+                           <div><label className={labelClass}>Phân cấp (Level)</label>
+                               <div className="relative">
+                                   <input type="number" min="1" max="5" className={`${inputClass}`} value={formState.cap_do} onChange={(e) => setFormState({...formState, cap_do: parseInt(e.target.value) || 1})}/>
+                                   <Network size={14} className="absolute right-3 top-3 text-gray-400 pointer-events-none"/>
+                               </div>
+                           </div>
                            <div><label className={labelClass}>Ký tự nối</label><select className={`${inputClass} font-mono`} value={formState.ky_tu_noi} onChange={(e) => setFormState({...formState, ky_tu_noi: e.target.value})}><option value=".">Dấu chấm (.)</option><option value="-">Gạch ngang (-)</option><option value="/">Gạch chéo (/)</option><option value="_">Gạch dưới (_)</option></select></div>
-                           <div><label className={labelClass}>Độ dài số</label><input type="number" min="1" max="5" className={inputClass} value={formState.do_dai_so} onChange={(e) => setFormState({...formState, do_dai_so: parseInt(e.target.value) || 2})}/></div>
-                           <div className="col-span-2"><p className="text-[11px] text-gray-500 italic">Ví dụ: Nếu tài liệu cha là <span className="font-bold">P06</span>, Prefix là <span className="font-bold">QT</span> &rarr; Mã con sẽ là <span className="font-bold">P06.QT01</span></p></div>
+                           
+                           <div className="col-span-2"><p className="text-[11px] text-gray-500 italic">Cấp 1: Chính sách/Quy định (Cha). Cấp 2: Quy trình (Con). Cấp 3: Hướng dẫn (Cháu)...</p></div>
                         </div>
                      </div>
                   )}

@@ -66,16 +66,16 @@ export interface TaiLieu {
   dinh_kem?: DinhKem[]; // NEW: Danh sách file đính kèm
   lich_su?: LichSuHoatDong[]; // NEW: Lịch sử hoạt động
 
-  // Trách nhiệm (Lưu ID NhanSu - Đã đổi tên theo yêu cầu)
-  id_nguoi_soan_thao: string;
-  id_nguoi_xem_xet: string;
-  id_nguoi_phe_duyet: string;
+  // Trách nhiệm (Reverted to original column names)
+  nguoi_soan_thao: string;
+  nguoi_xem_xet: string;
+  nguoi_phe_duyet: string;
   
   // Standard columns (System)
   ngay_tao: string;
-  id_nguoi_tao: string; // Renaming consistent with others
+  nguoi_tao: string; 
   ngay_cap_nhat_cuoi: string;
-  id_nguoi_cap_nhat_cuoi: string; // Renaming
+  nguoi_cap_nhat_cuoi: string; 
   trang_thai: TrangThaiTaiLieu;
 }
 
@@ -86,7 +86,7 @@ export interface HoSo {
   ma_tai_lieu_lien_quan?: string; // Link đến Tài liệu quy trình (VD: theo QT-NS-01)
   
   id_phong_ban: string;      // Bộ phận sở hữu (ID)
-  id_nguoi_tao: string;      // Người tạo (ID)
+  nguoi_tao: string;      // Người tạo (ID)
   ngay_tao: string;       // Ngày ghi nhận hồ sơ
 
   vi_tri_luu_tru: string; // Kho, Tủ số 1, Link Drive...
@@ -124,6 +124,7 @@ export interface DanhMucItem {
   ma_viet_tat?: string; // VD: QT, BM, HD
   ky_tu_noi?: string;   // VD: ., -, /
   do_dai_so?: number;   // VD: 2 (01, 02), 3 (001, 002)
+  cap_do?: number;      // NEW: Phân cấp (1: Chính sách, 2: Quy trình, 3: Hướng dẫn...)
 }
 
 // --- AUDIT MODULE TYPES ---
@@ -167,7 +168,7 @@ export interface KeHoachDanhGia {
   
   danh_sach_phien: PhienDanhGia[];
   
-  id_nguoi_tao: string; // Changed from nguoi_tao
+  nguoi_tao: string; // Reverted
   ngay_tao: string;
   trang_thai: TrangThaiKeHoach;
 }

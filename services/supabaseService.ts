@@ -69,7 +69,7 @@ const mapCategoryToItem = (record: any): DanhMucItem => ({
   thu_tu: record.thu_tu || 0,
   ma_viet_tat: record.ma_viet_tat,
   parentId: record.id_cha,
-  ...(record.cai_dat || {})
+  ...(record.cai_dat || {}) // This will automatically map 'cap_do' if present in JSON
 });
 
 const mapItemToCategoryPayload = (item: DanhMucItem, type: string) => ({
@@ -82,7 +82,8 @@ const mapItemToCategoryPayload = (item: DanhMucItem, type: string) => ({
     id_cha: item.parentId,
     cai_dat: {
         ky_tu_noi: item.ky_tu_noi,
-        do_dai_so: item.do_dai_so
+        do_dai_so: item.do_dai_so,
+        cap_do: item.cap_do // Save level to JSON config
     }
 });
 

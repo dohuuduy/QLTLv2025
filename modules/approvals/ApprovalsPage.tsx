@@ -22,7 +22,7 @@ export const ApprovalsPage: React.FC<ApprovalsPageProps> = ({ currentUser, docum
         if (doc.trang_thai !== TrangThaiTaiLieu.CHO_DUYET) return false;
         if (currentUser.roles.includes('QUAN_TRI')) return true;
         // Compare by ID now
-        return doc.id_nguoi_xem_xet === currentUser.id || doc.id_nguoi_phe_duyet === currentUser.id;
+        return doc.nguoi_xem_xet === currentUser.id || doc.nguoi_phe_duyet === currentUser.id;
      });
   }, [documents, currentUser]);
 
@@ -69,7 +69,7 @@ export const ApprovalsPage: React.FC<ApprovalsPageProps> = ({ currentUser, docum
         ...selectedDoc,
         trang_thai: isRejecting ? TrangThaiTaiLieu.SOAN_THAO : TrangThaiTaiLieu.DA_BAN_HANH,
         ngay_cap_nhat_cuoi: now,
-        id_nguoi_cap_nhat_cuoi: currentUser.id,
+        nguoi_cap_nhat_cuoi: currentUser.id,
         ...( !isRejecting ? { ngay_ban_hanh: format(new Date(), 'yyyy-MM-dd') } : {}),
         lich_su: [...(selectedDoc.lich_su || []), newLog]
     };
@@ -92,13 +92,13 @@ export const ApprovalsPage: React.FC<ApprovalsPageProps> = ({ currentUser, docum
   const columns: ColumnDefinition<TaiLieu>[] = [
     { key: 'ma_tai_lieu', header: 'Mã số', visible: true, render: (val) => <span className="font-mono font-bold text-blue-700 dark:text-blue-400">{val}</span> },
     { key: 'ten_tai_lieu', header: 'Tên Tài Liệu', visible: true, render: (val, doc) => (<div><div className="font-medium text-gray-900 dark:text-gray-100">{val}</div><div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5"><span className="bg-gray-100 dark:bg-slate-800 px-1.5 rounded border border-gray-200 dark:border-slate-700 dark:text-gray-300">v{doc.phien_ban}</span><span>•</span><span className="dark:text-gray-400">{getDocTypeName(doc.id_loai_tai_lieu)}</span></div></div>) },
-    { key: 'id_nguoi_soan_thao', header: 'Người trình', visible: true, render: (val) => { const name = getName(val as string); return <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs flex items-center justify-center font-bold">{name.charAt(0)}</div><span className="text-sm dark:text-gray-300">{name}</span></div>; } },
+    { key: 'nguoi_soan_thao', header: 'Người trình', visible: true, render: (val) => { const name = getName(val as string); return <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs flex items-center justify-center font-bold">{name.charAt(0)}</div><span className="text-sm dark:text-gray-300">{name}</span></div>; } },
     { key: 'ngay_cap_nhat_cuoi', header: 'Ngày trình', visible: true, render: (val) => <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs"><Clock size={12}/>{format(new Date(val), 'dd/MM/yyyy')}</span> },
-    { key: 'trang_thai', header: 'Vai trò', visible: true, render: (_, doc) => { const isApprover = doc.id_nguoi_phe_duyet === currentUser.id; if (currentUser.roles.includes('QUAN_TRI') && doc.id_nguoi_phe_duyet !== currentUser.id && doc.id_nguoi_xem_xet !== currentUser.id) { return <span className="text-[10px] font-bold text-gray-500 bg-gray-100 border border-gray-200 px-2 py-1 rounded-full dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400">Quản trị viên</span>; } return isApprover ? <span className="text-[10px] font-bold text-green-700 bg-green-100 border border-green-200 px-2 py-1 rounded-full shadow-sm flex w-fit items-center gap-1 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"><PenTool size={10}/> Phê duyệt</span> : <span className="text-[10px] font-bold text-blue-700 bg-blue-100 border border-blue-200 px-2 py-1 rounded-full shadow-sm flex w-fit items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300"><Eye size={10}/> Xem xét</span>; } },
+    { key: 'trang_thai', header: 'Vai trò', visible: true, render: (_, doc) => { const isApprover = doc.nguoi_phe_duyet === currentUser.id; if (currentUser.roles.includes('QUAN_TRI') && doc.nguoi_phe_duyet !== currentUser.id && doc.nguoi_xem_xet !== currentUser.id) { return <span className="text-[10px] font-bold text-gray-500 bg-gray-100 border border-gray-200 px-2 py-1 rounded-full dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400">Quản trị viên</span>; } return isApprover ? <span className="text-[10px] font-bold text-green-700 bg-green-100 border border-green-200 px-2 py-1 rounded-full shadow-sm flex w-fit items-center gap-1 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"><PenTool size={10}/> Phê duyệt</span> : <span className="text-[10px] font-bold text-blue-700 bg-blue-100 border border-blue-200 px-2 py-1 rounded-full shadow-sm flex w-fit items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300"><Eye size={10}/> Xem xét</span>; } },
     { key: 'id', header: 'Tác vụ', visible: true, render: (_, item) => (<div className="flex gap-2"><Button size="sm" className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 shadow-sm" onClick={(e) => { e.stopPropagation(); openActionModal(item, false); }} title="Phê duyệt"><CheckCircle size={14} className="mr-1.5"/> Duyệt</Button><Button size="sm" className="bg-white text-red-600 border border-red-200 hover:bg-red-50 h-8 px-2 dark:bg-transparent dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20" onClick={(e) => { e.stopPropagation(); openActionModal(item, true); }} title="Từ chối / Trả về"><XCircle size={14} /></Button></div>) }
   ];
 
-  const getRoleText = () => { if (!selectedDoc) return ''; return selectedDoc.id_nguoi_phe_duyet === currentUser.id ? 'PHÊ DUYỆT' : 'XEM XÉT'; }
+  const getRoleText = () => { if (!selectedDoc) return ''; return selectedDoc.nguoi_phe_duyet === currentUser.id ? 'PHÊ DUYỆT' : 'XEM XÉT'; }
 
   return (
     <div className="space-y-6 animate-fade-in h-full flex flex-col">
