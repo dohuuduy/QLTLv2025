@@ -94,9 +94,22 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
       }
       setIsLoading(true);
 
+      // UUID Generation logic
+      let planId = editingPlan.id;
+      if (!planId) {
+          if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+              planId = crypto.randomUUID();
+          } else {
+              planId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                  var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                  return v.toString(16);
+              });
+          }
+      }
+
       const newPlan: KeHoachDanhGia = {
           ...editingPlan,
-          id: editingPlan.id || `KH${Date.now()}`,
+          id: planId,
           ngay_tao: editingPlan.ngay_tao || new Date().toISOString(),
           id_nguoi_tao: editingPlan.id_nguoi_tao || currentUser.id,
           danh_sach_phien: editingPlan.danh_sach_phien || []

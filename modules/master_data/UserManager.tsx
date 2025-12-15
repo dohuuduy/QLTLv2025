@@ -106,7 +106,15 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
             }
         } 
         else if (!userId) {
-            userId = `temp_${Date.now()}`;
+            // Generate UUID if creating profile ONLY without auth user
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                userId = crypto.randomUUID();
+            } else {
+                userId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
         }
 
         const roles = editingUser.roles || [];

@@ -89,9 +89,22 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
        expiryDate = format(addMonths(start, editingItem.thoi_gian_luu_tru), 'yyyy-MM-dd');
     }
 
+    // UUID Generation logic
+    let recordId = editingItem.id;
+    if (!recordId) {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            recordId = crypto.randomUUID();
+        } else {
+            recordId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+    }
+
     const newItem: HoSo = {
       ...editingItem,
-      id: editingItem.id || `HS-${Date.now()}`,
+      id: recordId,
       ngay_het_han: expiryDate,
       trang_thai: (expiryDate && isPast(new Date(expiryDate))) ? TrangThaiHoSo.CHO_HUY : (editingItem.trang_thai || TrangThaiHoSo.LUU_TRU)
     } as HoSo;

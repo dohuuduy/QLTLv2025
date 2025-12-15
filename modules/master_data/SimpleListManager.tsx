@@ -145,9 +145,22 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
     }
     setIsLoading(true);
 
+    // UUID Generation logic
+    let itemId = editingItem ? editingItem.id : undefined;
+    if (!itemId) {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            itemId = crypto.randomUUID();
+        } else {
+            itemId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+    }
+
     const type = guessType();
     const newItem: DanhMucItem = {
-        id: editingItem ? editingItem.id : undefined as any,
+        id: itemId,
         ten: formState.ten,
         thu_tu: formState.thu_tu,
         active: formState.active,
@@ -162,11 +175,11 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
 
     try {
         await upsertCategory(newItem, type);
-        const tempItem = { ...newItem, id: newItem.id || Date.now().toString() }; 
+        // const tempItem = { ...newItem, id: newItem.id || Date.now().toString() }; 
         if (editingItem) {
-            onUpdate(data.map(item => item.id === editingItem.id ? tempItem : item));
+            onUpdate(data.map(item => item.id === editingItem.id ? newItem : item));
         } else {
-            onUpdate([...data, tempItem]);
+            onUpdate([...data, newItem]);
         }
         setIsModalOpen(false);
         dialog.alert('Lưu danh mục thành công!', { type: 'success' });

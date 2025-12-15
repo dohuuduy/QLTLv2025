@@ -200,9 +200,24 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
   const handleSaveDoc = async (docData: Partial<TaiLieu>) => {
     setIsLoading(true);
+    
+    // Generate UUID if new
+    let docId = docData.id;
+    if (!docId) {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            docId = crypto.randomUUID();
+        } else {
+            // Fallback for older browsers
+            docId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+    }
+
     const newDoc: TaiLieu = {
       ...docData,
-      id: docData.id || `TL${Date.now()}`,
+      id: docId,
       ngay_tao: docData.ngay_tao || new Date().toISOString(),
       nguoi_tao: docData.nguoi_tao || currentUser.id,
       ngay_cap_nhat_cuoi: new Date().toISOString(),
@@ -212,7 +227,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
 
     if (!docData.id) {
        newDoc.lich_su?.push({
-         id: `H${Date.now()}`,
+         id: `H${Date.now()}`, // History IDs can be strings if not a strict relation, but usually safer as UUID too. For now keeping simple.
          nguoi_thuc_hien: currentUser.ho_ten, 
          hanh_dong: 'TAO_MOI',
          thoi_gian: new Date().toISOString(),
@@ -238,6 +253,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       handleCloseDrawer();
       dialog.alert('Lưu tài liệu thành công!', { type: 'success' });
     } catch (e) {
+      console.error(e);
       dialog.alert('Lỗi lưu tài liệu! Vui lòng thử lại.', { type: 'error' });
     } finally {
       setIsLoading(false);
@@ -310,10 +326,21 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
        }]
     };
 
+    // Generate UUID for new version
+    let newDocId;
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        newDocId = crypto.randomUUID();
+    } else {
+        newDocId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
     const newVersion = getNextVersion(selectedDoc.phien_ban, versionType);
     const newDoc: TaiLieu = {
        ...selectedDoc,
-       id: `TL${Date.now()}`,
+       id: newDocId,
        phien_ban: newVersion,
        trang_thai: TrangThaiTaiLieu.SOAN_THAO,
        ngay_ban_hanh: '', // Reset
