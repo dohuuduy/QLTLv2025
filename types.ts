@@ -158,7 +158,7 @@ export interface KeHoachDanhGia {
   
   // NEW FIELDS
   to_chuc_danh_gia_id?: string; // Link MasterData.toChucDanhGia
-  truong_doan_id?: string;      // Link MasterData.auditors
+  auditor_ids?: string[];       // Link MasterData.auditors (Multiple) - Replaces truong_doan_id
   
   thoi_gian_du_kien_start: string;
   thoi_gian_du_kien_end: string;

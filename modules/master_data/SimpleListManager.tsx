@@ -8,6 +8,7 @@ import { Trash2, Pencil, Plus, CheckCircle, XCircle, Link as LinkIcon, Layers, H
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { upsertCategory, deleteCategory } from '../../services/supabaseService';
 import { useDialog } from '../../contexts/DialogContext';
+import { useToast } from '../../components/ui/Toast';
 
 interface SimpleListManagerProps {
   data: DanhMucItem[];
@@ -30,6 +31,7 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
   const [editingItem, setEditingItem] = useState<DanhMucItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const dialog = useDialog();
+  const toast = useToast();
   
   const guessType = () => {
       if (title.includes('Loại tài liệu')) return 'LOAI_TAI_LIEU';
@@ -128,9 +130,9 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
       try {
           await deleteCategory(id);
           onUpdate(data.filter(item => item.id !== id));
-          dialog.alert('Xóa thành công!', { type: 'success' });
+          toast.success('Xóa danh mục thành công!');
       } catch (error) {
-          dialog.alert('Lỗi khi xóa danh mục!', { type: 'error' });
+          toast.error('Lỗi khi xóa danh mục!');
       }
     }
   };
@@ -177,9 +179,9 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
             onUpdate([...data, newItem]);
         }
         setIsModalOpen(false);
-        dialog.alert('Lưu danh mục thành công!', { type: 'success' });
+        toast.success('Lưu danh mục thành công!');
     } catch (error) {
-        dialog.alert("Lỗi khi lưu danh mục!", { type: 'error' });
+        toast.error("Lỗi khi lưu danh mục!");
     } finally {
         setIsLoading(false);
     }
@@ -190,8 +192,10 @@ export const SimpleListManager: React.FC<SimpleListManagerProps> = ({
       try {
           await upsertCategory(newItem, guessType());
           onUpdate(data.map(i => i.id === item.id ? newItem : i));
+          toast.success(`Đã ${newItem.active ? 'kích hoạt' : 'khóa'} danh mục: ${item.ten}`);
       } catch (error) {
           console.error(error);
+          toast.error("Lỗi cập nhật trạng thái!");
       }
   };
 

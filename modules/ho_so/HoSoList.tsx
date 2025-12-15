@@ -10,6 +10,7 @@ import { format, addMonths, isPast, differenceInDays } from 'date-fns';
 import { Archive, Plus, Trash2, Clock, MapPin, ShieldAlert, FileBox, Calendar, HardDrive, Hash, AlignLeft, Link as LinkIcon, Filter, X, Database, Building2 } from 'lucide-react';
 import { upsertRecord, deleteRecord } from '../../services/supabaseService';
 import { useDialog } from '../../contexts/DialogContext';
+import { useToast } from '../../components/ui/Toast';
 
 interface HoSoListProps {
   masterData: MasterDataState;
@@ -24,6 +25,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
   const [editingItem, setEditingItem] = useState<Partial<HoSo>>({});
   const [isLoading, setIsLoading] = useState(false);
   const dialog = useDialog();
+  const toast = useToast();
 
   const getDeptName = (id: string) => masterData.boPhan.find(bp => bp.id === id)?.ten || '---';
 
@@ -121,9 +123,9 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
            onUpdate([newItem, ...data]);
         }
         setIsModalOpen(false);
-        dialog.alert('Lưu hồ sơ thành công!', { type: 'success' });
+        toast.success('Lưu hồ sơ thành công!');
     } catch (error) {
-        dialog.alert("Lỗi khi lưu hồ sơ!", { type: 'error' });
+        toast.error("Lỗi khi lưu hồ sơ!");
     } finally {
         setIsLoading(false);
     }
@@ -136,9 +138,9 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
         try {
             await deleteRecord(id);
             onUpdate(data.filter(i => i.id !== id));
-            dialog.alert('Tiêu hủy hồ sơ thành công!', { type: 'success' });
+            toast.success('Tiêu hủy hồ sơ thành công!');
         } catch (error) {
-            dialog.alert("Lỗi khi xóa hồ sơ!", { type: 'error' });
+            toast.error("Lỗi khi xóa hồ sơ!");
         }
      }
   }

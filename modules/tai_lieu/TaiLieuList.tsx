@@ -13,6 +13,7 @@ import { Plus, Filter, FileText, Eye, Pencil, Send, FileUp, ChevronRight, X, Clo
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
 import { format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
+import { useToast } from '../../components/ui/Toast';
 
 interface TaiLieuListProps {
   masterData: MasterDataState;
@@ -43,6 +44,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const dialog = useDialog();
+  const toast = useToast();
   const isAdmin = currentUser.roles.includes('QUAN_TRI');
 
   useEffect(() => {
@@ -145,9 +147,9 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         try {
             await deleteDocument(id);
             onUpdate(data.filter(d => d.id !== id));
-            dialog.alert('Đã xóa tài liệu thành công!', { type: 'success' });
+            toast.success('Đã xóa tài liệu thành công!');
         } catch (error) {
-            dialog.alert('Lỗi khi xóa tài liệu! Vui lòng thử lại.', { type: 'error' });
+            toast.error('Lỗi khi xóa tài liệu! Vui lòng thử lại.');
         }
     }
   };
@@ -269,10 +271,10 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         onUpdate([newDoc, ...data]);
       }
       handleCloseDrawer();
-      dialog.alert('Lưu tài liệu thành công!', { type: 'success' });
+      toast.success('Lưu tài liệu thành công!');
     } catch (e) {
       console.error(e);
-      dialog.alert('Lỗi lưu tài liệu! Vui lòng thử lại.', { type: 'error' });
+      toast.error('Lỗi lưu tài liệu! Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
@@ -302,9 +304,9 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
       await upsertDocument(updatedDoc);
       onUpdate(data.map(d => d.id === updatedDoc.id ? updatedDoc : d));
       setSelectedDoc(updatedDoc);
-      dialog.alert('Đã gửi yêu cầu phê duyệt thành công!', { type: 'success' });
+      toast.success('Đã gửi yêu cầu phê duyệt thành công!');
     } catch (e) {
-      dialog.alert('Lỗi gửi yêu cầu phê duyệt.', { type: 'error' });
+      toast.error('Lỗi gửi yêu cầu phê duyệt.');
     } finally {
       setIsLoading(false);
     }
@@ -379,9 +381,9 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         setSelectedDoc(newDoc);
         setShowVersionModal(false);
         setViewMode('form');
-        dialog.alert(`Đã nâng cấp lên phiên bản ${newVersion}`, { type: 'success' });
+        toast.success(`Đã nâng cấp lên phiên bản ${newVersion}`);
     } catch(e) {
-        dialog.alert("Lỗi khi nâng phiên bản tài liệu.", { type: 'error' });
+        toast.error("Lỗi khi nâng phiên bản tài liệu.");
     } finally {
         setIsLoading(false);
     }

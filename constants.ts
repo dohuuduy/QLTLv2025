@@ -339,7 +339,7 @@ export const MOCK_KE_HOACH_AUDIT: KeHoachDanhGia[] = [
     ten_ke_hoach: 'Đánh giá nội bộ Q4/2024',
     id_loai_danh_gia: '1', // Đánh giá nội bộ (ID)
     to_chuc_danh_gia_id: '5', // Ban ISO Nội bộ
-    truong_doan_id: '1',      // Nguyễn Văn Kiểm
+    auditor_ids: ['1', '2'], // Nguyễn Văn Kiểm & Trần Thị Soát
     thoi_gian_du_kien_start: '2024-10-20',
     thoi_gian_du_kien_end: '2024-10-30',
     muc_tieu: 'Kiểm tra sự tuân thủ quy trình ISO 9001:2015 tại các phòng ban khối Văn phòng.',

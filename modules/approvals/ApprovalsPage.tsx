@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { upsertDocument } from '../../services/supabaseService';
 import { useDialog } from '../../contexts/DialogContext';
+import { useToast } from '../../components/ui/Toast';
 
 interface ApprovalsPageProps {
   currentUser: NhanSu;
@@ -32,6 +33,7 @@ export const ApprovalsPage: React.FC<ApprovalsPageProps> = ({ currentUser, docum
   const [comment, setComment] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const dialog = useDialog();
+  const toast = useToast();
 
   const getName = (id: string) => masterData?.nhanSu.find(u => u.id === id)?.ho_ten || '---';
   const getDocTypeName = (id: string) => masterData?.loaiTaiLieu.find(t => t.id === id)?.ten || id || '---';
@@ -81,9 +83,9 @@ export const ApprovalsPage: React.FC<ApprovalsPageProps> = ({ currentUser, docum
         onUpdate(updatedDocs);
         console.log(`[ISO LOG] ${actionName} | Doc: ${selectedDoc.ma_tai_lieu}`);
         setShowSignModal(false);
-        dialog.alert(isRejecting ? 'Đã trả về tài liệu thành công!' : 'Đã phê duyệt tài liệu thành công!', { type: 'success' });
+        toast.success(isRejecting ? 'Đã trả về tài liệu thành công!' : 'Đã phê duyệt tài liệu thành công!');
     } catch (error) {
-        dialog.alert("Lỗi khi cập nhật trạng thái tài liệu!", { type: 'error' });
+        toast.error("Lỗi khi cập nhật trạng thái tài liệu!");
     } finally {
         setIsLoading(false);
     }

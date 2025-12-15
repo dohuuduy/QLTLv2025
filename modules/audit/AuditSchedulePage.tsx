@@ -5,11 +5,13 @@ import { Button } from '../../components/ui/Button';
 import { DataTable } from '../../components/DataTable';
 import { Modal } from '../../components/ui/Modal';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
+import { MultiSelect } from '../../components/ui/MultiSelect'; // Use MultiSelect for Auditors
 import { CalendarDays, Plus, Calendar, Target, MapPin, UserCheck, Briefcase, Trash2, Pencil, Layers, List, FileBox } from 'lucide-react';
 import { format } from 'date-fns';
 import { AuditCalendar } from './AuditCalendar';
 import { upsertAuditPlan, deleteAuditPlan } from '../../services/supabaseService';
 import { useDialog } from '../../contexts/DialogContext';
+import { useToast } from '../../components/ui/Toast';
 
 interface AuditSchedulePageProps {
   auditPlans: KeHoachDanhGia[];
@@ -31,11 +33,12 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
   const [editingPlan, setEditingPlan] = useState<Partial<KeHoachDanhGia>>({
      trang_thai: 'lap_ke_hoach',
      to_chuc_danh_gia_id: '',
-     truong_doan_id: '',
+     auditor_ids: [],
      id_loai_danh_gia: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const dialog = useDialog();
+  const toast = useToast();
 
   // Unified Styles (Fixed Dark Mode)
   const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 ring-primary/20 outline-none transition-all text-sm";
@@ -59,7 +62,7 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
          muc_tieu: '',
          pham_vi: '',
          to_chuc_danh_gia_id: '',
-         truong_doan_id: ''
+         auditor_ids: []
      });
      setIsModalOpen(true);
   };
@@ -80,9 +83,9 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
         try {
             await deleteAuditPlan(id);
             onUpdate(auditPlans.filter(p => p.id !== id));
-            dialog.alert('Đã xóa kế hoạch thành công!', { type: 'success' });
+            toast.success('Đã xóa kế hoạch thành công!');
         } catch (error) {
-            dialog.alert("Lỗi xóa kế hoạch!", { type: 'error' });
+            toast.error("Lỗi xóa kế hoạch! Vui lòng thử lại.");
         }
      }
   };
@@ -123,9 +126,9 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
               onUpdate([newPlan, ...auditPlans]);
           }
           setIsModalOpen(false);
-          dialog.alert('Lưu kế hoạch thành công!', { type: 'success' });
+          toast.success('Lưu kế hoạch đánh giá thành công!');
       } catch (error) {
-          dialog.alert("Lỗi lưu kế hoạch!", { type: 'error' });
+          toast.error("Lỗi khi lưu kế hoạch!");
       } finally {
           setIsLoading(false);
       }
@@ -134,6 +137,7 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
   const auditTypeOptions = (masterData.loaiDanhGia || []).map(t => ({ value: t.id, label: t.ten }));
   const auditOrgOptions = (masterData.toChucDanhGia || []).map(t => ({ value: t.id, label: t.ten }));
   
+  // Use for MultiSelect
   const filteredAuditors = useMemo(() => {
      if (!editingPlan.to_chuc_danh_gia_id) return [];
      return (masterData.auditors || [])
@@ -147,7 +151,20 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
           return (<div><div className="font-medium text-gray-800 dark:text-gray-200">{val}</div><div className="text-xs text-gray-500 mt-1">{typeName}</div></div>);
       }},
       { key: 'to_chuc_danh_gia_id', header: 'Tổ chức đánh giá', visible: true, render: (val) => { const org = masterData.toChucDanhGia?.find(o => o.id === val); return <span className="text-sm">{org ? org.ten : '--'}</span>; } },
-      { key: 'truong_doan_id', header: 'Trưởng đoàn', visible: true, render: (val) => { const lead = masterData.auditors?.find(a => a.id === val); return lead ? (<div className="flex items-center gap-1 text-sm"><UserCheck size={14} className="text-blue-500"/> {lead.ten}</div>) : '--'; } },
+      { key: 'auditor_ids', header: 'Đoàn đánh giá', visible: true, render: (val) => { 
+          const ids = (val as string[]) || [];
+          if (ids.length === 0) return '--';
+          const names = ids.map(id => masterData.auditors.find(a => a.id === id)?.ten).filter(Boolean);
+          return (
+            <div className="flex flex-col gap-1 text-sm">
+                {names.length > 0 ? (
+                    names.map((name, idx) => (
+                        <div key={idx} className="flex items-center gap-1"><UserCheck size={12} className="text-blue-500"/> {name}</div>
+                    ))
+                ) : <span className="italic text-gray-400">Không tìm thấy</span>}
+            </div>
+          );
+      } },
       { key: 'thoi_gian_du_kien_start', header: 'Thời gian', visible: true, render: (_, item) => (<span className="text-xs">{item.thoi_gian_du_kien_start ? format(new Date(item.thoi_gian_du_kien_start), 'dd/MM/yyyy') : '?'} {' - '} {item.thoi_gian_du_kien_end ? format(new Date(item.thoi_gian_du_kien_end), 'dd/MM/yyyy') : '?'}</span>) },
       { key: 'trang_thai', header: 'Trạng thái', visible: true, render: (val) => getStatusBadge(val as TrangThaiKeHoach) },
       { key: 'id', header: 'Thao tác', visible: true, render: (_, item) => (<div className="flex gap-1"><Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}><Pencil size={16} className="text-blue-500"/></Button><Button variant="ghost" size="icon" onClick={(e) => handleDelete(item.id, e)}><Trash2 size={16} className="text-red-500"/></Button></div>) }
@@ -213,8 +230,19 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
                 <div className="space-y-4">
                         <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><Briefcase size={16} className="text-purple-500"/> Đơn vị thực hiện</h4>
                         <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-900/30 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label className={labelClass}>Tổ chức đánh giá</label><SearchableSelect options={auditOrgOptions} value={editingPlan.to_chuc_danh_gia_id} onChange={(val) => setEditingPlan({...editingPlan, to_chuc_danh_gia_id: String(val), truong_doan_id: ''})} placeholder="-- Chọn tổ chức --"/></div>
-                        <div><label className={labelClass}>Trưởng đoàn đánh giá</label><SearchableSelect options={filteredAuditors} value={editingPlan.truong_doan_id} onChange={(val) => setEditingPlan({...editingPlan, truong_doan_id: String(val)})} placeholder={editingPlan.to_chuc_danh_gia_id ? "-- Chọn trưởng đoàn --" : "-- Chọn tổ chức trước --"} disabled={!editingPlan.to_chuc_danh_gia_id}/></div>
+                        <div><label className={labelClass}>Tổ chức đánh giá</label><SearchableSelect options={auditOrgOptions} value={editingPlan.to_chuc_danh_gia_id} onChange={(val) => setEditingPlan({...editingPlan, to_chuc_danh_gia_id: String(val), auditor_ids: []})} placeholder="-- Chọn tổ chức --"/></div>
+                        <div>
+                            <label className={labelClass}>Đoàn đánh giá (Auditors)</label>
+                            {/* Updated to MultiSelect for multiple auditors */}
+                            <MultiSelect 
+                                options={filteredAuditors} 
+                                value={editingPlan.auditor_ids || []} 
+                                onValueChange={(val) => setEditingPlan({...editingPlan, auditor_ids: val})} 
+                                placeholder={editingPlan.to_chuc_danh_gia_id ? "-- Chọn các thành viên --" : "-- Chọn tổ chức trước --"} 
+                                disabled={!editingPlan.to_chuc_danh_gia_id}
+                                className="bg-white dark:bg-slate-900"
+                            />
+                        </div>
                         </div>
                 </div>
 

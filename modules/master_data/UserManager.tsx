@@ -8,6 +8,7 @@ import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { Plus, Trash2, Pencil, Shield, User, Check, Lock, Info, FileBox, Minus } from 'lucide-react';
 import { upsertProfile, deleteProfile, signUpNewUser } from '../../services/supabaseService';
 import { useDialog } from '../../contexts/DialogContext';
+import { useToast } from '../../components/ui/Toast';
 
 interface UserManagerProps {
   users: NhanSu[];
@@ -23,6 +24,7 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
   const [createAuthUser, setCreateAuthUser] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const dialog = useDialog();
+  const toast = useToast();
 
   // Unified Styles (Fixed Dark Mode)
   const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 ring-primary/20 outline-none transition-all text-sm";
@@ -54,9 +56,9 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
       try {
           await deleteProfile(id);
           onUpdate(users.filter(u => u.id !== id));
-          dialog.alert('Xóa nhân sự thành công!', { type: 'success' });
+          toast.success('Xóa nhân sự thành công!');
       } catch (error) {
-          dialog.alert('Lỗi xóa nhân sự!', { type: 'error' });
+          toast.error('Lỗi xóa nhân sự!');
       }
     }
   };
@@ -90,7 +92,7 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
             });
 
             if (error) {
-                dialog.alert("Lỗi tạo tài khoản đăng nhập: " + error.message, { type: 'error' });
+                toast.error("Lỗi tạo tài khoản đăng nhập: " + error.message);
                 setIsLoading(false);
                 return;
             }
@@ -133,10 +135,10 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
         }
         
         setIsModalOpen(false);
-        dialog.alert('Lưu nhân sự thành công!', { type: 'success' });
+        toast.success('Lưu nhân sự thành công!');
     } catch (error: any) {
         console.error(error);
-        dialog.alert('Lỗi lưu nhân sự: ' + error.message, { type: 'error' });
+        toast.error('Lỗi lưu nhân sự: ' + error.message);
     } finally {
         setIsLoading(false);
     }
