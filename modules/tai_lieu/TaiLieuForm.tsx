@@ -199,7 +199,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const approverOptions = masterData.nhanSu.filter(u => u.roles.includes('PHE_DUYET') || u.roles.includes('QUAN_TRI')).map(mapUserToOption);
 
   // Styling
-  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm disabled:opacity-60";
+  const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm disabled:opacity-60 text-gray-900 dark:text-gray-100";
   const labelClass = "text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5 block tracking-wide";
   const cardClass = "bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm p-5 h-full flex flex-col";
 
@@ -212,14 +212,14 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                 <div className="md:col-span-8">
                     <label className={labelClass}><FileBox size={14} className="text-blue-500 inline mr-1"/> Tên tài liệu <span className="text-red-500">*</span></label>
-                    <input required name="ten_tai_lieu" value={formData.ten_tai_lieu} onChange={handleChange} className="w-full h-11 px-4 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-lg font-semibold focus:ring-2 ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:font-normal placeholder:text-gray-400" placeholder="VD: Quy trình kiểm soát chất lượng đầu vào" autoFocus />
+                    <input required name="ten_tai_lieu" value={formData.ten_tai_lieu} onChange={handleChange} className={`${inputClass} text-lg font-semibold h-11 placeholder:font-normal placeholder:text-gray-400`} placeholder="VD: Quy trình kiểm soát chất lượng đầu vào" autoFocus />
                 </div>
                 <div className="md:col-span-4">
                     <label className={labelClass}><Fingerprint size={14} className="text-purple-500 inline mr-1"/> Mã tài liệu <span className="text-red-500">*</span></label>
                     <div className="relative">
                         <input 
                             required name="ma_tai_lieu" value={formData.ma_tai_lieu} onChange={handleChange} 
-                            className="w-full h-11 px-4 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-lg font-mono font-bold text-blue-700 dark:text-blue-400 focus:ring-2 ring-blue-500/20 focus:border-blue-500 outline-none uppercase" 
+                            className={`${inputClass} text-lg font-mono font-bold text-blue-700 dark:text-blue-400 h-11 uppercase`} 
                             placeholder="Tự động sinh..." readOnly={isCodeLocked} 
                         />
                         <button type="button" onClick={() => setIsCodeLocked(!isCodeLocked)} className="absolute right-3 top-3 text-gray-400 hover:text-blue-500 transition-colors">
@@ -243,7 +243,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                     <div><label className={labelClass}>Tài liệu gốc (Parent)</label><SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} placeholder="-- Không có --" /></div>
                     <div>
                         <label className={labelClass}>Tiêu chuẩn áp dụng</label>
-                        <div className="flex flex-wrap gap-2 pt-1">{masterData.tieuChuan.map(item => (<button key={item.id} type="button" onClick={() => toggleTieuChuan(item.ten)} className={`px-2.5 py-1.5 rounded-md text-[11px] font-semibold border transition-all flex items-center gap-1.5 ${formData.tieu_chuan?.includes(item.ten) ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm' : 'bg-white border-gray-200 text-gray-500'}`}>{formData.tieu_chuan?.includes(item.ten) && <Tag size={10} className="fill-current" />} {item.ten}</button>))}</div>
+                        <div className="flex flex-wrap gap-2 pt-1">{masterData.tieuChuan.map(item => (<button key={item.id} type="button" onClick={() => toggleTieuChuan(item.ten)} className={`px-2.5 py-1.5 rounded-md text-[11px] font-semibold border transition-all flex items-center gap-1.5 ${formData.tieu_chuan?.includes(item.ten) ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' : 'bg-white border-gray-200 text-gray-500 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400'}`}>{formData.tieu_chuan?.includes(item.ten) && <Tag size={10} className="fill-current" />} {item.ten}</button>))}</div>
                     </div>
                 </div>
             </div>
@@ -259,18 +259,43 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                         <div><label className={labelClass}>Lần ban hành</label><input type="number" min="0" name="lan_ban_hanh" value={formData.lan_ban_hanh} onChange={handleChange} className={`${inputClass} text-center font-mono`} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div><label className={labelClass}>Ngày ban hành</label><input type="date" name="ngay_ban_hanh" value={formData.ngay_ban_hanh} onChange={handleChange} className={`${inputClass} cursor-pointer`} /></div>
-                        <div><label className={labelClass}>Ngày hiệu lực</label><input type="date" name="ngay_hieu_luc" value={formData.ngay_hieu_luc} onChange={handleChange} className={`${inputClass} cursor-pointer`} /></div>
+                        <div><label className={labelClass}>Ngày ban hành</label><input type="date" name="ngay_ban_hanh" value={formData.ngay_ban_hanh} onChange={handleChange} className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`} /></div>
+                        <div><label className={labelClass}>Ngày hiệu lực</label><input type="date" name="ngay_hieu_luc" value={formData.ngay_hieu_luc} onChange={handleChange} className={`${inputClass} cursor-pointer dark:[color-scheme:dark]`} /></div>
                     </div>
-                    <div className={`p-3 rounded-xl border transition-all ${isReviewEnabled ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-gray-100'}`}>
+                    
+                    {/* FIXED: Dark mode colors for Periodic Review */}
+                    <div className={`p-3 rounded-xl border transition-all ${isReviewEnabled ? 'bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-800/50' : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-slate-700'}`}>
                         <label className="flex items-center justify-between cursor-pointer mb-2">
-                            <span className={`text-xs font-bold flex items-center gap-1.5 ${isReviewEnabled ? 'text-orange-700' : 'text-gray-500'}`}><RefreshCw size={14}/> Rà soát định kỳ</span>
-                            <div className={`w-8 h-4 rounded-full relative transition-colors ${isReviewEnabled ? 'bg-orange-500' : 'bg-gray-300'}`}><input type="checkbox" className="hidden" checked={isReviewEnabled} onChange={toggleReview} /><div className={`w-2.5 h-2.5 bg-white rounded-full absolute top-0.5 transition-all shadow-sm ${isReviewEnabled ? 'left-5' : 'left-0.5'}`}></div></div>
+                            <span className={`text-xs font-bold flex items-center gap-1.5 ${isReviewEnabled ? 'text-orange-700 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'}`}><RefreshCw size={14}/> Rà soát định kỳ</span>
+                            <div className={`w-8 h-4 rounded-full relative transition-colors ${isReviewEnabled ? 'bg-orange-500' : 'bg-gray-300 dark:bg-slate-600'}`}>
+                                <input type="checkbox" className="hidden" checked={isReviewEnabled} onChange={toggleReview} />
+                                <div className={`w-2.5 h-2.5 bg-white rounded-full absolute top-0.5 transition-all shadow-sm ${isReviewEnabled ? 'left-5' : 'left-0.5'}`}></div>
+                            </div>
                         </label>
                         {isReviewEnabled && (
                             <div className="flex items-end gap-2 animate-in fade-in">
-                                <div className="flex-1"><input type="number" min="1" name="chu_ky_ra_soat" value={formData.chu_ky_ra_soat || ''} onChange={handleChange} className="w-full h-8 px-2 rounded-lg border border-orange-300 bg-white text-xs font-bold text-center" placeholder="12" /><span className="text-[9px] text-orange-600/70 block text-center mt-0.5">Tháng/lần</span></div>
-                                <div className="flex-[2]"><input type="date" name="ngay_ra_soat_tiep_theo" value={formData.ngay_ra_soat_tiep_theo || ''} onChange={handleChange} className="w-full h-8 px-2 rounded-lg border border-orange-300 bg-white text-xs" /><span className="text-[9px] text-orange-600/70 block text-center mt-0.5">Lần tới</span></div>
+                                <div className="flex-1">
+                                    <input 
+                                        type="number" 
+                                        min="1" 
+                                        name="chu_ky_ra_soat" 
+                                        value={formData.chu_ky_ra_soat || ''} 
+                                        onChange={handleChange} 
+                                        className="w-full h-8 px-2 rounded-lg border border-orange-300 dark:border-orange-700/50 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-orange-500/20 outline-none text-xs font-bold text-center text-gray-900 dark:text-orange-100 placeholder:text-gray-400" 
+                                        placeholder="12" 
+                                    />
+                                    <span className="text-[9px] text-orange-600/80 dark:text-orange-400/80 block text-center mt-1 font-medium">Tháng/lần</span>
+                                </div>
+                                <div className="flex-[2]">
+                                    <input 
+                                        type="date" 
+                                        name="ngay_ra_soat_tiep_theo" 
+                                        value={formData.ngay_ra_soat_tiep_theo || ''} 
+                                        onChange={handleChange} 
+                                        className="w-full h-8 px-2 rounded-lg border border-orange-300 dark:border-orange-700/50 bg-white dark:bg-slate-900 outline-none text-xs text-gray-900 dark:text-orange-100 dark:[color-scheme:dark]" 
+                                    />
+                                    <span className="text-[9px] text-orange-600/80 dark:text-orange-400/80 block text-center mt-1 font-medium">Lần tới</span>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -289,16 +314,16 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             <input value={urlInput} onChange={(e) => setUrlInput(e.target.value)} className={`${inputClass} pl-8 text-xs h-8 bg-white dark:bg-slate-950`} placeholder="Dán link Drive/SharePoint..." />
                         </div>
                         <div className="flex gap-2">
-                            <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('pdf')} className="flex-1 h-7 text-[10px] px-1 hover:text-red-600 hover:border-red-200 bg-white gap-1"><FileType size={12}/> PDF</Button>
-                            <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('doc')} className="flex-1 h-7 text-[10px] px-1 hover:text-blue-600 hover:border-blue-200 bg-white gap-1"><FileText size={12}/> Word</Button>
-                            <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('excel')} className="flex-1 h-7 text-[10px] px-1 hover:text-emerald-600 hover:border-emerald-200 bg-white gap-1"><FileSpreadsheet size={12}/> Excel</Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('pdf')} className="flex-1 h-7 text-[10px] px-1 hover:text-red-600 hover:border-red-200 bg-white dark:bg-slate-900 gap-1"><FileType size={12}/> PDF</Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('doc')} className="flex-1 h-7 text-[10px] px-1 hover:text-blue-600 hover:border-blue-200 bg-white dark:bg-slate-900 gap-1"><FileText size={12}/> Word</Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => handleAddFile('excel')} className="flex-1 h-7 text-[10px] px-1 hover:text-emerald-600 hover:border-emerald-200 bg-white dark:bg-slate-900 gap-1"><FileSpreadsheet size={12}/> Excel</Button>
                         </div>
                     </div>
                     <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2 max-h-[180px]">
                         {formData.dinh_kem?.map(file => (
-                            <div key={file.id} className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 bg-white shadow-sm group hover:border-blue-300 transition-all">
-                                <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${file.loai === 'pdf' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600'}`}>{file.loai === 'pdf' ? <FileType size={16}/> : <File size={16}/>}</div>
-                                <div className="flex-1 min-w-0"><a href={file.url} target="_blank" rel="noreferrer" className="text-xs font-medium text-gray-700 truncate block hover:text-blue-600">{file.ten_file}</a><span className="text-[10px] text-gray-400">{format(new Date(file.ngay_upload), 'dd/MM/yyyy')}</span></div>
+                            <div key={file.id} className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm group hover:border-blue-300 transition-all">
+                                <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${file.loai === 'pdf' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600 dark:bg-slate-800'}`}>{file.loai === 'pdf' ? <FileType size={16}/> : <File size={16}/>}</div>
+                                <div className="flex-1 min-w-0"><a href={file.url} target="_blank" rel="noreferrer" className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate block hover:text-blue-600">{file.ten_file}</a><span className="text-[10px] text-gray-400">{format(new Date(file.ngay_upload), 'dd/MM/yyyy')}</span></div>
                                 <button type="button" onClick={() => removeFile(file.id)} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
                             </div>
                         ))}
@@ -312,7 +337,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
             <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-3 mb-4">
                 <Info size={16} className="text-blue-500"/> Nội dung tóm tắt
             </h4>
-            <textarea name="mo_ta_tom_tat" value={formData.mo_ta_tom_tat} onChange={handleChange} className="w-full p-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-2 ring-primary/20 outline-none text-sm min-h-[100px]" placeholder="Mô tả phạm vi áp dụng, mục đích và các nội dung chính của tài liệu..." />
+            <textarea name="mo_ta_tom_tat" value={formData.mo_ta_tom_tat} onChange={handleChange} className={`${inputClass} h-auto min-h-[100px] resize-none p-3`} placeholder="Mô tả phạm vi áp dụng, mục đích và các nội dung chính của tài liệu..." />
         </div>
 
         {/* --- BLOCK 6: WORKFLOW (Horizontal Process) --- */}
@@ -329,7 +354,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                         <div><p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Bước 1</p><p className="text-sm font-bold text-gray-800 dark:text-gray-100">Soạn thảo</p></div>
                     </div>
                     <SearchableSelect options={drafterOptions} value={formData.id_nguoi_soan_thao} onChange={(val) => handleSelectChange('id_nguoi_soan_thao', val)} placeholder="Chọn nhân sự..." />
-                    <div className="hidden md:block absolute top-1/2 -right-6 transform -translate-y-1/2 text-blue-200 z-10"><ArrowRight size={24}/></div>
+                    <div className="hidden md:block absolute top-1/2 -right-6 transform -translate-y-1/2 text-blue-200 dark:text-blue-800 z-10"><ArrowRight size={24}/></div>
                 </div>
 
                 {/* Step 2 */}
@@ -339,7 +364,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                         <div><p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">Bước 2</p><p className="text-sm font-bold text-gray-800 dark:text-gray-100">Xem xét</p></div>
                     </div>
                     <SearchableSelect options={reviewerOptions} value={formData.id_nguoi_xem_xet} onChange={(val) => handleSelectChange('id_nguoi_xem_xet', val)} placeholder="Chọn nhân sự..." />
-                    <div className="hidden md:block absolute top-1/2 -right-6 transform -translate-y-1/2 text-indigo-200 z-10"><ArrowRight size={24}/></div>
+                    <div className="hidden md:block absolute top-1/2 -right-6 transform -translate-y-1/2 text-indigo-200 dark:text-indigo-800 z-10"><ArrowRight size={24}/></div>
                 </div>
 
                 {/* Step 3 */}
