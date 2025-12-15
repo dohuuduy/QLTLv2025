@@ -122,7 +122,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
 
   // 2. Dữ liệu Bộ phận (Department Bar) - Derived from Author
   const departmentCounts = data.reduce((acc, curr) => {
-    const dept = getDept(curr.id_nguoi_soan_thao);
+    const dept = getDept(curr.nguoi_soan_thao);
     acc[dept] = (acc[dept] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -134,7 +134,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateToDocuments }) =
 
   // 3. Dữ liệu Năng suất (Top Authors Bar)
   const authorCounts = data.reduce((acc, curr) => {
-    const authorName = getName(curr.id_nguoi_soan_thao);
+    const authorName = getName(curr.nguoi_soan_thao);
     acc[authorName] = (acc[authorName] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);

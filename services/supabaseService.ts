@@ -208,16 +208,37 @@ export const fetchDocumentsFromDB = async (): Promise<TaiLieu[] | null> => {
     try {
         const { data, error } = await supabase.from('tai_lieu').select('*').order('ngay_tao', { ascending: false });
         if (error) { console.warn("Fetch Docs Error:", error.message); return null; }
-        return data as TaiLieu[];
+        
+        // Map DB columns (id_*) back to Frontend types (nguoi_*) for compatibility
+        return (data || []).map((d: any) => ({
+            ...d,
+            nguoi_soan_thao: d.id_nguoi_soan_thao || d.nguoi_soan_thao,
+            nguoi_xem_xet: d.id_nguoi_xem_xet || d.nguoi_xem_xet,
+            nguoi_phe_duyet: d.id_nguoi_phe_duyet || d.nguoi_phe_duyet,
+            nguoi_tao: d.id_nguoi_tao || d.nguoi_tao
+        })) as TaiLieu[];
     } catch { return null; }
 };
 
 export const upsertDocument = async (doc: TaiLieu) => {
-    // Sanitize Payload: Remove frontend-only fields or fields missing in DB
-    const { nguoi_cap_nhat_cuoi, ...payload } = doc as any;
-    
-    // Explicitly handle array fields if needed, but Supabase standard is JSONB
-    // 'nguoi_cap_nhat_cuoi' removed to fix PGRST204
+    // Transform Frontend types to DB columns
+    // Remove fields that shouldn't be sent or need renaming
+    const { 
+        nguoi_cap_nhat_cuoi, 
+        nguoi_soan_thao,
+        nguoi_xem_xet,
+        nguoi_phe_duyet,
+        nguoi_tao,
+        ...rest 
+    } = doc as any;
+
+    const payload = {
+        ...rest,
+        id_nguoi_soan_thao: nguoi_soan_thao || null,
+        id_nguoi_xem_xet: nguoi_xem_xet || null,
+        id_nguoi_phe_duyet: nguoi_phe_duyet || null,
+        id_nguoi_tao: nguoi_tao
+    };
     
     const { error } = await supabase.from('tai_lieu').upsert(payload);
     if (error) {
