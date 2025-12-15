@@ -269,8 +269,9 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
               width: popoverPosition.width,
               // Using transform to adjust for "top" placement instead of changing top directly avoids layout thrashing
               transform: popoverPosition.placement === 'top' ? 'translateY(-100%)' : 'none',
+              transformOrigin: popoverPosition.placement === 'top' ? 'bottom' : 'top'
             }}
-            className="fixed z-[9999] min-w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg shadow-black/5 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200"
+            className="absolute z-[9999] min-w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg shadow-black/5 animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Search & Actions Header */}

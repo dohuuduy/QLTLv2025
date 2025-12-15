@@ -69,7 +69,9 @@ const mapCategoryToItem = (record: any): DanhMucItem => ({
   thu_tu: record.thu_tu || 0,
   ma_viet_tat: record.ma_viet_tat,
   parentId: record.id_cha,
-  ...(record.cai_dat || {}) // This will automatically map 'cap_do' if present in JSON
+  // Mapping 'cap_do' directly from DB column if available, fallback to cai_dat for backward compat
+  cap_do: record.cap_do !== undefined && record.cap_do !== null ? record.cap_do : record.cai_dat?.cap_do,
+  ...(record.cai_dat || {}) 
 });
 
 const mapItemToCategoryPayload = (item: DanhMucItem, type: string) => ({
@@ -80,10 +82,12 @@ const mapItemToCategoryPayload = (item: DanhMucItem, type: string) => ({
     thu_tu: item.thu_tu,
     ma_viet_tat: item.ma_viet_tat,
     id_cha: item.parentId,
+    // Explicitly write to 'cap_do' column
+    cap_do: item.cap_do, 
     cai_dat: {
         ky_tu_noi: item.ky_tu_noi,
         do_dai_so: item.do_dai_so,
-        cap_do: item.cap_do // Save level to JSON config
+        // Removed cap_do from here to avoid duplication, strictly use column now
     }
 });
 

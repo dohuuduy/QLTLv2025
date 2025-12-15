@@ -49,6 +49,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
       const placement = spaceBelow < dropdownHeight && rect.top > dropdownHeight ? 'top' : 'bottom';
       
       setPosition({
+        // Using absolute positioning relative to document: rect.bottom + window.scrollY
         top: placement === 'bottom' ? rect.bottom + window.scrollY + 4 : rect.top + window.scrollY - 4,
         left: rect.left + window.scrollX,
         width: rect.width,
@@ -195,8 +196,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = React.memo(({
               minWidth: position.width, 
               maxWidth: '90vw',
               transform: position.placement === 'top' ? 'translateY(-100%)' : 'none',
+              transformOrigin: position.placement === 'top' ? 'bottom' : 'top'
           }}
-          className="fixed z-[9999] bg-popover text-popover-foreground border border-border rounded-xl shadow-xl flex flex-col overflow-hidden animate-in fade-in duration-150"
+          className="absolute z-[9999] bg-popover text-popover-foreground border border-border rounded-xl shadow-xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
           onClick={(e) => e.stopPropagation()} 
         >
           {/* Search Header */}
