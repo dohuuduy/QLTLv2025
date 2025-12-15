@@ -14,6 +14,8 @@ import { MasterDataState, NhanSu, AppNotification, TaiLieu, HoSo, KeHoachDanhGia
 import { fetchMasterDataFromDB, fetchDocumentsFromDB, fetchRecordsFromDB, fetchAuditPlansFromDB, signOut, getCurrentSession } from './services/supabaseService';
 import { supabase } from './lib/supabaseClient';
 import { DialogProvider } from './contexts/DialogContext';
+import { ToastProvider, useToast } from './components/ui/Toast'; // Import Toast
+import { Tooltip } from './components/ui/Tooltip'; // Import Tooltip
 import { useSystemTheme } from './hooks/useTheme';
 
 const AppContent: React.FC = () => {
@@ -27,6 +29,9 @@ const AppContent: React.FC = () => {
   
   // Theme Hook
   const { theme, setTheme } = useSystemTheme();
+  
+  // Toast Hook
+  const toast = useToast();
 
   // Notification State
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
@@ -68,12 +73,17 @@ const AppContent: React.FC = () => {
       setSession(session);
       if (session && window.location.hash && window.location.hash.includes('access_token')) {
           window.history.replaceState(null, '', window.location.pathname);
+          toast.success("Xác thực email thành công!", "Chào mừng");
       }
       if (!session) {
          setDocuments([]);
          setRecords([]);
          setAuditPlans([]);
          setCurrentUser({ id: 'guest', ho_ten: 'Khách', email: '', chuc_vu: '', phong_ban: '', roles: [] });
+      } else if (event === 'SIGNED_IN') {
+         toast.success("Đăng nhập thành công!");
+      } else if (event === 'SIGNED_OUT') {
+         toast.info("Đã đăng xuất hệ thống.");
       }
     });
 
@@ -183,6 +193,7 @@ const AppContent: React.FC = () => {
      if (data.documents) setDocuments(data.documents);
      if (data.records) setRecords(data.records);
      if (data.auditPlans) setAuditPlans(data.auditPlans);
+     toast.success("Dữ liệu đã được khôi phục thành công!");
   };
 
   const getPageTitle = () => MENU_ITEMS.find(i => i.path === activeTab)?.label || 'Trang chủ';
@@ -233,26 +244,31 @@ const AppContent: React.FC = () => {
         </div>
         
         <nav className="flex-1 py-6 px-3 overflow-y-auto overflow-x-hidden space-y-1">
-            {MENU_ITEMS.map((item) => (
-              <button 
-                key={item.path}
-                onClick={() => setActiveTab(item.path)} 
-                className={`w-full flex items-center p-2.5 rounded-md transition-all duration-200 group whitespace-nowrap
-                  ${activeTab === item.path 
-                    ? 'bg-primary text-primary-foreground shadow-sm font-medium' 
-                    : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
-                  }`}
-              >
-                  <item.icon size={20} className={`min-w-[20px] transition-transform ${isSidebarOpen ? '' : 'mx-auto'}`} />
-                  {isSidebarOpen && <span className="ml-3 text-sm opacity-100 transition-opacity duration-300">{item.label}</span>}
-                  
-                  {!isSidebarOpen && activeTab === item.path && (
-                    <div className="absolute left-16 bg-popover text-popover-foreground px-2 py-1 rounded text-xs shadow-md border whitespace-nowrap z-50 animate-in fade-in slide-in-from-left-2 ml-2">
-                        {item.label}
-                    </div>
-                  )}
-              </button>
-            ))}
+            {MENU_ITEMS.map((item) => {
+              const buttonContent = (
+                <button 
+                  key={item.path}
+                  onClick={() => setActiveTab(item.path)} 
+                  className={`w-full flex items-center p-2.5 rounded-md transition-all duration-200 group whitespace-nowrap
+                    ${activeTab === item.path 
+                      ? 'bg-primary text-primary-foreground shadow-sm font-medium' 
+                      : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                    }`}
+                >
+                    <item.icon size={20} className={`min-w-[20px] transition-transform ${isSidebarOpen ? '' : 'mx-auto'}`} />
+                    {isSidebarOpen && <span className="ml-3 text-sm opacity-100 transition-opacity duration-300">{item.label}</span>}
+                </button>
+              );
+
+              // Improved Tooltip for collapsed Sidebar
+              return !isSidebarOpen ? (
+                <Tooltip key={item.path} content={item.label} position="right" className="w-full">
+                  {buttonContent}
+                </Tooltip>
+              ) : (
+                buttonContent
+              );
+            })}
         </nav>
 
         <div className="p-4 border-t border-border bg-muted/10 shrink-0 overflow-hidden">
@@ -397,7 +413,9 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <DialogProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </DialogProvider>
   );
 };
