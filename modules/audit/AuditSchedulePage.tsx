@@ -90,11 +90,43 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
      }
   };
 
+  // --- DATE HANDLERS ---
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newStart = e.target.value;
+      setEditingPlan(prev => ({
+          ...prev,
+          thoi_gian_du_kien_start: newStart,
+          // Auto-fill end date to match start date for convenience
+          // Logic: If user sets start date, we assume at least a 1-day audit.
+          // They can extend it later, but this prevents empty or invalid end dates.
+          thoi_gian_du_kien_end: newStart 
+      }));
+  };
+
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newEnd = e.target.value;
+      const start = editingPlan.thoi_gian_du_kien_start;
+
+      if (start && newEnd < start) {
+          toast.warning("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu!");
+          // Reset to start date if invalid
+          setEditingPlan(prev => ({ ...prev, thoi_gian_du_kien_end: start }));
+          return;
+      }
+      setEditingPlan(prev => ({ ...prev, thoi_gian_du_kien_end: newEnd }));
+  };
+  // ---------------------
+
   const handleSave = async () => {
       if (!editingPlan.ten_ke_hoach) {
           dialog.alert("Vui lòng nhập tên kế hoạch!", { type: 'warning' });
           return;
       }
+      if (!editingPlan.thoi_gian_du_kien_start || !editingPlan.thoi_gian_du_kien_end) {
+          dialog.alert("Vui lòng chọn thời gian dự kiến!", { type: 'warning' });
+          return;
+      }
+
       setIsLoading(true);
 
       // UUID Generation logic
@@ -253,8 +285,20 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
                         <div>
                             <label className={labelClass}>Thời gian dự kiến</label>
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="relative group"><input type="date" className={`${inputClass}`} value={editingPlan.thoi_gian_du_kien_start || ''} onChange={(e) => setEditingPlan({...editingPlan, thoi_gian_du_kien_start: e.target.value})}/></div>
-                                <div className="relative group"><input type="date" className={`${inputClass}`} value={editingPlan.thoi_gian_du_kien_end || ''} onChange={(e) => setEditingPlan({...editingPlan, thoi_gian_du_kien_end: e.target.value})}/></div>
+                                <div className="relative group">
+                                    <label className="text-[10px] text-gray-400 absolute left-2 -top-1.5 bg-white dark:bg-slate-900 px-1">Bắt đầu</label>
+                                    <input type="date" className={`${inputClass}`} value={editingPlan.thoi_gian_du_kien_start || ''} onChange={handleStartDateChange}/>
+                                </div>
+                                <div className="relative group">
+                                    <label className="text-[10px] text-gray-400 absolute left-2 -top-1.5 bg-white dark:bg-slate-900 px-1">Kết thúc</label>
+                                    <input 
+                                        type="date" 
+                                        className={`${inputClass}`} 
+                                        value={editingPlan.thoi_gian_du_kien_end || ''} 
+                                        onChange={handleEndDateChange}
+                                        min={editingPlan.thoi_gian_du_kien_start}
+                                    />
+                                </div>
                             </div>
                         </div>
                         <div>
