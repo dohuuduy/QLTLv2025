@@ -39,8 +39,11 @@ export interface TaiLieu {
   // Định danh
   ma_tai_lieu: string;
   ten_tai_lieu: string;
-  loai_tai_lieu: string; // VD: Quy trình, Hướng dẫn, Biểu mẫu
-  tieu_chuan?: string[]; // UPDATED: Cho phép nhiều tiêu chuẩn (Array)
+  
+  // REFERENCES (Lưu ID thay vì Text)
+  id_loai_tai_lieu: string; // Link MasterData.loaiTaiLieu
+  id_linh_vuc?: string;     // Link MasterData.linhVuc (NEW)
+  id_tieu_chuan?: string[]; // Link MasterData.tieuChuan (Array of IDs)
   
   // HIERARCHY (QUAN HỆ CHA CON)
   tai_lieu_cha_id?: string; // ID của tài liệu cha
@@ -204,9 +207,9 @@ export interface BackupData {
 // Master Data State Structure
 export interface MasterDataState {
   loaiTaiLieu: DanhMucItem[];
-  // Removed linhVuc
+  linhVuc: DanhMucItem[]; // Restored
   boPhan: DanhMucItem[];
-  chucVu: DanhMucItem[]; // NEW: Chức vụ
+  chucVu: DanhMucItem[];
   tieuChuan: DanhMucItem[];
   nhanSu: NhanSu[];
   // NEW CATEGORIES FOR AUDIT

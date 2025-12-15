@@ -3,14 +3,14 @@ import React, { useState } from 'react';
 import { MasterDataState } from '../../types';
 import { SimpleListManager } from './SimpleListManager';
 import { UserManager } from './UserManager';
-import { Database, Users, Layers, Tag, Bookmark, Award, UserCheck, ClipboardList, Briefcase } from 'lucide-react';
+import { Database, Users, Layers, Tag, Bookmark, Award, UserCheck, ClipboardList, Briefcase, Grid } from 'lucide-react';
 
 interface MasterDataLayoutProps {
   data: MasterDataState;
   onUpdate: (newData: MasterDataState) => void;
 }
 
-type TabType = 'users' | 'docTypes' | 'departments' | 'positions' | 'standards' | 'auditOrgs' | 'auditors' | 'auditTypes';
+type TabType = 'users' | 'docTypes' | 'areas' | 'departments' | 'positions' | 'standards' | 'auditOrgs' | 'auditors' | 'auditTypes';
 
 export const MasterDataLayout: React.FC<MasterDataLayoutProps> = ({ data, onUpdate }) => {
   const [activeTab, setActiveTab] = useState<TabType>('users');
@@ -18,6 +18,7 @@ export const MasterDataLayout: React.FC<MasterDataLayoutProps> = ({ data, onUpda
   const tabs = [
     { id: 'users', label: 'Người dùng & Quyền', icon: Users },
     { id: 'docTypes', label: 'Loại tài liệu', icon: Layers },
+    { id: 'areas', label: 'Lĩnh vực', icon: Grid }, // Added Area
     { id: 'departments', label: 'Phòng ban / Bộ phận', icon: Database },
     { id: 'positions', label: 'Chức vụ', icon: Briefcase }, 
     { id: 'standards', label: 'Tiêu chuẩn', icon: Bookmark },
@@ -70,6 +71,14 @@ export const MasterDataLayout: React.FC<MasterDataLayoutProps> = ({ data, onUpda
             data={data.loaiTaiLieu}
             onUpdate={(newData) => onUpdate({...data, loaiTaiLieu: newData})}
             showDocTypeConfig={true} // BẬT CẤU HÌNH AUTO-NUMBERING
+          />
+        )}
+
+        {activeTab === 'areas' && (
+          <SimpleListManager 
+            title="Danh mục Lĩnh vực hoạt động"
+            data={data.linhVuc || []}
+            onUpdate={(newData) => onUpdate({...data, linhVuc: newData})}
           />
         )}
 

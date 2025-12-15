@@ -19,8 +19,9 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
   const [formData, setFormData] = useState<Partial<TaiLieu>>({
     ma_tai_lieu: '',
     ten_tai_lieu: '',
-    loai_tai_lieu: '',
-    tieu_chuan: [],
+    id_loai_tai_lieu: '',
+    id_linh_vuc: '',
+    id_tieu_chuan: [],
     tai_lieu_cha_id: '',
     thu_tu: 0,
     phien_ban: '1.0',
@@ -49,7 +50,8 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
       subLabel: d.ma_tai_lieu
   })), [fullList, initialData]);
 
-  const loaiTaiLieuOptions = useMemo(() => masterData.loaiTaiLieu.map(i => ({ value: i.ten, label: i.ten })), [masterData.loaiTaiLieu]);
+  const loaiTaiLieuOptions = useMemo(() => masterData.loaiTaiLieu.map(i => ({ value: i.id, label: i.ten })), [masterData.loaiTaiLieu]);
+  const linhVucOptions = useMemo(() => masterData.linhVuc.map(i => ({ value: i.id, label: i.ten })), [masterData.linhVuc]);
   
   const mapUserToOption = (u: NhanSu) => ({ value: u.id, label: u.ho_ten, subLabel: u.chuc_vu });
   
@@ -69,13 +71,14 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     }
   }, [initialData]);
 
-  // FIX: Auto-generate code logic (Now supports Root documents)
+  // FIX: Auto-generate code logic (Supports Root documents + ID Lookup)
   useEffect(() => {
       // Only run if not manually editing (Locked) and document type is selected
       if (initialData || !isCodeLocked) return;
-      if (!formData.loai_tai_lieu) return;
+      if (!formData.id_loai_tai_lieu) return;
 
-      const docTypeConfig = masterData.loaiTaiLieu.find(t => t.ten === formData.loai_tai_lieu);
+      // Lookup prefix from Master Data using ID
+      const docTypeConfig = masterData.loaiTaiLieu.find(t => t.id === formData.id_loai_tai_lieu);
       if (!docTypeConfig) return;
 
       const prefix = docTypeConfig.ma_viet_tat || 'TL';
@@ -86,7 +89,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
       // Count siblings to determine number
       const siblings = fullList.filter(d => {
-          const isSameType = d.loai_tai_lieu === formData.loai_tai_lieu;
+          const isSameType = d.id_loai_tai_lieu === formData.id_loai_tai_lieu;
           const isSameParent = formData.tai_lieu_cha_id 
               ? d.tai_lieu_cha_id === formData.tai_lieu_cha_id 
               : !d.tai_lieu_cha_id; // Both have no parent (Root)
@@ -111,7 +114,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
           setFormData(prev => ({ ...prev, ma_tai_lieu: newCode }));
       }
 
-  }, [formData.tai_lieu_cha_id, formData.loai_tai_lieu, isCodeLocked, fullList, masterData.loaiTaiLieu, initialData]);
+  }, [formData.tai_lieu_cha_id, formData.id_loai_tai_lieu, isCodeLocked, fullList, masterData.loaiTaiLieu, initialData]);
 
 
   useEffect(() => {
@@ -149,12 +152,12 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
       setFormData(prev => ({ ...prev, [key]: value }));
   };
 
-  const toggleTieuChuan = (tieuChuanName: string) => {
-    const currentList = formData.tieu_chuan || [];
-    if (currentList.includes(tieuChuanName)) {
-      setFormData(prev => ({ ...prev, tieu_chuan: currentList.filter(item => item !== tieuChuanName) }));
+  const toggleTieuChuan = (id: string) => {
+    const currentList = formData.id_tieu_chuan || [];
+    if (currentList.includes(id)) {
+      setFormData(prev => ({ ...prev, id_tieu_chuan: currentList.filter(item => item !== id) }));
     } else {
-      setFormData(prev => ({ ...prev, tieu_chuan: [...currentList, tieuChuanName] }));
+      setFormData(prev => ({ ...prev, id_tieu_chuan: [...currentList, id] }));
     }
   };
 
@@ -260,12 +263,12 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                     <Layers size={16} className="text-primary"/> Phân loại & Phạm vi
                 </h4>
                 <div className="space-y-4 flex-1">
-                    <div><label className={labelClass}>Loại tài liệu</label><SearchableSelect options={loaiTaiLieuOptions} value={formData.loai_tai_lieu} onChange={(val) => handleSelectChange('loai_tai_lieu', val)} placeholder="-- Chọn loại --" /></div>
-                    {/* Changed label from "Tài liệu gốc" to "Tài liệu cha" */}
+                    <div><label className={labelClass}>Loại tài liệu</label><SearchableSelect options={loaiTaiLieuOptions} value={formData.id_loai_tai_lieu} onChange={(val) => handleSelectChange('id_loai_tai_lieu', String(val))} placeholder="-- Chọn loại --" /></div>
+                    <div><label className={labelClass}>Lĩnh vực</label><SearchableSelect options={linhVucOptions} value={formData.id_linh_vuc} onChange={(val) => handleSelectChange('id_linh_vuc', String(val))} placeholder="-- Chọn lĩnh vực --" /></div>
                     <div><label className={labelClass}>Tài liệu cha (Parent)</label><SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', val)} placeholder="-- Không có --" /></div>
                     <div>
                         <label className={labelClass}>Tiêu chuẩn áp dụng</label>
-                        <div className="flex flex-wrap gap-2 pt-1">{masterData.tieuChuan.map(item => (<button key={item.id} type="button" onClick={() => toggleTieuChuan(item.ten)} className={`px-2.5 py-1.5 rounded-md text-[11px] font-semibold border transition-all flex items-center gap-1.5 ${formData.tieu_chuan?.includes(item.ten) ? 'bg-primary/10 text-primary border-primary/20 shadow-sm' : 'bg-background border-border text-muted-foreground hover:bg-muted'}`}>{formData.tieu_chuan?.includes(item.ten) && <Tag size={10} className="fill-current" />} {item.ten}</button>))}</div>
+                        <div className="flex flex-wrap gap-2 pt-1">{masterData.tieuChuan.map(item => (<button key={item.id} type="button" onClick={() => toggleTieuChuan(item.id)} className={`px-2.5 py-1.5 rounded-md text-[11px] font-semibold border transition-all flex items-center gap-1.5 ${formData.id_tieu_chuan?.includes(item.id) ? 'bg-primary/10 text-primary border-primary/20 shadow-sm' : 'bg-background border-border text-muted-foreground hover:bg-muted'}`}>{formData.id_tieu_chuan?.includes(item.id) && <Tag size={10} className="fill-current" />} {item.ten}</button>))}</div>
                     </div>
                 </div>
             </div>

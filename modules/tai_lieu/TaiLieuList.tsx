@@ -29,8 +29,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const [isTreeView, setIsTreeView] = useState(true); 
   const [selectedDoc, setSelectedDoc] = useState<TaiLieu | null>(null);
   
-  // Removed bo_phan from filters state
-  const [filters, setFilters] = useState<{ trang_thai?: string; loai_tai_lieu?: string }>(initialFilters || {});
+  const [filters, setFilters] = useState<{ trang_thai?: string; id_loai_tai_lieu?: string }>(initialFilters || {});
   
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -48,6 +47,11 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   // Helper to resolve names
   const getUserName = (id: string) => masterData.nhanSu.find(u => u.id === id)?.ho_ten || '---';
   const getDept = (userId: string) => masterData.nhanSu.find(u => u.id === userId)?.phong_ban || '---';
+  const getDocTypeName = (id: string) => masterData.loaiTaiLieu.find(t => t.id === id)?.ten || id || '---';
+  const getStandardNames = (ids?: string[]) => {
+      if (!ids || ids.length === 0) return [];
+      return ids.map(id => masterData.tieuChuan.find(t => t.id === id)?.ten || id);
+  };
 
   // --- HIERARCHY LOGIC ---
   const getLevel = (doc: TaiLieu, allDocs: TaiLieu[]): number => {
@@ -99,7 +103,7 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
   const filteredData = useMemo(() => {
     let result = data.filter(doc => {
       if (filters.trang_thai && doc.trang_thai !== filters.trang_thai) return false;
-      if (filters.loai_tai_lieu && doc.loai_tai_lieu !== filters.loai_tai_lieu) return false;
+      if (filters.id_loai_tai_lieu && doc.id_loai_tai_lieu !== filters.id_loai_tai_lieu) return false;
       return true;
     });
 
@@ -165,7 +169,6 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
         }
     },
     { key: 'phien_ban', header: 'Ver', visible: true, render: (val) => <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-xs font-mono dark:text-gray-300">{val}</span> },
-    // Removed "Bộ phận" column
     { key: 'ngay_ban_hanh', header: 'Ngày BH', visible: true, render: (val) => <span className="text-xs dark:text-gray-300">{val ? format(new Date(val), 'dd/MM/yyyy') : '--'}</span> },
     { key: 'trang_thai', header: 'Trạng thái', visible: true, render: (val) => <Badge status={val as TrangThaiTaiLieu} /> },
     { key: 'id', header: 'Thao tác', visible: true, render: (_, item) => (
@@ -358,19 +361,17 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
               <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
            </div>
            
-           {/* Removed 'Bộ phận' select filter */}
-
            <div className="relative group shrink-0">
-              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.loai_tai_lieu || ''} onChange={(e) => setFilters(prev => ({ ...prev, loai_tai_lieu: e.target.value || undefined }))}>
+              <select className="h-9 pl-9 pr-7 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-gray-700 dark:text-gray-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer hover:border-blue-400 transition-colors w-auto min-w-[120px] max-w-[180px] truncate" value={filters.id_loai_tai_lieu || ''} onChange={(e) => setFilters(prev => ({ ...prev, id_loai_tai_lieu: e.target.value || undefined }))}>
                  <option value="">Loại tài liệu: Tất cả</option>
                  {masterData.loaiTaiLieu.map(lt => (
-                    <option key={lt.id} value={lt.ten}>{lt.ten}</option>
+                    <option key={lt.id} value={lt.id}>{lt.ten}</option>
                  ))}
               </select>
               <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
            </div>
        </div>
-       {(filters.trang_thai || filters.loai_tai_lieu) && (
+       {(filters.trang_thai || filters.id_loai_tai_lieu) && (
           <button onClick={() => setFilters({})} className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all dark:bg-red-900/20 dark:border-red-900 dark:text-red-400 ml-1" title="Xóa tất cả bộ lọc"><X size={16} /></button>
        )}
     </div>
@@ -498,10 +499,10 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                        </h4>
                                    </div>
                                    <div className="p-4 space-y-4">
-                                       <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Loại tài liệu</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedDoc.loai_tai_lieu}</p></div>
+                                       <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Loại tài liệu</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getDocTypeName(selectedDoc.id_loai_tai_lieu)}</p></div>
                                        <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Bộ phận sở hữu</p><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getDept(selectedDoc.id_nguoi_soan_thao)}</p></div>
-                                       {selectedDoc.tieu_chuan && selectedDoc.tieu_chuan.length > 0 && (
-                                           <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Tiêu chuẩn áp dụng</p><div className="flex flex-wrap gap-1.5">{selectedDoc.tieu_chuan.map(t => (<span key={t} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"><Tag size={10} /> {t}</span>))}</div></div>
+                                       {selectedDoc.id_tieu_chuan && selectedDoc.id_tieu_chuan.length > 0 && (
+                                           <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Tiêu chuẩn áp dụng</p><div className="flex flex-wrap gap-1.5">{getStandardNames(selectedDoc.id_tieu_chuan).map((t, idx) => (<span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"><Tag size={10} /> {t}</span>))}</div></div>
                                        )}
                                    </div>
                                </div>

@@ -49,16 +49,18 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ document }) => {
     setInput('');
     setIsLoading(true);
 
-    // Context from document
+    // Context from document (Note: In real app, we need to map IDs to Names here, but for now we pass IDs. 
+    // Ideally, pass masterData to this component or fetch names)
+    // Assuming context is mainly for content search which relies on 'mo_ta_tom_tat' and 'ten_tai_lieu' mostly.
     const context = `
       Mã: ${document.ma_tai_lieu}
       Tên: ${document.ten_tai_lieu}
-      Loại: ${document.loai_tai_lieu}
+      Loại (ID): ${document.id_loai_tai_lieu}
       Mô tả tóm tắt: ${document.mo_ta_tom_tat}
       Phiên bản: ${document.phien_ban}
       Ngày hiệu lực: ${document.ngay_hieu_luc}
-      Người soạn: ${document.id_nguoi_soan_thao}
-      Tiêu chuẩn áp dụng: ${document.tieu_chuan?.join(', ')}
+      Người soạn (ID): ${document.id_nguoi_soan_thao}
+      Tiêu chuẩn áp dụng (IDs): ${document.id_tieu_chuan?.join(', ')}
     `;
 
     const responseText = await chatWithDocument(context, userMsg.text);

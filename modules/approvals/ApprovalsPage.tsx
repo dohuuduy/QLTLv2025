@@ -34,6 +34,7 @@ export const ApprovalsPage: React.FC<ApprovalsPageProps> = ({ currentUser, docum
   const dialog = useDialog();
 
   const getName = (id: string) => masterData?.nhanSu.find(u => u.id === id)?.ho_ten || '---';
+  const getDocTypeName = (id: string) => masterData?.loaiTaiLieu.find(t => t.id === id)?.ten || id || '---';
 
   const openActionModal = (doc: TaiLieu, reject: boolean) => {
     setSelectedDoc(doc);
@@ -90,7 +91,7 @@ export const ApprovalsPage: React.FC<ApprovalsPageProps> = ({ currentUser, docum
 
   const columns: ColumnDefinition<TaiLieu>[] = [
     { key: 'ma_tai_lieu', header: 'Mã số', visible: true, render: (val) => <span className="font-mono font-bold text-blue-700 dark:text-blue-400">{val}</span> },
-    { key: 'ten_tai_lieu', header: 'Tên Tài Liệu', visible: true, render: (val, doc) => (<div><div className="font-medium text-gray-900 dark:text-gray-100">{val}</div><div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5"><span className="bg-gray-100 dark:bg-slate-800 px-1.5 rounded border border-gray-200 dark:border-slate-700 dark:text-gray-300">v{doc.phien_ban}</span><span>•</span><span className="dark:text-gray-400">{doc.loai_tai_lieu}</span></div></div>) },
+    { key: 'ten_tai_lieu', header: 'Tên Tài Liệu', visible: true, render: (val, doc) => (<div><div className="font-medium text-gray-900 dark:text-gray-100">{val}</div><div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5"><span className="bg-gray-100 dark:bg-slate-800 px-1.5 rounded border border-gray-200 dark:border-slate-700 dark:text-gray-300">v{doc.phien_ban}</span><span>•</span><span className="dark:text-gray-400">{getDocTypeName(doc.id_loai_tai_lieu)}</span></div></div>) },
     { key: 'id_nguoi_soan_thao', header: 'Người trình', visible: true, render: (val) => { const name = getName(val as string); return <div className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs flex items-center justify-center font-bold">{name.charAt(0)}</div><span className="text-sm dark:text-gray-300">{name}</span></div>; } },
     { key: 'ngay_cap_nhat_cuoi', header: 'Ngày trình', visible: true, render: (val) => <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs"><Clock size={12}/>{format(new Date(val), 'dd/MM/yyyy')}</span> },
     { key: 'trang_thai', header: 'Vai trò', visible: true, render: (_, doc) => { const isApprover = doc.id_nguoi_phe_duyet === currentUser.id; if (currentUser.roles.includes('QUAN_TRI') && doc.id_nguoi_phe_duyet !== currentUser.id && doc.id_nguoi_xem_xet !== currentUser.id) { return <span className="text-[10px] font-bold text-gray-500 bg-gray-100 border border-gray-200 px-2 py-1 rounded-full dark:bg-slate-800 dark:border-slate-700 dark:text-gray-400">Quản trị viên</span>; } return isApprover ? <span className="text-[10px] font-bold text-green-700 bg-green-100 border border-green-200 px-2 py-1 rounded-full shadow-sm flex w-fit items-center gap-1 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"><PenTool size={10}/> Phê duyệt</span> : <span className="text-[10px] font-bold text-blue-700 bg-blue-100 border border-blue-200 px-2 py-1 rounded-full shadow-sm flex w-fit items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300"><Eye size={10}/> Xem xét</span>; } },
