@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-import { Info, Calendar, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, File, RefreshCw, Lock, Unlock, Layers, Tag, UploadCloud, Save, PenTool, Search as SearchIcon, FileSignature, GitCommit, ArrowRight, Fingerprint, FileBox, User, Network, Minus, Plus } from 'lucide-react';
+import { Info, Calendar, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, RefreshCw, Lock, Unlock, Layers, Tag, Save, ArrowRight, FileBox, User, Minus, Plus, GitCommit } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -28,7 +28,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     lan_ban_hanh: 1,
     ngay_ban_hanh: '',
     ngay_hieu_luc: '',
-    chu_ky_ra_soat: 0, // Default 0 (Disabled)
+    chu_ky_ra_soat: 0,
     ngay_ra_soat_tiep_theo: '',
     nguoi_soan_thao: '',
     nguoi_xem_xet: '',
@@ -45,25 +45,15 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
   // --- FILTER PARENT DOCUMENTS LOGIC ---
   const availableParents = useMemo(() => {
-      // 1. Get current doc level
       const currentType = masterData.loaiTaiLieu.find(t => t.id === formData.id_loai_tai_lieu);
-      const currentLevel = currentType?.cap_do || 99; // Default high level if not found
+      const currentLevel = currentType?.cap_do || 99;
 
-      // 2. Filter list
       return fullList
         .filter(d => {
-            // Exclude self
             if (d.id === initialData?.id) return false;
-            
-            // Exclude undefined type docs
             if (!d.id_loai_tai_lieu) return false;
-
-            // Find parent's level
             const parentType = masterData.loaiTaiLieu.find(t => t.id === d.id_loai_tai_lieu);
             const parentLevel = parentType?.cap_do || 99;
-
-            // Strict Rule: Parent must have smaller Level number (Higher Hierarchy)
-            // e.g. If creating Level 2 (Process), show Level 1 (Policy)
             return parentLevel < currentLevel;
         })
         .map(d => ({
@@ -94,13 +84,11 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     }
   }, [initialData]);
 
-  // FIX: Auto-generate code logic (Supports Root documents + ID Lookup)
+  // Auto-generate code logic
   useEffect(() => {
-      // Only run if not manually editing (Locked) and document type is selected
       if (initialData || !isCodeLocked) return;
       if (!formData.id_loai_tai_lieu) return;
 
-      // Lookup prefix from Master Data using ID
       const docTypeConfig = masterData.loaiTaiLieu.find(t => t.id === formData.id_loai_tai_lieu);
       if (!docTypeConfig) return;
 
@@ -109,13 +97,11 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
       const digitCount = docTypeConfig.do_dai_so || 2;
 
       let newCode = '';
-
-      // Count siblings to determine number
       const siblings = fullList.filter(d => {
           const isSameType = d.id_loai_tai_lieu === formData.id_loai_tai_lieu;
           const isSameParent = formData.tai_lieu_cha_id 
               ? d.tai_lieu_cha_id === formData.tai_lieu_cha_id 
-              : !d.tai_lieu_cha_id; // Both have no parent (Root)
+              : !d.tai_lieu_cha_id;
           return isSameType && isSameParent && d.id !== initialData?.id;
       });
 
@@ -123,13 +109,11 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
       const paddedNum = String(nextNum).padStart(digitCount, '0');
 
       if (formData.tai_lieu_cha_id) {
-          // Child Document: ParentCode + Separator + TypePrefix + Number
           const parentDoc = fullList.find(d => d.id === formData.tai_lieu_cha_id);
           if (parentDoc) {
              newCode = `${parentDoc.ma_tai_lieu}${separator}${prefix}${paddedNum}`;
           }
       } else {
-          // Root Document: TypePrefix + Number (e.g., QT01)
           newCode = `${prefix}${paddedNum}`;
       }
 
@@ -139,22 +123,15 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
   }, [formData.tai_lieu_cha_id, formData.id_loai_tai_lieu, isCodeLocked, fullList, masterData.loaiTaiLieu, initialData]);
 
-  // NEW: Auto-calculate "Thứ tự hiển thị" based on Type & Parent
+  // Auto-calculate "Thứ tự hiển thị"
   useEffect(() => {
-      if (initialData) return; // Don't override if editing
-      
-      // Calculate based on siblings (Same Type AND Same Parent)
+      if (initialData) return;
       const siblings = fullList.filter(d => 
           d.id_loai_tai_lieu === formData.id_loai_tai_lieu &&
           d.tai_lieu_cha_id === formData.tai_lieu_cha_id
       );
-
-      const maxOrder = siblings.length > 0 
-          ? Math.max(...siblings.map(d => d.thu_tu || 0)) 
-          : 0;
-      
+      const maxOrder = siblings.length > 0 ? Math.max(...siblings.map(d => d.thu_tu || 0)) : 0;
       setFormData(prev => ({ ...prev, thu_tu: maxOrder + 1 }));
-
   }, [formData.id_loai_tai_lieu, formData.tai_lieu_cha_id, fullList, initialData]);
 
 
@@ -164,7 +141,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
             const hieuLucDate = new Date(formData.ngay_hieu_luc);
             const nextDate = addMonths(hieuLucDate, formData.chu_ky_ra_soat);
             const formattedNextDate = format(nextDate, 'yyyy-MM-dd');
-            
             if (formattedNextDate !== formData.ngay_ra_soat_tiep_theo) {
                 setFormData(prev => ({ ...prev, ngay_ra_soat_tiep_theo: formattedNextDate }));
             }
@@ -180,8 +156,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
     setFormData(prev => {
         const newData = { ...prev, [name]: finalValue };
-        
-        // Auto-set Effective Date if Issue Date is set and Effective Date is empty
         if (name === 'ngay_ban_hanh' && !prev.ngay_hieu_luc) {
             newData.ngay_hieu_luc = value; 
         }
@@ -193,13 +167,12 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
       setFormData(prev => {
           const current = (prev[field] as number) || 0;
           const next = current + amount;
-          if (field === 'thu_tu' && next < 1) return prev; // Don't allow order < 1
+          if (field === 'thu_tu' && next < 1) return prev;
           return { ...prev, [field]: next < 0 ? 0 : next };
       });
   };
 
   const handleSelectChange = (key: keyof TaiLieu, value: any) => {
-      // If changing document type, reset parent to avoid invalid hierarchy
       if (key === 'id_loai_tai_lieu') {
           setFormData(prev => ({ ...prev, [key]: value, tai_lieu_cha_id: '' }));
       } else {
@@ -263,14 +236,12 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
         dialog.alert("Vui lòng nhập Mã và Tên tài liệu!", { type: 'warning' });
         return;
     }
-    // Validation: Effective Date must be >= Issue Date
     if (formData.ngay_ban_hanh && formData.ngay_hieu_luc) {
         if (new Date(formData.ngay_hieu_luc) < new Date(formData.ngay_ban_hanh)) {
             dialog.alert("Ngày hiệu lực phải sau hoặc bằng ngày ban hành!", { type: 'warning' });
             return;
         }
     }
-
     const cleanData = { ...formData };
     if (cleanData.ngay_ra_soat_tiep_theo === '') cleanData.ngay_ra_soat_tiep_theo = null as any;
     if (cleanData.ngay_ban_hanh === '') cleanData.ngay_ban_hanh = null as any;
@@ -278,10 +249,25 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     onSave(cleanData);
   };
 
-  // Styling (Fixed Dark Mode Color)
   const inputClass = "w-full h-10 px-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-white focus:ring-2 ring-primary/20 focus:border-primary outline-none transition-all text-sm disabled:opacity-60 disabled:bg-gray-100 dark:disabled:bg-slate-800 placeholder:text-gray-400 dark:placeholder:text-gray-500";
   const labelClass = "text-xs font-bold text-muted-foreground uppercase mb-1.5 block tracking-wide";
   const cardClass = "bg-card text-card-foreground rounded-xl border border-border shadow-sm p-5 h-full flex flex-col";
+
+  // Reusable Compact Counter Component
+  const CompactCounter = ({ value, onChange, min = 0 }: { value: number, onChange: (val: number) => void, min?: number }) => (
+    <div className="flex items-center h-8 w-[120px] rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-sm hover:border-blue-400 transition-colors">
+        <button type="button" onClick={() => onChange(-1)} className="w-8 h-full flex items-center justify-center bg-gray-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-500 hover:text-blue-600 transition-colors border-r border-gray-200 dark:border-slate-700"><Minus size={12}/></button>
+        <input 
+            type="number" 
+            min={min} 
+            className="flex-1 w-full h-full text-center text-xs font-bold text-gray-700 dark:text-gray-200 bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+            value={value} 
+            onChange={(e) => onChange(0)} // Dummy, handled by parent mostly or adjust
+            readOnly
+        />
+        <button type="button" onClick={() => onChange(1)} className="w-8 h-full flex items-center justify-center bg-gray-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-500 hover:text-blue-600 transition-colors border-l border-gray-200 dark:border-slate-700"><Plus size={12}/></button>
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -326,20 +312,10 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                          </div>
                      </div>
                      
-                     {/* CUSTOM ORDER INPUT (SMALLER SIZE h-8) */}
+                     {/* COMPACT ORDER INPUT */}
                      <div>
-                        <label className={labelClass}>Thứ tự hiển thị <span className="font-normal text-[10px] text-muted-foreground lowercase ml-1">(auto tăng)</span></label>
-                        <div className="flex items-center h-8 rounded-lg border border-input bg-background overflow-hidden focus-within:ring-2 ring-primary/20 transition-shadow">
-                            <button type="button" onClick={() => adjustNumber('thu_tu', -1)} className="px-2 h-full hover:bg-muted border-r border-border flex items-center justify-center text-muted-foreground transition-colors"><Minus size={14}/></button>
-                            <input 
-                                type="number" 
-                                min="1" 
-                                className="flex-1 w-full h-full text-center bg-transparent outline-none text-sm font-bold text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
-                                value={formData.thu_tu} 
-                                onChange={(e) => setFormData({...formData, thu_tu: parseInt(e.target.value) || 1})}
-                            />
-                            <button type="button" onClick={() => adjustNumber('thu_tu', 1)} className="px-2 h-full hover:bg-muted border-l border-border flex items-center justify-center text-muted-foreground transition-colors"><Plus size={14}/></button>
-                        </div>
+                        <label className={labelClass}>Thứ tự hiển thị</label>
+                        <CompactCounter value={formData.thu_tu || 1} onChange={(val) => adjustNumber('thu_tu', val)} min={1} />
                      </div>
                 </div>
             </div>
@@ -393,13 +369,9 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                 <div>
                    <label className={labelClass}>Phiên bản / Lần BH</label>
                    <div className="flex gap-4">
-                      <div className="relative flex-1"><GitCommit size={14} className="absolute left-3 top-3 text-muted-foreground"/><input className={`${inputClass} pl-9 font-mono`} value={formData.phien_ban} onChange={handleChange} name="phien_ban" placeholder="1.0" /></div>
-                      {/* FIXED: Changed h-10 to h-8 for better proportion */}
-                      <div className="flex items-center h-8 w-24 rounded-lg border border-input bg-background overflow-hidden">
-                          <button type="button" onClick={() => adjustNumber('lan_ban_hanh', -1)} className="px-2 h-full hover:bg-muted border-r border-border text-muted-foreground flex items-center justify-center"><Minus size={12}/></button>
-                          <div className="flex-1 text-center text-xs font-bold flex items-center justify-center">{formData.lan_ban_hanh}</div>
-                          <button type="button" onClick={() => adjustNumber('lan_ban_hanh', 1)} className="px-2 h-full hover:bg-muted border-l border-border text-muted-foreground flex items-center justify-center"><Plus size={12}/></button>
-                      </div>
+                      <div className="relative flex-1"><GitCommit size={14} className="absolute left-3 top-2.5 text-muted-foreground"/><input className={`${inputClass} pl-9 font-mono`} value={formData.phien_ban} onChange={handleChange} name="phien_ban" placeholder="1.0" /></div>
+                      {/* COMPACT COUNTER */}
+                      <CompactCounter value={formData.lan_ban_hanh || 1} onChange={(val) => adjustNumber('lan_ban_hanh', val)} min={1} />
                    </div>
                 </div>
 
@@ -419,12 +391,8 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                     </div>
                     {isReviewEnabled && (
                         <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-                            {/* CUSTOM REVIEW CYCLE INPUT (SMALLER SIZE h-8) */}
-                            <div className="flex items-center h-8 bg-background rounded border border-input overflow-hidden w-28">
-                                <button type="button" onClick={() => adjustNumber('chu_ky_ra_soat', -6)} className="px-2 h-full hover:bg-muted border-r border-border text-muted-foreground flex items-center justify-center"><Minus size={12}/></button>
-                                <input className="w-full text-center text-sm font-bold bg-transparent outline-none" value={formData.chu_ky_ra_soat} readOnly />
-                                <button type="button" onClick={() => adjustNumber('chu_ky_ra_soat', 6)} className="px-2 h-full hover:bg-muted border-l border-border text-muted-foreground flex items-center justify-center"><Plus size={12}/></button>
-                            </div>
+                            {/* COMPACT COUNTER */}
+                            <CompactCounter value={formData.chu_ky_ra_soat || 12} onChange={(val) => adjustNumber('chu_ky_ra_soat', val === 1 ? 6 : -6)} min={0} />
                             <span className="text-xs text-muted-foreground">Tháng / lần</span>
                         </div>
                     )}
