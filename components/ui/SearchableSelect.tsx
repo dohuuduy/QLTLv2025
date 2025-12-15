@@ -117,23 +117,23 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
             }
         }}
         className={`
-          w-full h-10 px-3 rounded-lg border flex items-center justify-between cursor-pointer transition-all bg-white dark:bg-slate-900
-          ${isOpen ? 'border-blue-500 ring-1 ring-blue-500/20' : 'border-gray-200 dark:border-slate-700'}
-          ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-800' : 'hover:border-blue-400 dark:hover:border-slate-600'}
+          w-full h-10 px-3 rounded-lg border flex items-center justify-between cursor-pointer transition-all bg-background
+          ${isOpen ? 'border-primary ring-1 ring-primary/20' : 'border-input'}
+          ${disabled ? 'opacity-50 cursor-not-allowed bg-muted' : 'hover:border-primary'}
           ${className}
         `}
       >
         <div className="flex items-center gap-2 overflow-hidden">
             {selectedOption && selectedOption.subLabel && (
-                <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300 flex items-center justify-center text-[10px] font-bold shrink-0">
+                <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
                     {selectedOption.label.charAt(0)}
                 </div>
             )}
-            <span className={`truncate text-sm ${selectedOption ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-400'}`}>
+            <span className={`truncate text-sm ${selectedOption ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                 {selectedOption ? selectedOption.label : placeholder}
             </span>
         </div>
-        <ChevronDown size={16} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180 text-blue-500' : ''}`} />
+        <ChevronDown size={16} className={`text-muted-foreground transition-transform ${isOpen ? 'rotate-180 text-primary' : ''}`} />
       </div>
 
       {/* Portal Dropdown Menu */}
@@ -145,17 +145,17 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
               width: position.width,
               transform: position.placement === 'top' ? 'translateY(-100%)' : 'none'
           }}
-          className="fixed z-[9999] bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+          className="fixed z-[9999] bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-100"
         >
           {/* Search Header */}
-          <div className="p-2 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50">
+          <div className="p-2 border-b border-border bg-muted/30">
             <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-2.5 text-gray-400" />
+              <Search size={14} className="absolute left-2.5 top-2.5 text-muted-foreground" />
               <input
                 ref={searchInputRef}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-8 pl-8 pr-3 text-xs rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900 focus:ring-1 focus:ring-blue-500 outline-none text-gray-700 dark:text-gray-200 placeholder:text-gray-400"
+                className="w-full h-8 pl-8 pr-3 text-xs rounded-lg border border-input bg-background focus:ring-1 focus:ring-primary outline-none text-foreground placeholder:text-muted-foreground"
                 placeholder="Tìm kiếm..."
               />
             </div>
@@ -171,29 +171,29 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                   className={`
                     px-3 py-2.5 rounded-lg cursor-pointer flex items-center justify-between group transition-colors mb-0.5
                     ${option.value === value 
-                      ? 'bg-blue-50 dark:bg-blue-900/20' 
-                      : 'hover:bg-gray-100 dark:hover:bg-slate-800'}
+                      ? 'bg-primary/10' 
+                      : 'hover:bg-accent hover:text-accent-foreground'}
                   `}
                 >
                   <div className="flex items-center gap-3 overflow-hidden">
                      {/* Smart Avatar Generation */}
-                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${option.value === value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-300'}`}>
+                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${option.value === value ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                         {option.subLabel ? option.label.charAt(0) : <User size={14}/>}
                      </div>
                      <div className="flex flex-col min-w-0">
-                        <span className={`text-sm truncate ${option.value === value ? 'font-bold text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                        <span className={`text-sm truncate ${option.value === value ? 'font-bold text-primary' : 'text-foreground'}`}>
                             {option.label}
                         </span>
                         {option.subLabel && (
-                            <span className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{option.subLabel}</span>
+                            <span className="text-[10px] text-muted-foreground truncate">{option.subLabel}</span>
                         )}
                      </div>
                   </div>
-                  {option.value === value && <Check size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />}
+                  {option.value === value && <Check size={16} className="text-primary shrink-0" />}
                 </div>
               ))
             ) : (
-              <div className="px-3 py-8 text-center text-xs text-gray-400 flex flex-col items-center">
+              <div className="px-3 py-8 text-center text-xs text-muted-foreground flex flex-col items-center">
                 <Search size={24} className="mb-2 opacity-20"/>
                 Không tìm thấy kết quả
               </div>
