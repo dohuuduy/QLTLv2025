@@ -132,11 +132,48 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: () => void }> = ({ toa
     setIsPaused(false);
   };
 
+  // Cấu hình màu sắc chi tiết cho từng loại Toast
   const config = {
-    success: { icon: CheckCircle, bg: 'bg-white dark:bg-slate-900', border: 'border-l-4 border-l-green-500', text: 'text-green-600 dark:text-green-400', progress: 'bg-green-500' },
-    error: { icon: XCircle, bg: 'bg-white dark:bg-slate-900', border: 'border-l-4 border-l-red-500', text: 'text-red-600 dark:text-red-400', progress: 'bg-red-500' },
-    warning: { icon: AlertTriangle, bg: 'bg-white dark:bg-slate-900', border: 'border-l-4 border-l-amber-500', text: 'text-amber-600 dark:text-amber-400', progress: 'bg-amber-500' },
-    info: { icon: Info, bg: 'bg-white dark:bg-slate-900', border: 'border-l-4 border-l-blue-500', text: 'text-blue-600 dark:text-blue-400', progress: 'bg-blue-500' },
+    success: { 
+      icon: CheckCircle, 
+      container: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800', 
+      borderLeft: 'border-l-4 border-l-emerald-500', 
+      iconColor: 'text-emerald-600 dark:text-emerald-400', 
+      titleColor: 'text-emerald-800 dark:text-emerald-100',
+      textColor: 'text-emerald-700 dark:text-emerald-200', 
+      progress: 'bg-emerald-500',
+      closeBtn: 'text-emerald-500 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
+    },
+    error: { 
+      icon: XCircle, 
+      container: 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800', 
+      borderLeft: 'border-l-4 border-l-red-500', 
+      iconColor: 'text-red-600 dark:text-red-400', 
+      titleColor: 'text-red-800 dark:text-red-100',
+      textColor: 'text-red-700 dark:text-red-200', 
+      progress: 'bg-red-500',
+      closeBtn: 'text-red-500 hover:bg-red-200 dark:hover:bg-red-900/50'
+    },
+    warning: { 
+      icon: AlertTriangle, 
+      container: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800', 
+      borderLeft: 'border-l-4 border-l-amber-500', 
+      iconColor: 'text-amber-600 dark:text-amber-400', 
+      titleColor: 'text-amber-800 dark:text-amber-100',
+      textColor: 'text-amber-700 dark:text-amber-200', 
+      progress: 'bg-amber-500',
+      closeBtn: 'text-amber-500 hover:bg-amber-200 dark:hover:bg-amber-900/50'
+    },
+    info: { 
+      icon: Info, 
+      container: 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800', 
+      borderLeft: 'border-l-4 border-l-blue-500', 
+      iconColor: 'text-blue-600 dark:text-blue-400', 
+      titleColor: 'text-blue-800 dark:text-blue-100',
+      textColor: 'text-blue-700 dark:text-blue-200', 
+      progress: 'bg-blue-500',
+      closeBtn: 'text-blue-500 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+    },
   }[toast.type];
 
   const Icon = config.icon;
@@ -146,25 +183,25 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: () => void }> = ({ toa
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className={`
-        pointer-events-auto w-full max-w-sm rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 relative overflow-hidden group
+        pointer-events-auto w-full max-w-sm rounded-lg shadow-xl border relative overflow-hidden group
         transition-all duration-300 ease-out transform
-        ${config.bg}
+        ${config.container}
         ${isVisible ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-full opacity-0 scale-95'}
       `}
     >
-      <div className={`flex p-4 gap-3 ${config.border}`}>
-        <div className={`shrink-0 ${config.text} mt-0.5`}>
+      <div className={`flex p-4 gap-3 ${config.borderLeft}`}>
+        <div className={`shrink-0 ${config.iconColor} mt-0.5`}>
           <Icon size={20} />
         </div>
         <div className="flex-1 min-w-0">
-          {toast.title && <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-1 leading-none">{toast.title}</h4>}
-          <div className="text-sm text-gray-600 dark:text-gray-300 leading-snug break-words">
+          {toast.title && <h4 className={`font-bold text-sm mb-1 leading-none ${config.titleColor}`}>{toast.title}</h4>}
+          <div className={`text-sm leading-snug break-words ${config.textColor}`}>
             {toast.message}
           </div>
         </div>
         <button 
           onClick={handleClose}
-          className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors self-start -mt-1 -mr-1 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800"
+          className={`shrink-0 transition-colors self-start -mt-1 -mr-1 p-1.5 rounded-full ${config.closeBtn}`}
         >
           <X size={16} />
         </button>
@@ -172,7 +209,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: () => void }> = ({ toa
       
       {/* Progress Bar */}
       {toast.duration !== 0 && (
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-100 dark:bg-slate-800">
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-black/5 dark:bg-white/10">
           <div 
             id={`progress-${toast.id}`}
             className={`h-full ${config.progress} transition-all duration-75 ease-linear`}
