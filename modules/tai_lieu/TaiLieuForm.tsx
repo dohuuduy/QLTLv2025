@@ -329,15 +329,16 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             <label className={labelClass}>Tên tài liệu <span className="text-red-500">*</span></label>
                             <input name="ten_tai_lieu" className={`${inputClass} font-semibold text-base h-10`} value={formData.ten_tai_lieu} onChange={handleChange} placeholder="Nhập tên tài liệu chính xác..." autoFocus />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className={labelClass}>Loại tài liệu <span className="text-red-500">*</span></label>
-                                <SearchableSelect options={loaiTaiLieuOptions} value={formData.id_loai_tai_lieu} onChange={(val) => handleSelectChange('id_loai_tai_lieu', String(val))} placeholder="-- Chọn loại --"/>
-                            </div>
-                            <div>
-                                <label className={labelClass}>Tài liệu cha (Quy trình mẹ)</label>
-                                <SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', String(val))} placeholder="-- Chọn tài liệu cấp trên --" disabled={!formData.id_loai_tai_lieu}/>
-                            </div>
+                        
+                        {/* Changed: Removed grid-cols-2 to allow full width for Document Type and Parent Document */}
+                        <div>
+                            <label className={labelClass}>Loại tài liệu <span className="text-red-500">*</span></label>
+                            <SearchableSelect options={loaiTaiLieuOptions} value={formData.id_loai_tai_lieu} onChange={(val) => handleSelectChange('id_loai_tai_lieu', String(val))} placeholder="-- Chọn loại --"/>
+                        </div>
+                        
+                        <div>
+                            <label className={labelClass}>Tài liệu cha (Quy trình mẹ)</label>
+                            <SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', String(val))} placeholder="-- Chọn tài liệu cấp trên --" disabled={!formData.id_loai_tai_lieu}/>
                         </div>
                     </div>
                 </div>
