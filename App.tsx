@@ -18,8 +18,8 @@ import { ToastProvider, useToast } from './components/ui/Toast';
 import { Tooltip } from './components/ui/Tooltip';
 import { useSystemTheme } from './hooks/useTheme';
 import { NotificationCenter } from './components/NotificationCenter';
-import { differenceInDays, formatDistanceToNow, parseISO, isAfter, subDays } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { differenceInDays, formatDistanceToNow, isAfter } from 'date-fns';
+import vi from 'date-fns/locale/vi';
 
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<any>(null); // Supabase Session
@@ -192,10 +192,12 @@ const AppContent: React.FC = () => {
 
         // 2. THÔNG BÁO BAN HÀNH (Information)
         // Tìm tài liệu mới ban hành trong 7 ngày qua
-        const sevenDaysAgo = subDays(new Date(), 7);
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
         documents.forEach(doc => {
             if (doc.trang_thai === TrangThaiTaiLieu.DA_BAN_HANH && doc.ngay_ban_hanh) {
-                if (isAfter(parseISO(doc.ngay_ban_hanh), sevenDaysAgo)) {
+                if (isAfter(new Date(doc.ngay_ban_hanh), sevenDaysAgo)) {
                     const id = `publish_${doc.id}`;
                     newNotifications.push({
                         id: id,
@@ -214,7 +216,7 @@ const AppContent: React.FC = () => {
         // Dành cho người tạo hồ sơ hoặc Admin
         records.forEach(rec => {
             if (rec.trang_thai === TrangThaiHoSo.LUU_TRU && rec.ngay_het_han) {
-                const daysLeft = differenceInDays(parseISO(rec.ngay_het_han), new Date());
+                const daysLeft = differenceInDays(new Date(rec.ngay_het_han), new Date());
                 if (daysLeft <= 30 && daysLeft >= 0) {
                     if (rec.nguoi_tao === currentUser.id || currentUser.roles.includes('QUAN_TRI')) {
                         const id = `rec_exp_${rec.id}`;
@@ -257,7 +259,7 @@ const AppContent: React.FC = () => {
   // Helper time format
   const formatTimeAgo = (dateStr: string) => {
       try {
-          return formatDistanceToNow(parseISO(dateStr), { addSuffix: true, locale: vi });
+          return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: vi } as any);
       } catch (e) { return dateStr; }
   };
 

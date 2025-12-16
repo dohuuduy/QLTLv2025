@@ -326,10 +326,10 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
             {/* LEFT COLUMN: MAIN CONTENT (8/12) */}
             <div className="col-span-12 lg:col-span-8 space-y-6">
                 
-                {/* 1. Identity & Classification */}
+                {/* 1. Identity & Classification (Đã di chuyển Lĩnh vực & Tiêu chuẩn vào đây) */}
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
                     <div className={cardHeaderClass}>
-                        <FileBox size={16} className="text-blue-500"/> Thông tin định danh
+                        <FileBox size={16} className="text-blue-500"/> Thông tin định danh & Phân loại
                     </div>
                     <div className="space-y-4">
                         <div>
@@ -337,14 +337,33 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             <input name="ten_tai_lieu" className={`${inputClass} font-semibold text-base h-10`} value={formData.ten_tai_lieu} onChange={handleChange} placeholder="Nhập tên tài liệu chính xác..." autoFocus />
                         </div>
                         
-                        <div>
-                            <label className={labelClass}>Loại tài liệu <span className="text-red-500">*</span></label>
-                            <SearchableSelect options={loaiTaiLieuOptions} value={formData.id_loai_tai_lieu} onChange={(val) => handleSelectChange('id_loai_tai_lieu', String(val))} placeholder="-- Chọn loại --"/>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className={labelClass}>Loại tài liệu <span className="text-red-500">*</span></label>
+                                <SearchableSelect options={loaiTaiLieuOptions} value={formData.id_loai_tai_lieu} onChange={(val) => handleSelectChange('id_loai_tai_lieu', String(val))} placeholder="-- Chọn loại --"/>
+                            </div>
+                            {/* Di chuyển Lĩnh vực lên đây, ngang hàng Loại tài liệu */}
+                            <div>
+                                <label className={labelClass}>Lĩnh vực</label>
+                                <SearchableSelect options={linhVucOptions} value={formData.id_linh_vuc} onChange={(val) => handleSelectChange('id_linh_vuc', String(val))} placeholder="-- Chọn lĩnh vực --"/>
+                            </div>
                         </div>
                         
                         <div>
                             <label className={labelClass}>Tài liệu cha (Quy trình mẹ)</label>
                             <SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', String(val))} placeholder="-- Chọn tài liệu cấp trên --" disabled={!formData.id_loai_tai_lieu}/>
+                        </div>
+
+                        {/* Di chuyển Tiêu chuẩn xuống đây, ngay dưới tài liệu cha */}
+                        <div>
+                            <label className={labelClass}>Tiêu chuẩn áp dụng</label>
+                            <MultiSelect 
+                                options={tieuChuanOptions}
+                                value={formData.id_tieu_chuan || []}
+                                onValueChange={(val) => setFormData(prev => ({...prev, id_tieu_chuan: val}))}
+                                placeholder="Chọn tiêu chuẩn..."
+                                className="text-xs"
+                            />
                         </div>
                     </div>
                 </div>
@@ -475,10 +494,10 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                     </div>
                 </div>
 
-                {/* 3. Responsibility & Context */}
+                {/* 3. Responsibility (Simplified) */}
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
                     <div className={cardHeaderClass}>
-                        <User size={16} className="text-green-500"/> Trách nhiệm & Bối cảnh
+                        <User size={16} className="text-green-500"/> Trách nhiệm nhân sự
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div className="col-span-2">
@@ -495,22 +514,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             <SearchableSelect options={approverOptions} value={formData.nguoi_phe_duyet} onChange={(val) => handleSelectChange('nguoi_phe_duyet', String(val))} placeholder="-- Chọn --" className="h-8 text-xs"/>
                         </div>
                         
-                        <div className="col-span-2 pt-2 border-t border-gray-100 dark:border-slate-800 mt-1"></div>
-
-                        <div className="col-span-1">
-                            <label className={labelClass}>Lĩnh vực</label>
-                            <SearchableSelect options={linhVucOptions} value={formData.id_linh_vuc} onChange={(val) => handleSelectChange('id_linh_vuc', String(val))} placeholder="-- Chọn lĩnh vực --" className="h-8 text-xs"/>
-                        </div>
-                        <div className="col-span-1">
-                            <label className={labelClass}>Tiêu chuẩn áp dụng</label>
-                            <MultiSelect 
-                                options={tieuChuanOptions}
-                                value={formData.id_tieu_chuan || []}
-                                onValueChange={(val) => setFormData(prev => ({...prev, id_tieu_chuan: val}))}
-                                placeholder="Chọn tiêu chuẩn..."
-                                className="text-xs"
-                            />
-                        </div>
+                        {/* Lĩnh vực và Tiêu chuẩn đã được chuyển sang cột trái */}
                     </div>
                 </div>
 
