@@ -44,12 +44,12 @@ export const AIChatBox: React.FC<AIChatBoxProps> = ({ document }) => {
     const context = `
       Mã: ${document.ma_tai_lieu}
       Tên: ${document.ten_tai_lieu}
-      Loại: ${document.loai_tai_lieu}
+      Loại: ${document.id_loai_tai_lieu}
       Mô tả tóm tắt: ${document.mo_ta_tom_tat}
       Phiên bản: ${document.phien_ban}
       Ngày hiệu lực: ${document.ngay_hieu_luc}
-      Người soạn: ${document.id_nguoi_soan_thao}
-      Tiêu chuẩn áp dụng: ${document.tieu_chuan?.join(', ')}
+      Người soạn: ${document.nguoi_soan_thao}
+      Tiêu chuẩn áp dụng: ${document.id_tieu_chuan?.join(', ')}
     `;
 
     const responseText = await chatWithDocument(context, userMsg.text);

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { MENU_ITEMS, APP_NAME, INITIAL_MASTER_DATA, MOCK_NOTIFICATIONS } from './constants';
-import { Menu, Search, LogOut, X, Sun, Moon, Monitor, FileText, Archive, CalendarDays, ArrowRight } from 'lucide-react'; // Removed Bell
+import { MENU_ITEMS, APP_NAME, INITIAL_MASTER_DATA } from './constants'; // Removed MOCK_NOTIFICATIONS
+import { Menu, Search, LogOut, X, Sun, Moon, Monitor, FileText, Archive, CalendarDays, ArrowRight } from 'lucide-react';
 import { Dashboard } from './modules/dashboard/Dashboard';
 import { TaiLieuList } from './modules/tai_lieu/TaiLieuList';
 import { MasterDataLayout } from './modules/master_data/MasterDataLayout';
@@ -10,14 +10,16 @@ import { HoSoList } from './modules/ho_so/HoSoList';
 import { AuditSchedulePage } from './modules/audit/AuditSchedulePage'; 
 import { SettingsPage } from './modules/settings/SettingsPage'; 
 import { LoginPage } from './modules/auth/LoginPage';
-import { MasterDataState, NhanSu, AppNotification, TaiLieu, HoSo, KeHoachDanhGia, BackupData } from './types';
+import { MasterDataState, NhanSu, AppNotification, TaiLieu, HoSo, KeHoachDanhGia, BackupData, TrangThaiTaiLieu, TrangThaiHoSo } from './types';
 import { fetchMasterDataFromDB, fetchDocumentsFromDB, fetchRecordsFromDB, fetchAuditPlansFromDB, signOut, getCurrentSession } from './services/supabaseService';
 import { supabase } from './lib/supabaseClient';
 import { DialogProvider } from './contexts/DialogContext';
 import { ToastProvider, useToast } from './components/ui/Toast';
 import { Tooltip } from './components/ui/Tooltip';
 import { useSystemTheme } from './hooks/useTheme';
-import { NotificationCenter } from './components/NotificationCenter'; // Import Component
+import { NotificationCenter } from './components/NotificationCenter';
+import { differenceInDays, formatDistanceToNow, parseISO, isAfter, subDays } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<any>(null); // Supabase Session
@@ -35,7 +37,7 @@ const AppContent: React.FC = () => {
   const toast = useToast();
 
   // Notification State
-  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   // Search State
   const [searchTerm, setSearchTerm] = useState('');
@@ -139,6 +141,138 @@ const AppContent: React.FC = () => {
 
     initData();
   }, [session]);
+
+  // --- REAL-TIME NOTIFICATION GENERATOR ---
+  useEffect(() => {
+    if (!currentUser.id || currentUser.id === 'guest') return;
+
+    const generateNotifications = () => {
+        const newNotifications: AppNotification[] = [];
+        const readNotiIds = JSON.parse(localStorage.getItem(`read_notifications_${currentUser.id}`) || '[]');
+
+        // 1. THÔNG BÁO PHÊ DUYỆT (Action Required)
+        // Tìm các tài liệu đang chờ duyệt mà user hiện tại có trách nhiệm
+        documents.forEach(doc => {
+            if (doc.trang_thai === TrangThaiTaiLieu.CHO_DUYET) {
+                const isReviewer = doc.nguoi_xem_xet === currentUser.id;
+                const isApprover = doc.nguoi_phe_duyet === currentUser.id;
+                const isAdmin = currentUser.roles.includes('QUAN_TRI');
+
+                if (isReviewer || isApprover || isAdmin) {
+                    const id = `approv_${doc.id}_${doc.ngay_cap_nhat_cuoi}`; // ID unique theo lần update cuối
+                    newNotifications.push({
+                        id: id,
+                        title: 'Yêu cầu xử lý tài liệu',
+                        message: `${doc.nguoi_tao ? 'Ai đó' : 'Hệ thống'} đang chờ bạn ${isApprover ? 'phê duyệt' : 'xem xét'} tài liệu: ${doc.ma_tai_lieu}`,
+                        time: formatTimeAgo(doc.ngay_cap_nhat_cuoi),
+                        read: readNotiIds.includes(id),
+                        type: 'warning',
+                        linkTo: 'approvals'
+                    });
+                }
+            }
+            // Thông báo trả về / từ chối (Dành cho người soạn thảo)
+            else if (doc.trang_thai === TrangThaiTaiLieu.SOAN_THAO && doc.nguoi_soan_thao === currentUser.id) {
+                // Kiểm tra lịch sử xem có phải vừa bị từ chối không
+                const lastAction = doc.lich_su?.[doc.lich_su.length - 1];
+                if (lastAction && lastAction.hanh_dong === 'TU_CHOI') {
+                     const id = `reject_${doc.id}_${lastAction.thoi_gian}`;
+                     newNotifications.push({
+                        id: id,
+                        title: 'Tài liệu bị trả về',
+                        message: `Tài liệu ${doc.ma_tai_lieu} bị từ chối. Lý do: "${lastAction.ghi_chu}"`,
+                        time: formatTimeAgo(lastAction.thoi_gian),
+                        read: readNotiIds.includes(id),
+                        type: 'error',
+                        linkTo: 'documents'
+                    });
+                }
+            }
+        });
+
+        // 2. THÔNG BÁO BAN HÀNH (Information)
+        // Tìm tài liệu mới ban hành trong 7 ngày qua
+        const sevenDaysAgo = subDays(new Date(), 7);
+        documents.forEach(doc => {
+            if (doc.trang_thai === TrangThaiTaiLieu.DA_BAN_HANH && doc.ngay_ban_hanh) {
+                if (isAfter(parseISO(doc.ngay_ban_hanh), sevenDaysAgo)) {
+                    const id = `publish_${doc.id}`;
+                    newNotifications.push({
+                        id: id,
+                        title: 'Tài liệu mới ban hành',
+                        message: `${doc.ma_tai_lieu} - ${doc.ten_tai_lieu} đã có hiệu lực.`,
+                        time: formatTimeAgo(doc.ngay_ban_hanh),
+                        read: readNotiIds.includes(id),
+                        type: 'success',
+                        linkTo: 'documents'
+                    });
+                }
+            }
+        });
+
+        // 3. THÔNG BÁO HỒ SƠ SẮP HẾT HẠN (Warning)
+        // Dành cho người tạo hồ sơ hoặc Admin
+        records.forEach(rec => {
+            if (rec.trang_thai === TrangThaiHoSo.LUU_TRU && rec.ngay_het_han) {
+                const daysLeft = differenceInDays(parseISO(rec.ngay_het_han), new Date());
+                if (daysLeft <= 30 && daysLeft >= 0) {
+                    if (rec.nguoi_tao === currentUser.id || currentUser.roles.includes('QUAN_TRI')) {
+                        const id = `rec_exp_${rec.id}`;
+                        newNotifications.push({
+                            id: id,
+                            title: 'Hồ sơ sắp hết hạn',
+                            message: `Hồ sơ "${rec.tieu_de}" sẽ hết hạn lưu trữ trong ${daysLeft} ngày nữa.`,
+                            time: 'Hệ thống nhắc',
+                            read: readNotiIds.includes(id),
+                            type: 'warning',
+                            linkTo: 'records'
+                        });
+                    }
+                }
+            }
+        });
+
+        // 4. LỊCH AUDIT (Info)
+        auditPlans.forEach(plan => {
+            if (plan.auditor_ids?.includes(currentUser.id) && plan.trang_thai !== 'hoan_thanh') {
+                 const id = `audit_${plan.id}`;
+                 newNotifications.push({
+                    id: id,
+                    title: 'Lịch đánh giá sắp tới',
+                    message: `Bạn có tham gia đoàn đánh giá: ${plan.ten_ke_hoach}`,
+                    time: plan.thoi_gian_du_kien_start ? formatTimeAgo(plan.thoi_gian_du_kien_start) : 'Sắp diễn ra',
+                    read: readNotiIds.includes(id),
+                    type: 'info',
+                    linkTo: 'audit-schedule'
+                 });
+            }
+        });
+
+        setNotifications(newNotifications);
+    };
+
+    generateNotifications();
+  }, [documents, records, auditPlans, currentUser]);
+
+  // Helper time format
+  const formatTimeAgo = (dateStr: string) => {
+      try {
+          return formatDistanceToNow(parseISO(dateStr), { addSuffix: true, locale: vi });
+      } catch (e) { return dateStr; }
+  };
+
+  // Sync read status to local storage whenever notifications change (user clicks read)
+  useEffect(() => {
+      if (!currentUser.id || currentUser.id === 'guest') return;
+      const readIds = notifications.filter(n => n.read).map(n => n.id);
+      if (readIds.length > 0) {
+          // Merge with existing
+          const existing = JSON.parse(localStorage.getItem(`read_notifications_${currentUser.id}`) || '[]');
+          const unique = Array.from(new Set([...existing, ...readIds]));
+          localStorage.setItem(`read_notifications_${currentUser.id}`, JSON.stringify(unique));
+      }
+  }, [notifications, currentUser.id]);
+
 
   const handleLogout = async () => {
       await signOut();
@@ -344,7 +478,7 @@ const AppContent: React.FC = () => {
                            <div className="max-h-[60vh] overflow-y-auto p-1">
                                {searchResults.docs.length > 0 && (<div className="py-2"><div className="px-3 py-1 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Tài liệu</div>{searchResults.docs.map(doc => (<div key={doc.id} onClick={() => handleSearchResultClick('documents')} className="px-3 py-2 hover:bg-accent rounded-md cursor-pointer flex items-center gap-3 group transition-colors"><div className="bg-primary/10 text-primary p-1.5 rounded-md"><FileText size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground truncate">{doc.ten_tai_lieu}</p><p className="text-xs text-muted-foreground font-mono">{doc.ma_tai_lieu}</p></div><ArrowRight size={14} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity"/></div>))}</div>)}
                                {searchResults.recs.length > 0 && (<div className="py-2 border-t border-border"><div className="px-3 py-1 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Hồ sơ</div>{searchResults.recs.map(rec => (<div key={rec.id} onClick={() => handleSearchResultClick('records')} className="px-3 py-2 hover:bg-accent rounded-md cursor-pointer flex items-center gap-3 group transition-colors"><div className="bg-primary/10 text-primary p-1.5 rounded-md"><Archive size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground truncate">{rec.tieu_de}</p><p className="text-xs text-muted-foreground font-mono">{rec.ma_ho_so}</p></div><ArrowRight size={14} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity"/></div>))}</div>)}
-                               {searchResults.audits.length > 0 && (<div className="py-2 border-t border-border"><div className="px-3 py-1 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Kế hoạch Audit</div>{searchResults.audits.map(plan => (<div key={plan.id} onClick={() => handleSearchResultClick('audit-schedule')} className="px-3 py-2 hover:bg-accent rounded-md cursor-pointer flex items-center gap-3 group transition-colors"><div className="bg-primary/10 text-primary p-1.5 rounded-md"><CalendarDays size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground truncate">{plan.ten_ke_hoach}</p><p className="text-xs text-muted-foreground">{plan.loai_danh_gia}</p></div><ArrowRight size={14} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity"/></div>))}</div>)}
+                               {searchResults.audits.length > 0 && (<div className="py-2 border-t border-border"><div className="px-3 py-1 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Kế hoạch Audit</div>{searchResults.audits.map(plan => (<div key={plan.id} onClick={() => handleSearchResultClick('audit-schedule')} className="px-3 py-2 hover:bg-accent rounded-md cursor-pointer flex items-center gap-3 group transition-colors"><div className="bg-primary/10 text-primary p-1.5 rounded-md"><CalendarDays size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground truncate">{plan.ten_ke_hoach}</p><p className="text-xs text-muted-foreground">{masterData.loaiDanhGia.find(l => l.id === plan.id_loai_danh_gia)?.ten || plan.id_loai_danh_gia}</p></div><ArrowRight size={14} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity"/></div>))}</div>)}
                            </div>
                        ) : (<div className="p-4 text-center text-muted-foreground text-xs md:hidden">Nhập từ khóa để tìm kiếm</div>)}
                     </div>

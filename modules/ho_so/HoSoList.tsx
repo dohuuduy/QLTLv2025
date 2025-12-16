@@ -72,7 +72,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
       thoi_gian_luu_tru: 12,
       trang_thai: TrangThaiHoSo.LUU_TRU,
       dang_luu_tru: 'BAN_CUNG',
-      id_nguoi_tao: currentUser.id,
+      nguoi_tao: currentUser.id,
       id_phong_ban: userDeptId
     });
     setIsModalOpen(true);
