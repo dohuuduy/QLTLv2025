@@ -20,7 +20,7 @@ import { useSystemTheme } from './hooks/useTheme';
 import { NotificationCenter } from './components/NotificationCenter';
 // Import differenceInCalendarDays for accurate daily calculations ignoring timezones/hours
 import { differenceInCalendarDays, formatDistanceToNow, isAfter, format } from 'date-fns';
-import vi from 'date-fns/locale/vi';
+import { vi } from 'date-fns/locale';
 
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<any>(null); // Supabase Session
@@ -240,13 +240,25 @@ const AppContent: React.FC = () => {
 
                     if (isResponsible || isAdmin) {
                         const isExpired = daysLeft < 0;
+                        const isToday = daysLeft === 0;
                         const id = `doc_exp_${doc.id}_${doc.ngay_het_han}`;
                         
+                        let message = `${doc.ma_tai_lieu} còn ${daysLeft} ngày nữa hết hiệu lực.`;
+                        let timeLabel = `${daysLeft} ngày nữa`;
+
+                        if (isExpired) {
+                            message = `${doc.ma_tai_lieu} đã quá hạn ${Math.abs(daysLeft)} ngày.`;
+                            timeLabel = 'Quá hạn';
+                        } else if (isToday) {
+                            message = `${doc.ma_tai_lieu} hết hạn HÔM NAY.`;
+                            timeLabel = 'Hôm nay';
+                        }
+
                         newNotifications.push({
                             id: id,
                             title: isExpired ? 'Tài liệu ĐÃ HẾT HẠN' : 'Tài liệu sắp hết hạn',
-                            message: `${doc.ma_tai_lieu} ${isExpired ? `đã quá hạn ${Math.abs(daysLeft)} ngày` : `còn ${daysLeft} ngày nữa hết hiệu lực`}.`,
-                            time: isExpired ? 'Quá hạn' : `${daysLeft} ngày nữa`,
+                            message: message,
+                            time: timeLabel,
                             read: readNotiIds.includes(id),
                             type: isExpired ? 'error' : 'warning',
                             linkTo: 'documents'
@@ -311,7 +323,7 @@ const AppContent: React.FC = () => {
   // Helper time format
   const formatTimeAgo = (dateStr: string) => {
       try {
-          return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: vi } as any);
+          return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: vi });
       } catch (e) { return dateStr; }
   };
 
