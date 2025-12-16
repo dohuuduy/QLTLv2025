@@ -71,8 +71,20 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
   };
 
   const handleSave = async () => {
+      // 1. Validate required fields
       if (!editingPlan.ten_ke_hoach || !editingPlan.id_loai_danh_gia) {
-          toast.warning("Vui lòng nhập tên kế hoạch và loại đánh giá!", "Thiếu thông tin");
+          toast.warning("Vui lòng nhập Tên kế hoạch và Loại đánh giá!", "Thiếu thông tin");
+          return;
+      }
+
+      if (!editingPlan.thoi_gian_du_kien_start || !editingPlan.thoi_gian_du_kien_end) {
+          toast.warning("Vui lòng chọn đầy đủ thời gian bắt đầu và kết thúc!", "Thiếu thời gian");
+          return;
+      }
+
+      // 2. Validate Logic Dates
+      if (new Date(editingPlan.thoi_gian_du_kien_start) > new Date(editingPlan.thoi_gian_du_kien_end)) {
+          toast.warning("Ngày kết thúc không thể trước ngày bắt đầu!", "Lỗi thời gian");
           return;
       }
 
@@ -106,10 +118,10 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
               onUpdate([newPlan, ...auditPlans]);
           }
           setIsModalOpen(false);
-          toast.success("Lưu kế hoạch đánh giá thành công!");
+          toast.success("Lưu kế hoạch đánh giá thành công!", "Thành công");
       } catch (error) {
           console.error(error);
-          toast.error("Lỗi khi lưu kế hoạch!");
+          toast.error("Lỗi khi lưu kế hoạch, vui lòng thử lại.", "Lỗi hệ thống");
       } finally {
           setIsLoading(false);
       }
@@ -118,17 +130,18 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
   const handleDelete = async (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
       const confirmed = await dialog.confirm(
-          'Bạn có chắc chắn muốn xóa kế hoạch đánh giá này?', 
-          { title: 'Xóa kế hoạch', type: 'error', confirmLabel: 'Xóa' }
+          'Bạn có chắc chắn muốn xóa kế hoạch đánh giá này? Dữ liệu các phiên con cũng sẽ bị mất.', 
+          { title: 'Xóa kế hoạch', type: 'error', confirmLabel: 'Xóa vĩnh viễn' }
       );
 
       if (confirmed) {
           try {
               await deleteAuditPlan(id);
               onUpdate(auditPlans.filter(p => p.id !== id));
-              toast.success("Đã xóa kế hoạch thành công!");
+              // Changed from toast.success (Green) to toast.info (Blue) for delete action
+              toast.info("Đã xóa kế hoạch đánh giá khỏi hệ thống.", "Đã xóa");
           } catch (error) {
-              toast.error("Lỗi khi xóa kế hoạch!");
+              toast.error("Lỗi khi xóa kế hoạch!", "Lỗi hệ thống");
           }
       }
   };
@@ -179,7 +192,7 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                               <div>
-                                  <label className={labelClass}>Loại hình đánh giá</label>
+                                  <label className={labelClass}>Loại hình đánh giá <span className="text-red-500">*</span></label>
                                   <SearchableSelect options={auditTypeOptions} value={editingPlan.id_loai_danh_gia} onChange={(val) => setEditingPlan({...editingPlan, id_loai_danh_gia: String(val)})} placeholder="-- Chọn loại --"/>
                               </div>
                               <div>
@@ -193,8 +206,32 @@ export const AuditSchedulePage: React.FC<AuditSchedulePageProps> = ({
                   <div className="space-y-4">
                       <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2"><Calendar size={16} className="text-orange-500"/> Thời gian & Phạm vi</h4>
                       <div className="grid grid-cols-2 gap-4">
-                          <div><label className={labelClass}>Ngày bắt đầu</label><input type="date" className={inputClass} value={editingPlan.thoi_gian_du_kien_start || ''} onChange={(e) => setEditingPlan({...editingPlan, thoi_gian_du_kien_start: e.target.value})}/></div>
-                          <div><label className={labelClass}>Ngày kết thúc</label><input type="date" className={inputClass} value={editingPlan.thoi_gian_du_kien_end || ''} onChange={(e) => setEditingPlan({...editingPlan, thoi_gian_du_kien_end: e.target.value})}/></div>
+                          <div>
+                              <label className={labelClass}>Ngày bắt đầu <span className="text-red-500">*</span></label>
+                              <input 
+                                type="date" 
+                                className={inputClass} 
+                                value={editingPlan.thoi_gian_du_kien_start || ''} 
+                                onChange={(e) => {
+                                    const newVal = e.target.value;
+                                    setEditingPlan(prev => ({
+                                        ...prev, 
+                                        thoi_gian_du_kien_start: newVal,
+                                        // Auto-fill End Date if it's currently empty
+                                        thoi_gian_du_kien_end: prev.thoi_gian_du_kien_end || newVal 
+                                    }))
+                                }}
+                              />
+                          </div>
+                          <div>
+                              <label className={labelClass}>Ngày kết thúc <span className="text-red-500">*</span></label>
+                              <input 
+                                type="date" 
+                                className={inputClass} 
+                                value={editingPlan.thoi_gian_du_kien_end || ''} 
+                                onChange={(e) => setEditingPlan({...editingPlan, thoi_gian_du_kien_end: e.target.value})}
+                              />
+                          </div>
                       </div>
                       <div>
                           <label className={labelClass}>Mục tiêu đánh giá</label>
