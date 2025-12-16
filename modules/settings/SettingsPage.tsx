@@ -177,7 +177,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const renderNotifications = () => (
     <div className="space-y-6 animate-fade-in">
         <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 border-b pb-2 flex items-center gap-2">
-             <Bell size={20} className="text-orange-500" /> Cấu hình cảnh báo ISO
+             <Bell size={20} className="text-orange-500" /> Cấu hình nhắc nhở
         </h3>
         
         <div className="bg-orange-50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-100 dark:border-orange-800">
@@ -195,7 +195,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     />
                     <span className="text-sm text-gray-600 dark:text-gray-400">Ngày</span>
                  </div>
-                 <p className="text-xs text-gray-500 mt-1">Gửi thông báo trước X ngày khi tài liệu hết hạn hoặc cần rà soát.</p>
+                 <p className="text-xs text-gray-500 mt-1">Hệ thống tạo nhắc nhở trước X ngày khi tài liệu hết hạn hoặc cần rà soát.</p>
               </div>
 
               <div>
@@ -217,7 +217,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
 
         <div>
-           <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-3">Kênh thông báo</h4>
+           <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-3">Kênh hiển thị</h4>
            <div className="space-y-3">
               <label className="flex items-center gap-3 cursor-pointer">
                  <input 

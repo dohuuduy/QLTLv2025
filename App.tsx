@@ -76,7 +76,7 @@ const AppContent: React.FC = () => {
       setSession(session);
       if (session && window.location.hash && window.location.hash.includes('access_token')) {
           window.history.replaceState(null, '', window.location.pathname);
-          toast.success("Xác thực email thành công!", "Chào mừng");
+          toast.success("Xác thực tài khoản thành công!", "Chào mừng");
       }
       if (!session) {
          setDocuments([]);
