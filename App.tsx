@@ -18,8 +18,10 @@ import { ToastProvider, useToast } from './components/ui/Toast';
 import { Tooltip } from './components/ui/Tooltip';
 import { useSystemTheme } from './hooks/useTheme';
 import { NotificationCenter } from './components/NotificationCenter';
-import { differenceInDays, formatDistanceToNow, isAfter } from 'date-fns';
+import { differenceInDays, formatDistanceToNow, isAfter, format } from 'date-fns';
 import vi from 'date-fns/locale/vi';
+// IMPORT EMAIL SERVICE
+import { sendSystemEmail, generateDocumentExpiryEmail, generateRecordExpiryEmail } from './services/emailService';
 
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<any>(null); // Supabase Session
@@ -142,7 +144,7 @@ const AppContent: React.FC = () => {
     initData();
   }, [session]);
 
-  // --- REAL-TIME NOTIFICATION GENERATOR ---
+  // --- REAL-TIME NOTIFICATION & EMAIL GENERATOR ---
   useEffect(() => {
     if (!currentUser.id || currentUser.id === 'guest') return;
 
@@ -150,12 +152,13 @@ const AppContent: React.FC = () => {
     const savedSettings = localStorage.getItem('iso_app_settings');
     const config = savedSettings ? JSON.parse(savedSettings) : { 
         reviewAlertDays: 30, 
-        recordExpiryAlertDays: 60 
+        recordExpiryAlertDays: 60,
+        enableEmailNoti: false 
     };
     const DOC_ALERT_DAYS = config.reviewAlertDays || 30;
     const REC_ALERT_DAYS = config.recordExpiryAlertDays || 60;
 
-    const generateNotifications = () => {
+    const generateNotifications = async () => {
         const newNotifications: AppNotification[] = [];
         const readNotiIds = JSON.parse(localStorage.getItem(`read_notifications_${currentUser.id}`) || '[]');
 
@@ -218,7 +221,7 @@ const AppContent: React.FC = () => {
         });
 
         // 3. THÔNG BÁO TÀI LIỆU SẮP HẾT HẠN / QUÁ HẠN (Warning - Dynamic Config)
-        documents.forEach(doc => {
+        for (const doc of documents) {
             if (doc.ngay_het_han && doc.trang_thai === TrangThaiTaiLieu.DA_BAN_HANH) {
                 const expiryDate = new Date(doc.ngay_het_han);
                 const daysLeft = differenceInDays(expiryDate, new Date());
@@ -230,21 +233,34 @@ const AppContent: React.FC = () => {
 
                     if (isResponsible || isAdmin) {
                         const isExpired = daysLeft < 0;
-                        const id = `doc_exp_${doc.id}_${doc.ngay_het_han}`;
+                        const id = `doc_exp_${doc.id}_${doc.ngay_het_han}`; // Unique ID by date so re-alerts if date changed
+                        const isNewNotification = !readNotiIds.includes(id);
+
+                        // EMAIL LOGIC
+                        // Chỉ gửi email nếu chưa gửi trong ngày hôm nay (hoặc logic khác tùy chỉnh)
+                        const emailSentKey = `email_sent_${id}_${new Date().toISOString().slice(0, 10)}`;
                         
-                        // Check if email notification was already sent "mock"
-                        const emailSentKey = `email_sent_${id}`;
-                        if (!localStorage.getItem(emailSentKey)) {
-                            // MOCK: Gửi Email cảnh báo
-                            console.log(`[MOCK EMAIL] Sending warning to ${isResponsible ? 'Staff' : 'Admin'}: Document ${doc.ma_tai_lieu} is expiring/expired.`);
-                            localStorage.setItem(emailSentKey, 'true');
+                        if (config.enableEmailNoti && !localStorage.getItem(emailSentKey)) {
+                            // Call Service
+                            const sent = await sendSystemEmail({
+                                to: currentUser.email,
+                                recipientName: currentUser.ho_ten,
+                                subject: isExpired ? `[HẾT HẠN] Tài liệu ${doc.ma_tai_lieu}` : `[SẮP HẾT HẠN] Tài liệu ${doc.ma_tai_lieu}`,
+                                body: generateDocumentExpiryEmail(doc.ten_tai_lieu, doc.ma_tai_lieu, daysLeft, format(expiryDate, 'dd/MM/yyyy'), currentUser.ho_ten)
+                            });
+                            
+                            if (sent) {
+                                localStorage.setItem(emailSentKey, 'true');
+                                // Only toast if we just sent it
+                                toast.info(`Đã gửi email cảnh báo tài liệu ${doc.ma_tai_lieu}`);
+                            }
                         }
 
                         newNotifications.push({
                             id: id,
                             title: isExpired ? 'Tài liệu ĐÃ HẾT HẠN' : 'Tài liệu sắp hết hạn',
-                            message: `${doc.ma_tai_lieu} ${isExpired ? `đã hết hạn ${Math.abs(daysLeft)} ngày` : `còn ${daysLeft} ngày nữa hết hiệu lực`}. Đã gửi email cảnh báo.`,
-                            time: 'Hệ thống nhắc',
+                            message: `${doc.ma_tai_lieu} ${isExpired ? `đã hết hạn ${Math.abs(daysLeft)} ngày` : `còn ${daysLeft} ngày nữa hết hiệu lực`}.`,
+                            time: isExpired ? 'Quá hạn' : `${daysLeft} ngày`,
                             read: readNotiIds.includes(id),
                             type: isExpired ? 'error' : 'warning', // RED if expired, YELLOW if soon
                             linkTo: 'documents'
@@ -252,10 +268,10 @@ const AppContent: React.FC = () => {
                     }
                 }
             }
-        });
+        }
 
         // 4. THÔNG BÁO HỒ SƠ SẮP HẾT HẠN (Warning - Dynamic Config)
-        records.forEach(rec => {
+        for (const rec of records) {
             if (rec.trang_thai === TrangThaiHoSo.LUU_TRU && rec.ngay_het_han) {
                 const daysLeft = differenceInDays(new Date(rec.ngay_het_han), new Date());
                 
@@ -263,6 +279,19 @@ const AppContent: React.FC = () => {
                 if (daysLeft <= REC_ALERT_DAYS && daysLeft >= 0) {
                     if (rec.nguoi_tao === currentUser.id || currentUser.roles.includes('QUAN_TRI')) {
                         const id = `rec_exp_${rec.id}`;
+                        
+                        // EMAIL LOGIC FOR RECORDS
+                        const emailSentKey = `email_rec_${id}_${new Date().toISOString().slice(0, 10)}`;
+                        if (config.enableEmailNoti && !localStorage.getItem(emailSentKey)) {
+                             const sent = await sendSystemEmail({
+                                to: currentUser.email,
+                                recipientName: currentUser.ho_ten,
+                                subject: `[LƯU TRỮ] Hồ sơ sắp đến hạn hủy: ${rec.ma_ho_so}`,
+                                body: generateRecordExpiryEmail(rec.tieu_de, rec.ma_ho_so, daysLeft, format(new Date(rec.ngay_het_han), 'dd/MM/yyyy'), rec.vi_tri_luu_tru, currentUser.ho_ten)
+                            });
+                            if (sent) localStorage.setItem(emailSentKey, 'true');
+                        }
+
                         newNotifications.push({
                             id: id,
                             title: 'Hồ sơ sắp hết hạn',
@@ -275,7 +304,7 @@ const AppContent: React.FC = () => {
                     }
                 }
             }
-        });
+        }
 
         // 5. LỊCH AUDIT (Info)
         auditPlans.forEach(plan => {
