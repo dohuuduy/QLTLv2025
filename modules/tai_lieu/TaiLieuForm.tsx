@@ -4,7 +4,7 @@ import { TaiLieu, TrangThaiTaiLieu, MasterDataState, DinhKem, NhanSu } from '../
 import { Button } from '../../components/ui/Button';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { MultiSelect } from '../../components/ui/MultiSelect';
-import { Info, Calendar, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, RefreshCw, Lock, Unlock, Layers, Tag, Save, ArrowRight, FileBox, User, Minus, Plus, GitCommit, Hash, AlertCircle } from 'lucide-react';
+import { Info, Calendar, FileType, Paperclip, Trash2, Link as LinkIcon, FileText, FileSpreadsheet, RefreshCw, Lock, Unlock, Layers, Tag, Save, ArrowRight, FileBox, User, Minus, Plus, GitCommit, Hash, AlertCircle, Clock, CalendarX } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
 import { useToast } from '../../components/ui/Toast';
@@ -30,6 +30,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
     lan_ban_hanh: 1,
     ngay_ban_hanh: '',
     ngay_hieu_luc: '',
+    ngay_het_han: '',
     chu_ky_ra_soat: 0,
     ngay_ra_soat_tiep_theo: '',
     nguoi_soan_thao: '',
@@ -261,6 +262,13 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
         }
     }
 
+    if (formData.ngay_hieu_luc && formData.ngay_het_han) {
+        if (new Date(formData.ngay_het_han) <= new Date(formData.ngay_hieu_luc)) {
+            toast.warning("Ngày hết hạn phải sau ngày hiệu lực!", "Lỗi ngày tháng");
+            return;
+        }
+    }
+
     // SANITIZE DATA (Fix 400 Bad Request for UUIDs)
     const cleanData: any = { ...formData };
     
@@ -273,6 +281,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
         'nguoi_phe_duyet',
         'ngay_ban_hanh',
         'ngay_hieu_luc',
+        'ngay_het_han',
         'ngay_ra_soat_tiep_theo'
     ];
 
@@ -326,7 +335,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
             {/* LEFT COLUMN: MAIN CONTENT (8/12) */}
             <div className="col-span-12 lg:col-span-8 space-y-6">
                 
-                {/* 1. Identity & Classification (Đã di chuyển Lĩnh vực & Tiêu chuẩn vào đây) */}
+                {/* 1. Identity & Classification */}
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
                     <div className={cardHeaderClass}>
                         <FileBox size={16} className="text-blue-500"/> Thông tin định danh & Phân loại
@@ -342,7 +351,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                                 <label className={labelClass}>Loại tài liệu <span className="text-red-500">*</span></label>
                                 <SearchableSelect options={loaiTaiLieuOptions} value={formData.id_loai_tai_lieu} onChange={(val) => handleSelectChange('id_loai_tai_lieu', String(val))} placeholder="-- Chọn loại --"/>
                             </div>
-                            {/* Di chuyển Lĩnh vực lên đây, ngang hàng Loại tài liệu */}
                             <div>
                                 <label className={labelClass}>Lĩnh vực</label>
                                 <SearchableSelect options={linhVucOptions} value={formData.id_linh_vuc} onChange={(val) => handleSelectChange('id_linh_vuc', String(val))} placeholder="-- Chọn lĩnh vực --"/>
@@ -354,7 +362,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             <SearchableSelect options={availableParents} value={formData.tai_lieu_cha_id} onChange={(val) => handleSelectChange('tai_lieu_cha_id', String(val))} placeholder="-- Chọn tài liệu cấp trên --" disabled={!formData.id_loai_tai_lieu}/>
                         </div>
 
-                        {/* Di chuyển Tiêu chuẩn xuống đây, ngay dưới tài liệu cha */}
                         <div>
                             <label className={labelClass}>Tiêu chuẩn áp dụng</label>
                             <MultiSelect 
@@ -477,6 +484,21 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             </div>
                         </div>
 
+                        {/* Ngày hết hạn (Tùy chọn) - VISIBLE NOW */}
+                        <div className="bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-100 dark:border-red-900/30">
+                            <label className={`${labelClass} text-red-700 dark:text-red-400 flex items-center gap-1`}>
+                                <CalendarX size={12}/> Ngày hết hạn (Tùy chọn)
+                            </label>
+                            <input 
+                                type="date" 
+                                name="ngay_het_han" 
+                                className="w-full bg-white dark:bg-slate-800 border border-red-200 dark:border-red-800 rounded h-8 px-2 text-sm text-red-900 dark:text-red-200 focus:outline-none dark:[color-scheme:dark]" 
+                                value={formData.ngay_het_han || ''} 
+                                onChange={handleChange}
+                            />
+                            <p className="text-[10px] text-red-500/70 mt-1 italic">Dành cho giấy phép, kế hoạch năm, chứng chỉ...</p>
+                        </div>
+
                         <div className={`p-3 rounded-lg border transition-all ${isReviewEnabled ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-900/30' : 'bg-gray-50 border-gray-200 dark:bg-slate-800 dark:border-slate-700'}`}>
                             <div className="flex justify-between items-center mb-2">
                                 <label className="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1 cursor-pointer" onClick={toggleReview}>
@@ -494,7 +516,7 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                     </div>
                 </div>
 
-                {/* 3. Responsibility (Simplified) */}
+                {/* 3. Responsibility (Updated Layout to FULL WIDTH) */}
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
                     <div className={cardHeaderClass}>
                         <User size={16} className="text-green-500"/> Trách nhiệm nhân sự
@@ -505,16 +527,14 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             <SearchableSelect options={drafterOptions} value={formData.nguoi_soan_thao} onChange={(val) => handleSelectChange('nguoi_soan_thao', String(val))} placeholder="-- Chọn --" className="h-8 text-xs"/>
                         </div>
                         
-                        <div className="col-span-1">
+                        <div className="col-span-2">
                             <label className={labelClass}>Người xem xét</label>
                             <SearchableSelect options={reviewerOptions} value={formData.nguoi_xem_xet} onChange={(val) => handleSelectChange('nguoi_xem_xet', String(val))} placeholder="-- Chọn --" className="h-8 text-xs"/>
                         </div>
-                        <div className="col-span-1">
+                        <div className="col-span-2">
                             <label className={labelClass}>Người phê duyệt</label>
                             <SearchableSelect options={approverOptions} value={formData.nguoi_phe_duyet} onChange={(val) => handleSelectChange('nguoi_phe_duyet', String(val))} placeholder="-- Chọn --" className="h-8 text-xs"/>
                         </div>
-                        
-                        {/* Lĩnh vực và Tiêu chuẩn đã được chuyển sang cột trái */}
                     </div>
                 </div>
 

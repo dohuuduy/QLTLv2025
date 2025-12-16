@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Settings, Bell, Database, ShieldAlert, Save, Upload, Download, CheckCircle, Clock, Building, Palette, History } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { MasterDataState, TaiLieu, HoSo, KeHoachDanhGia, BackupData } from '../../types';
@@ -26,7 +26,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const dialog = useDialog();
   const toast = useToast();
 
-  // --- Mock Local Settings State ---
   const [settings, setSettings] = useState({
     companyName: 'Công Ty Cổ Phần Công Nghệ ISO',
     slogan: 'Chất lượng là danh dự',
@@ -34,16 +33,29 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     themeColor: '#3b82f6',
     
     // Notifications
-    reviewAlertDays: 30, // Nhắc rà soát trước 30 ngày
-    recordExpiryAlertDays: 60, // Nhắc hủy hồ sơ trước 60 ngày
+    reviewAlertDays: 30, 
+    recordExpiryAlertDays: 60,
     enableEmailNoti: false,
     enableAppNoti: true,
   });
 
-  // --- Handlers ---
+  // Load from local storage on mount
+  useEffect(() => {
+      const saved = localStorage.getItem('iso_app_settings');
+      if (saved) {
+          try {
+              setSettings(JSON.parse(saved));
+          } catch (e) {
+              console.error("Error parsing settings", e);
+          }
+      }
+  }, []);
+
   const handleSaveSettings = () => {
-    // In real app, save to Backend/LocalStorage
+    localStorage.setItem('iso_app_settings', JSON.stringify(settings));
     toast.success('Đã lưu cấu hình hệ thống thành công!', 'Cấu hình');
+    // Optional: Dispatch event to notify other components
+    window.dispatchEvent(new Event('iso_settings_updated'));
   };
 
   const handleBackup = () => {
@@ -173,7 +185,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5 flex items-center gap-2">
-                    <Clock size={16}/> Nhắc hạn rà soát tài liệu trước
+                    <Clock size={16}/> Nhắc hạn rà soát / Hết hạn tài liệu
                  </label>
                  <div className="flex items-center gap-2">
                     <input 
@@ -184,12 +196,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     />
                     <span className="text-sm text-gray-600 dark:text-gray-400">Ngày</span>
                  </div>
-                 <p className="text-xs text-gray-500 mt-1">Hệ thống sẽ gửi thông báo và highlight màu vàng khi tài liệu sắp đến hạn rà soát định kỳ.</p>
+                 <p className="text-xs text-gray-500 mt-1">Gửi thông báo trước X ngày khi tài liệu hết hạn hoặc cần rà soát.</p>
               </div>
 
               <div>
                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5 flex items-center gap-2">
-                    <ShieldAlert size={16}/> Nhắc hạn tiêu hủy hồ sơ trước
+                    <ShieldAlert size={16}/> Nhắc hạn tiêu hủy hồ sơ
                  </label>
                  <div className="flex items-center gap-2">
                     <input 

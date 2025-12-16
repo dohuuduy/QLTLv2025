@@ -146,12 +146,20 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (!currentUser.id || currentUser.id === 'guest') return;
 
+    // LOAD SETTINGS (Sync)
+    const savedSettings = localStorage.getItem('iso_app_settings');
+    const config = savedSettings ? JSON.parse(savedSettings) : { 
+        reviewAlertDays: 30, 
+        recordExpiryAlertDays: 60 
+    };
+    const DOC_ALERT_DAYS = config.reviewAlertDays || 30;
+    const REC_ALERT_DAYS = config.recordExpiryAlertDays || 60;
+
     const generateNotifications = () => {
         const newNotifications: AppNotification[] = [];
         const readNotiIds = JSON.parse(localStorage.getItem(`read_notifications_${currentUser.id}`) || '[]');
 
         // 1. THÔNG BÁO PHÊ DUYỆT (Action Required)
-        // Tìm các tài liệu đang chờ duyệt mà user hiện tại có trách nhiệm
         documents.forEach(doc => {
             if (doc.trang_thai === TrangThaiTaiLieu.CHO_DUYET) {
                 const isReviewer = doc.nguoi_xem_xet === currentUser.id;
@@ -159,7 +167,7 @@ const AppContent: React.FC = () => {
                 const isAdmin = currentUser.roles.includes('QUAN_TRI');
 
                 if (isReviewer || isApprover || isAdmin) {
-                    const id = `approv_${doc.id}_${doc.ngay_cap_nhat_cuoi}`; // ID unique theo lần update cuối
+                    const id = `approv_${doc.id}_${doc.ngay_cap_nhat_cuoi}`;
                     newNotifications.push({
                         id: id,
                         title: 'Yêu cầu xử lý tài liệu',
@@ -171,9 +179,7 @@ const AppContent: React.FC = () => {
                     });
                 }
             }
-            // Thông báo trả về / từ chối (Dành cho người soạn thảo)
             else if (doc.trang_thai === TrangThaiTaiLieu.SOAN_THAO && doc.nguoi_soan_thao === currentUser.id) {
-                // Kiểm tra lịch sử xem có phải vừa bị từ chối không
                 const lastAction = doc.lich_su?.[doc.lich_su.length - 1];
                 if (lastAction && lastAction.hanh_dong === 'TU_CHOI') {
                      const id = `reject_${doc.id}_${lastAction.thoi_gian}`;
@@ -191,7 +197,6 @@ const AppContent: React.FC = () => {
         });
 
         // 2. THÔNG BÁO BAN HÀNH (Information)
-        // Tìm tài liệu mới ban hành trong 7 ngày qua
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
@@ -212,12 +217,50 @@ const AppContent: React.FC = () => {
             }
         });
 
-        // 3. THÔNG BÁO HỒ SƠ SẮP HẾT HẠN (Warning)
-        // Dành cho người tạo hồ sơ hoặc Admin
+        // 3. THÔNG BÁO TÀI LIỆU SẮP HẾT HẠN / QUÁ HẠN (Warning - Dynamic Config)
+        documents.forEach(doc => {
+            if (doc.ngay_het_han && doc.trang_thai === TrangThaiTaiLieu.DA_BAN_HANH) {
+                const expiryDate = new Date(doc.ngay_het_han);
+                const daysLeft = differenceInDays(expiryDate, new Date());
+                
+                // Sử dụng biến DOC_ALERT_DAYS từ cấu hình
+                if (daysLeft <= DOC_ALERT_DAYS) {
+                    const isResponsible = doc.nguoi_soan_thao === currentUser.id;
+                    const isAdmin = currentUser.roles.includes('QUAN_TRI');
+
+                    if (isResponsible || isAdmin) {
+                        const isExpired = daysLeft < 0;
+                        const id = `doc_exp_${doc.id}_${doc.ngay_het_han}`;
+                        
+                        // Check if email notification was already sent "mock"
+                        const emailSentKey = `email_sent_${id}`;
+                        if (!localStorage.getItem(emailSentKey)) {
+                            // MOCK: Gửi Email cảnh báo
+                            console.log(`[MOCK EMAIL] Sending warning to ${isResponsible ? 'Staff' : 'Admin'}: Document ${doc.ma_tai_lieu} is expiring/expired.`);
+                            localStorage.setItem(emailSentKey, 'true');
+                        }
+
+                        newNotifications.push({
+                            id: id,
+                            title: isExpired ? 'Tài liệu ĐÃ HẾT HẠN' : 'Tài liệu sắp hết hạn',
+                            message: `${doc.ma_tai_lieu} ${isExpired ? `đã hết hạn ${Math.abs(daysLeft)} ngày` : `còn ${daysLeft} ngày nữa hết hiệu lực`}. Đã gửi email cảnh báo.`,
+                            time: 'Hệ thống nhắc',
+                            read: readNotiIds.includes(id),
+                            type: 'error',
+                            linkTo: 'documents'
+                        });
+                    }
+                }
+            }
+        });
+
+        // 4. THÔNG BÁO HỒ SƠ SẮP HẾT HẠN (Warning - Dynamic Config)
         records.forEach(rec => {
             if (rec.trang_thai === TrangThaiHoSo.LUU_TRU && rec.ngay_het_han) {
                 const daysLeft = differenceInDays(new Date(rec.ngay_het_han), new Date());
-                if (daysLeft <= 30 && daysLeft >= 0) {
+                
+                // Sử dụng biến REC_ALERT_DAYS từ cấu hình
+                if (daysLeft <= REC_ALERT_DAYS && daysLeft >= 0) {
                     if (rec.nguoi_tao === currentUser.id || currentUser.roles.includes('QUAN_TRI')) {
                         const id = `rec_exp_${rec.id}`;
                         newNotifications.push({
@@ -234,7 +277,7 @@ const AppContent: React.FC = () => {
             }
         });
 
-        // 4. LỊCH AUDIT (Info)
+        // 5. LỊCH AUDIT (Info)
         auditPlans.forEach(plan => {
             if (plan.auditor_ids?.includes(currentUser.id) && plan.trang_thai !== 'hoan_thanh') {
                  const id = `audit_${plan.id}`;
@@ -254,6 +297,12 @@ const AppContent: React.FC = () => {
     };
 
     generateNotifications();
+    
+    // Listen for settings update to regenerate notifications
+    const handleSettingsUpdate = () => generateNotifications();
+    window.addEventListener('iso_settings_updated', handleSettingsUpdate);
+    return () => window.removeEventListener('iso_settings_updated', handleSettingsUpdate);
+
   }, [documents, records, auditPlans, currentUser]);
 
   // Helper time format

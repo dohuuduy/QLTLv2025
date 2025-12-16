@@ -9,9 +9,9 @@ import { MultiSelect } from '../../components/ui/MultiSelect'; // Import MultiSe
 import { TaiLieuForm } from './TaiLieuForm';
 import { DocumentTimeline } from '../../components/DocumentTimeline';
 import { AIChatWidget } from '../../components/AIChatWidget';
-import { Plus, Filter, FileText, Eye, Pencil, Send, FileUp, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, FileType, FileSpreadsheet, Lock, History, Shield, UserCheck, Tag, RefreshCw, Paperclip, ExternalLink, LayoutDashboard, Zap, GitMerge, Check, AlertTriangle, Info } from 'lucide-react';
+import { Plus, Filter, FileText, Eye, Pencil, Send, FileUp, ChevronRight, X, Clock, File, Trash2, CornerDownRight, Layers, List, FileType, FileSpreadsheet, Lock, History, Shield, UserCheck, Tag, RefreshCw, Paperclip, ExternalLink, LayoutDashboard, Zap, GitMerge, Check, AlertTriangle, Info, CalendarX } from 'lucide-react';
 import { upsertDocument, deleteDocument } from '../../services/supabaseService';
-import { format } from 'date-fns';
+import { format, isPast } from 'date-fns';
 import { useDialog } from '../../contexts/DialogContext';
 import { useToast } from '../../components/ui/Toast';
 
@@ -567,7 +567,18 @@ export const TaiLieuList: React.FC<TaiLieuListProps> = ({
                                            <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Ngày ban hành</p><p className="text-sm font-medium">{selectedDoc.ngay_ban_hanh ? format(new Date(selectedDoc.ngay_ban_hanh), 'dd/MM/yyyy') : '---'}</p></div>
                                            <div><p className="text-xs text-gray-500 uppercase font-bold mb-1">Ngày hiệu lực</p><p className="text-sm font-medium">{selectedDoc.ngay_hieu_luc ? format(new Date(selectedDoc.ngay_hieu_luc), 'dd/MM/yyyy') : '---'}</p></div>
                                        </div>
-                                       {selectedDoc.ngay_ra_soat_tiep_theo && (
+                                       
+                                       {selectedDoc.ngay_het_han && (
+                                           <div className="pt-3 border-t border-gray-100 dark:border-slate-800">
+                                               <p className="text-xs text-red-600 dark:text-red-400 uppercase font-bold mb-1 flex items-center gap-1"><CalendarX size={12} /> Hạn hiệu lực</p>
+                                               <div className="flex items-center justify-between">
+                                                   <p className={`text-sm font-bold ${isPast(new Date(selectedDoc.ngay_het_han)) ? 'text-red-600' : 'text-gray-800 dark:text-gray-200'}`}>{format(new Date(selectedDoc.ngay_het_han), 'dd/MM/yyyy')}</p>
+                                                   {isPast(new Date(selectedDoc.ngay_het_han)) && <span className="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-100 font-bold">Đã hết hạn</span>}
+                                               </div>
+                                           </div>
+                                       )}
+
+                                       {selectedDoc.ngay_ra_soat_tiep_theo && !selectedDoc.ngay_het_han && (
                                            <div className="pt-3 border-t border-gray-100 dark:border-slate-800">
                                                <p className="text-xs text-orange-600 dark:text-orange-400 uppercase font-bold mb-1 flex items-center gap-1"><RefreshCw size={12} /> Rà soát tiếp theo</p>
                                                <div className="flex items-center justify-between">
