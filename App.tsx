@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MENU_ITEMS, APP_NAME, INITIAL_MASTER_DATA, MOCK_NOTIFICATIONS } from './constants';
-import { Menu, Bell, Search, LogOut, X, User, Database, FileText, Archive, CalendarDays, ArrowRight, Sun, Moon, Monitor } from 'lucide-react';
+import { Menu, Search, LogOut, X, Sun, Moon, Monitor, FileText, Archive, CalendarDays, ArrowRight } from 'lucide-react'; // Removed Bell
 import { Dashboard } from './modules/dashboard/Dashboard';
 import { TaiLieuList } from './modules/tai_lieu/TaiLieuList';
 import { MasterDataLayout } from './modules/master_data/MasterDataLayout';
@@ -14,9 +14,10 @@ import { MasterDataState, NhanSu, AppNotification, TaiLieu, HoSo, KeHoachDanhGia
 import { fetchMasterDataFromDB, fetchDocumentsFromDB, fetchRecordsFromDB, fetchAuditPlansFromDB, signOut, getCurrentSession } from './services/supabaseService';
 import { supabase } from './lib/supabaseClient';
 import { DialogProvider } from './contexts/DialogContext';
-import { ToastProvider, useToast } from './components/ui/Toast'; // Import Toast
-import { Tooltip } from './components/ui/Tooltip'; // Import Tooltip
+import { ToastProvider, useToast } from './components/ui/Toast';
+import { Tooltip } from './components/ui/Tooltip';
 import { useSystemTheme } from './hooks/useTheme';
+import { NotificationCenter } from './components/NotificationCenter'; // Import Component
 
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<any>(null); // Supabase Session
@@ -35,7 +36,6 @@ const AppContent: React.FC = () => {
 
   // Notification State
   const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   // Search State
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,8 +83,6 @@ const AppContent: React.FC = () => {
       } else if (event === 'SIGNED_OUT') {
          toast.info("Đã đăng xuất hệ thống.");
       }
-      // Note: Removed 'SIGNED_IN' toast here to prevent it showing on page reload.
-      // It is now handled explicitly in LoginPage.tsx
     });
 
     return () => subscription.unsubscribe();
@@ -149,7 +147,6 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (!target.closest('#notification-container')) setShowNotifications(false);
       if (searchRef.current && !searchRef.current.contains(target)) {
           setIsSearchOpen(false);
           setIsMobileSearchOpen(false);
@@ -175,12 +172,6 @@ const AppContent: React.FC = () => {
       setActiveTab(tab);
       setIsSearchOpen(false);
       setIsMobileSearchOpen(false);
-  };
-
-  const handleNotificationClick = (notification: AppNotification) => {
-    setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
-    if (notification.linkTo) setActiveTab(notification.linkTo);
-    setShowNotifications(false);
   };
 
   const handleDashboardFilter = (filters: { trang_thai?: string; bo_phan?: string }) => {
@@ -361,26 +352,12 @@ const AppContent: React.FC = () => {
              </div>
 
              <div className="flex items-center gap-2">
-                <div id="notification-container" className="relative">
-                  <button onClick={() => setShowNotifications(!showNotifications)} className={`relative p-2 rounded-full transition-colors ${showNotifications ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}`}>
-                    <Bell size={20} />
-                    {notifications.filter(n => !n.read).length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border border-background animate-pulse"></span>}
-                  </button>
-                  {showNotifications && (
-                    <div className="absolute right-0 top-full mt-3 w-80 sm:w-96 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-[90] animate-in fade-in slide-in-from-top-2 origin-top-right">
-                       <div className="p-3 border-b border-border flex justify-between items-center bg-muted/30"><h3 className="font-semibold text-sm">Thông báo</h3>{notifications.filter(n => !n.read).length > 0 && <button onClick={() => setNotifications(prev => prev.map(n => ({...n, read: true})))} className="text-xs text-primary hover:text-primary/80 font-medium hover:underline">Đánh dấu đã đọc hết</button>}</div>
-                       <div className="max-h-[60vh] overflow-y-auto">
-                          {notifications.length > 0 ? (
-                            notifications.map(n => (
-                              <div key={n.id} onClick={() => handleNotificationClick(n)} className={`p-4 border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer transition-colors flex gap-3 ${!n.read ? 'bg-primary/5' : ''}`}>
-                                 <div className="flex-1"><div className="flex justify-between items-start mb-1"><span className={`text-sm font-medium ${!n.read ? 'text-foreground' : 'text-muted-foreground'}`}>{n.title}</span><span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">{n.time}</span></div><p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p></div>{!n.read && <div className="w-2 h-2 rounded-full bg-primary shrink-0 self-center"></div>}
-                              </div>
-                            ))
-                          ) : (<div className="p-8 text-center text-muted-foreground text-sm">Không có thông báo mới</div>)}
-                       </div>
-                    </div>
-                  )}
-                </div>
+                {/* Notification Center */}
+                <NotificationCenter 
+                    notifications={notifications} 
+                    setNotifications={setNotifications} 
+                    onNavigate={setActiveTab} 
+                />
                 
                 <div className="h-5 w-px bg-border hidden sm:block"></div>
                 
