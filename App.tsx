@@ -246,7 +246,7 @@ const AppContent: React.FC = () => {
                             message: `${doc.ma_tai_lieu} ${isExpired ? `đã hết hạn ${Math.abs(daysLeft)} ngày` : `còn ${daysLeft} ngày nữa hết hiệu lực`}. Đã gửi email cảnh báo.`,
                             time: 'Hệ thống nhắc',
                             read: readNotiIds.includes(id),
-                            type: 'error',
+                            type: isExpired ? 'error' : 'warning', // RED if expired, YELLOW if soon
                             linkTo: 'documents'
                         });
                     }
