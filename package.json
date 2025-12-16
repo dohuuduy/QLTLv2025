@@ -18,6 +18,7 @@
     "date-fns": "^4.1.0",
     "lunar-javascript": "1.7.7",
     "@supabase/supabase-js": "2.47.10",
+    "@emailjs/browser": "4.1.0",
     "clsx": "2.1.0",
     "tailwind-merge": "2.2.1"
   },

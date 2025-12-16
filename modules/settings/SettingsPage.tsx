@@ -35,7 +35,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     // Notifications
     reviewAlertDays: 30, 
     recordExpiryAlertDays: 60,
-    enableEmailNoti: false,
     enableAppNoti: true,
   });
 
@@ -228,16 +227,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                    onChange={() => setSettings({...settings, enableAppNoti: !settings.enableAppNoti})}
                  />
                  <span className="text-sm text-gray-700 dark:text-gray-300">Thông báo trên ứng dụng (Chuông)</span>
-              </label>
-              
-              <label className="flex items-center gap-3 cursor-pointer">
-                 <input 
-                   type="checkbox" 
-                   className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300"
-                   checked={settings.enableEmailNoti}
-                   onChange={() => setSettings({...settings, enableEmailNoti: !settings.enableEmailNoti})}
-                 />
-                 <span className="text-sm text-gray-700 dark:text-gray-300">Gửi Email nhắc nhở</span>
               </label>
            </div>
         </div>
