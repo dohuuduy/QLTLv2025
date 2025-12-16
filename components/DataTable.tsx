@@ -275,14 +275,14 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
       {/* Table Content */}
       <div className="overflow-auto flex-1 w-full relative">
         <table className="w-full text-sm text-left border-collapse">
-          <thead className="text-xs font-medium text-muted-foreground uppercase bg-secondary/50 sticky top-0 z-20 backdrop-blur-sm">
+          <thead className="text-xs font-medium text-muted-foreground uppercase bg-secondary/50 sticky top-0 z-20 backdrop-blur-sm shadow-sm">
             <tr>
-              <th scope="col" className="sticky left-0 z-30 bg-secondary/90 backdrop-blur border-b border-border px-4 py-3 text-center w-14 font-semibold">STT</th>
+              <th scope="col" className="sticky left-0 z-30 bg-secondary/90 backdrop-blur border-b border-border px-3 py-2 text-center w-12 font-semibold">STT</th>
               {visibleColumns.map((col, index) => (
                 <th 
                   key={String(col.key as any)} 
                   scope="col" 
-                  className={`px-4 py-3 cursor-pointer hover:bg-secondary/80 transition-colors border-b border-border font-semibold whitespace-nowrap ${getStickyClass(index, visibleColumns.length, true)}`}
+                  className={`px-3 py-2 cursor-pointer hover:bg-secondary/80 transition-colors border-b border-border font-semibold whitespace-nowrap h-10 ${getStickyClass(index, visibleColumns.length, true)}`}
                   onClick={() => handleSort(col.key)}
                 >
                   <div className="flex items-center gap-1.5">
@@ -303,14 +303,14 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
                   onClick={() => onRowClick && onRowClick(item)}
                   className="group bg-background hover:bg-muted/50 transition-colors cursor-pointer"
                 >
-                  <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/50 border-r border-transparent px-4 py-3 text-center text-muted-foreground font-mono text-xs">
+                  <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/50 border-r border-transparent px-3 py-2 text-center text-muted-foreground font-mono text-xs">
                     {(currentPage - 1) * pageSize + index + 1}
                   </td>
                   {visibleColumns.map((col, colIndex) => (
                     <td 
                       key={String(col.key as any)} 
                       title={!col.render && typeof (item as any)[col.key] === 'string' ? String((item as any)[col.key]) : undefined}
-                      className={`px-4 py-3 text-sm truncate max-w-[300px] ${getStickyClass(colIndex, visibleColumns.length, false)}`}
+                      className={`px-3 py-2 text-sm truncate max-w-[300px] h-11 ${getStickyClass(colIndex, visibleColumns.length, false)}`}
                     >
                       {col.render ? col.render((item as any)[col.key], item) : String((item as any)[col.key] ?? '')}
                     </td>
@@ -333,10 +333,10 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
       </div>
 
       {/* Footer / Pagination */}
-      <div className="p-3 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4 bg-muted/10 shrink-0">
-        <div className="text-sm text-muted-foreground order-2 sm:order-1">
+      <div className="p-2 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4 bg-muted/10 shrink-0 text-xs sm:text-sm">
+        <div className="text-muted-foreground order-2 sm:order-1">
           {sortedData.length > 0 
-            ? <span>Hiển thị <span className="font-medium text-foreground">{(currentPage - 1) * pageSize + 1}</span> - <span className="font-medium text-foreground">{Math.min(currentPage * pageSize, sortedData.length)}</span> trong tổng số <span className="font-medium text-foreground">{sortedData.length}</span></span>
+            ? <span>Hiển thị <span className="font-medium text-foreground">{(currentPage - 1) * pageSize + 1}</span> - <span className="font-medium text-foreground">{Math.min(currentPage * pageSize, sortedData.length)}</span> / <span className="font-medium text-foreground">{sortedData.length}</span></span>
             : '0 kết quả'
           }
         </div>
@@ -356,8 +356,8 @@ export const DataTable = <T extends object>({ data, columns, title, onRowClick, 
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
               <ChevronLeft size={14} />
             </Button>
-            <div className="flex items-center justify-center min-w-[2rem] text-sm font-medium">
-              {currentPage} / {totalPages || 1}
+            <div className="flex items-center justify-center min-w-[2rem] font-medium">
+              {currentPage}
             </div>
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages || totalPages === 0}>
               <ChevronRight size={14} />

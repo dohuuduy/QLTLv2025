@@ -36,7 +36,7 @@ export const Button: React.FC<ButtonProps> = ({
     sm: "h-8 px-3 text-xs rounded-md",
     md: "h-10 px-4 py-2 text-sm rounded-md",
     lg: "h-12 px-8 text-base rounded-md",
-    icon: "h-10 w-10 p-0 rounded-md",
+    icon: "h-8 w-8 p-0 rounded-md", // Changed from h-10 w-10 to h-8 w-8 to fit compact tables
   };
 
   return (
