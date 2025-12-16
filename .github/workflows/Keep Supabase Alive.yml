@@ -4,122 +4,109 @@ on:
   schedule:
     # Chạy mỗi 5 ngày vào 1:00 UTC
     - cron: '0 1 */5 * *'
-  workflow_dispatch: # Cho phép chạy thủ công từ GitHub UI
+  workflow_dispatch:
 
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          
+
       - name: Install dependencies
         run: |
-          npm init -y
           npm install @supabase/supabase-js
-          
+
       - name: Write keep-alive script
         run: |
-          cat > ping.js << 'EOF'
-          const { createClient } = require('@supabase/supabase-js');
-          
+          cat > ping.mjs << 'EOF'
+          import { createClient } from '@supabase/supabase-js';
+
           const supabase = createClient(
             process.env.SUPABASE_URL,
             process.env.SUPABASE_KEY
           );
-          
+
           async function keepAlive() {
             try {
-              // Tạo timestamp hiện tại
               const timestamp = new Date().toISOString();
               const pingId = `ping_${Date.now()}`;
-              
+
               console.log(`🔄 Sending keep-alive ping at ${timestamp}`);
-              
-              // GHI dữ liệu mới vào bảng
-              const { data: insertData, error: insertError } = await supabase
+
+              // Insert keep-alive record
+              const { error: insertError } = await supabase
                 .from('keep_alive')
-                .insert([
-                  { 
-                    id: pingId,
-                    timestamp: timestamp,
-                    source: 'github_action',
-                    message: 'Keep-alive ping from GitHub Actions'
-                  }
-                ]);
-              
-              if (insertError) {
-                console.error('❌ Insert error:', insertError.message);
-                process.exit(1);
-              }
-              
-              console.log('✅ Successfully inserted keep-alive record:', {
-                id: pingId,
-                timestamp: timestamp
-              });
-              
-              // Kiểm tra dữ liệu vừa ghi (tùy chọn)
-              const { data: readData, error: readError } = await supabase
+                .insert({
+                  id: pingId,
+                  timestamp,
+                  source: 'github_action',
+                  message: 'Keep-alive ping from GitHub Actions'
+                });
+
+              if (insertError) throw insertError;
+
+              console.log('✅ Insert success:', pingId);
+
+              // Verify insert
+              const { data, error: readError } = await supabase
                 .from('keep_alive')
                 .select('*')
                 .eq('id', pingId)
                 .single();
-              
+
               if (readError) {
-                console.warn('⚠️ Read verification failed:', readError.message);
+                console.warn('⚠️ Verify failed:', readError.message);
               } else {
-                console.log('✅ Verified inserted data:', readData);
+                console.log('✅ Verified record:', data);
               }
-              
-              // Xóa các record cũ (giữ lại 10 record gần nhất)
-              console.log('🧹 Cleaning up old records...');
-              const { data: allRecords, error: selectError } = await supabase
+
+              // Cleanup: giữ lại 10 record mới nhất
+              const { data: records, error: selectError } = await supabase
                 .from('keep_alive')
-                .select('id, timestamp')
+                .select('id')
                 .order('timestamp', { ascending: false });
-              
-              if (!selectError && allRecords && allRecords.length > 10) {
-                const recordsToDelete = allRecords.slice(10);
-                const idsToDelete = recordsToDelete.map(r => r.id);
-                
+
+              if (!selectError && records.length > 10) {
+                const idsToDelete = records.slice(10).map(r => r.id);
+
                 const { error: deleteError } = await supabase
                   .from('keep_alive')
                   .delete()
                   .in('id', idsToDelete);
-                
+
                 if (deleteError) {
                   console.warn('⚠️ Cleanup failed:', deleteError.message);
                 } else {
-                  console.log(`🗑️ Cleaned up ${recordsToDelete.length} old records`);
+                  console.log(`🧹 Cleaned ${idsToDelete.length} old records`);
                 }
               }
-              
+
             } catch (err) {
-              console.error('❌ Unexpected error:', err.message);
-              console.error('Stack trace:', err.stack);
+              console.error('❌ Error:', err.message);
               process.exit(1);
             }
           }
-          
+
           keepAlive();
           EOF
-          
+
       - name: Run keep-alive ping
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: node ping.js
-        
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node ping.mjs
+
       - name: Done
         if: success()
         run: echo "🎉 Supabase keep-alive ping completed successfully."
-        
+
       - name: Show error if failed
         if: failure()
         run: echo "❌ Ping failed. Check logs above for more details."
