@@ -1,13 +1,13 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Lấy biến môi trường từ GitHub Secrets (sẽ cấu hình sau)
+// Lấy biến môi trường
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // Dùng Service Role để bypass RLS (đọc toàn bộ dữ liệu)
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const EMAILJS_SERVICE_ID = process.env.EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = process.env.EMAILJS_TEMPLATE_ID;
 const EMAILJS_PUBLIC_KEY = process.env.EMAILJS_PUBLIC_KEY;
-const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY; // Quan trọng: Cần Private Key để gửi từ Server/Node.js
+const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error('❌ Thiếu biến môi trường Supabase.');
@@ -16,10 +16,10 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Hàm gửi email qua EmailJS REST API
+// Hàm gửi email
 async function sendEmail(toEmail, toName, docCode, docName, expiryDate, daysLeft) {
   if (!EMAILJS_SERVICE_ID || !EMAILJS_PRIVATE_KEY) {
-    console.log('⚠️ Chưa cấu hình EmailJS, bỏ qua gửi mail.');
+    console.log(`⚠️ Giả lập gửi mail tới ${toEmail} (Chưa config EmailJS)`);
     return;
   }
 
@@ -58,42 +58,50 @@ async function sendEmail(toEmail, toName, docCode, docName, expiryDate, daysLeft
 }
 
 async function run() {
-  console.log('🔄 Bắt đầu kiểm tra tài liệu hết hạn...');
+  console.log('🔄 Bắt đầu kiểm tra tài liệu hết hạn (Chế độ No-Foreign-Key)...');
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // 1. Lấy danh sách tài liệu ĐÃ BAN HÀNH và CÓ NGÀY HẾT HẠN
-  // Kết hợp lấy thông tin người soạn thảo (nhan_su) để biết email
-  const { data: documents, error } = await supabase
+  // BƯỚC 1: Lấy danh sách tài liệu (Không join bảng để tránh lỗi PGRST200)
+  const { data: documents, error: docError } = await supabase
     .from('tai_lieu')
-    .select(`
-      id, 
-      ma_tai_lieu, 
-      ten_tai_lieu, 
-      ngay_het_han, 
-      trang_thai,
-      nhan_su:id_nguoi_soan_thao (
-        email, 
-        ho_ten
-      )
-    `)
+    .select('id, ma_tai_lieu, ten_tai_lieu, ngay_het_han, trang_thai, id_nguoi_soan_thao')
     .eq('trang_thai', 'da_ban_hanh')
     .not('ngay_het_han', 'is', null);
 
-  if (error) {
-    console.error('❌ Lỗi lấy dữ liệu từ Supabase:', error);
+  if (docError) {
+    console.error('❌ Lỗi lấy dữ liệu tài liệu:', docError);
     process.exit(1);
   }
 
   if (!documents || documents.length === 0) {
-    console.log('✅ Không có tài liệu nào cần kiểm tra.');
+    console.log('✅ Không có tài liệu nào có ngày hết hạn.');
     process.exit(0);
+  }
+
+  // BƯỚC 2: Lấy danh sách ID người soạn thảo cần tìm
+  const userIds = [...new Set(documents.map(d => d.id_nguoi_soan_thao).filter(Boolean))];
+
+  // BƯỚC 3: Lấy thông tin User từ danh sách ID
+  let users = [];
+  if (userIds.length > 0) {
+      const { data: usersData, error: userError } = await supabase
+        .from('nhan_su')
+        .select('id, email, ho_ten')
+        .in('id', userIds);
+      
+      if (userError) {
+          console.error('❌ Lỗi lấy dữ liệu nhân sự:', userError);
+          // Không exit, vẫn chạy tiếp nhưng sẽ không có email
+      } else {
+          users = usersData || [];
+      }
   }
 
   let count = 0;
 
-  // 2. Duyệt qua từng tài liệu
+  // BƯỚC 4: Duyệt và ghép dữ liệu thủ công
   for (const doc of documents) {
     const expiryDate = new Date(doc.ngay_het_han);
     expiryDate.setHours(0, 0, 0, 0);
@@ -102,13 +110,12 @@ async function run() {
     const diffTime = expiryDate.getTime() - today.getTime();
     const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // LOGIC GỬI MAIL: Chỉ gửi vào các mốc cụ thể để tránh spam hàng ngày
-    // Ví dụ: Còn đúng 30 ngày, còn đúng 7 ngày, hoặc đã hết hạn hôm nay (0 ngày)
+    // LOGIC GỬI MAIL
     const alertDays = [30, 7, 0]; 
 
     if (alertDays.includes(daysLeft)) {
-      // Ép kiểu vì join bảng trả về mảng hoặc object
-      const user = Array.isArray(doc.nhan_su) ? doc.nhan_su[0] : doc.nhan_su;
+      // Tìm user trong mảng đã lấy ở Bước 3
+      const user = users.find(u => u.id === doc.id_nguoi_soan_thao);
 
       if (user && user.email) {
         console.log(`🔔 Phát hiện: ${doc.ma_tai_lieu} còn ${daysLeft} ngày.`);
@@ -122,7 +129,7 @@ async function run() {
         );
         count++;
       } else {
-        console.warn(`⚠️ Tài liệu ${doc.ma_tai_lieu} sắp hết hạn nhưng không tìm thấy email người phụ trách.`);
+        console.warn(`⚠️ Tài liệu ${doc.ma_tai_lieu} sắp hết hạn (còn ${daysLeft} ngày) nhưng không tìm thấy email người phụ trách (ID: ${doc.id_nguoi_soan_thao}).`);
       }
     }
   }
@@ -131,3 +138,4 @@ async function run() {
 }
 
 run();
+
