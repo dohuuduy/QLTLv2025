@@ -169,6 +169,14 @@ const AppContent: React.FC = () => {
         const readNotiIds = JSON.parse(localStorage.getItem(`read_notifications_${currentUser.id}`) || '[]');
         const today = new Date();
 
+        // Helper: Phân tích ngày "YYYY-MM-DD" thành ngày cục bộ (Local Date)
+        // Tránh lỗi new Date("YYYY-MM-DD") bị hiểu là UTC
+        const parseLocal = (dateStr: string) => {
+            if (!dateStr) return new Date();
+            const [y, m, d] = dateStr.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        };
+
         // 1. THÔNG BÁO PHÊ DUYỆT (Action Required)
         documents.forEach(doc => {
             if (doc.trang_thai === TrangThaiTaiLieu.CHO_DUYET) {
@@ -212,13 +220,15 @@ const AppContent: React.FC = () => {
         
         documents.forEach(doc => {
             if (doc.trang_thai === TrangThaiTaiLieu.DA_BAN_HANH && doc.ngay_ban_hanh) {
-                if (isAfter(new Date(doc.ngay_ban_hanh), sevenDaysAgo)) {
+                const banHanhDate = parseLocal(doc.ngay_ban_hanh);
+                // Với thông báo mới, dùng logic ngày giờ thường cũng ổn, nhưng chuẩn hóa local tốt hơn
+                if (isAfter(new Date(doc.ngay_ban_hanh), sevenDaysAgo)) { // Logic cũ ok cho cái này vì là timestamp check
                     const id = `publish_${doc.id}`;
                     newNotifications.push({
                         id: id,
                         title: 'Tài liệu mới ban hành',
                         message: `${doc.ma_tai_lieu} - ${doc.ten_tai_lieu} đã có hiệu lực.`,
-                        time: formatTimeAgo(doc.ngay_ban_hanh),
+                        time: doc.ngay_ban_hanh, // Display raw date or formatted
                         read: readNotiIds.includes(id),
                         type: 'success',
                         linkTo: 'documents'
@@ -227,10 +237,10 @@ const AppContent: React.FC = () => {
             }
         });
 
-        // 3. THÔNG BÁO TÀI LIỆU SẮP HẾT HẠN / QUÁ HẠN (Warning - Fixed Timezone Logic)
+        // 3. THÔNG BÁO TÀI LIỆU SẮP HẾT HẠN / QUÁ HẠN (Warning - STRICT LOCAL DATE)
         for (const doc of documents) {
             if (doc.ngay_het_han && doc.trang_thai === TrangThaiTaiLieu.DA_BAN_HANH) {
-                const expiryDate = new Date(doc.ngay_het_han);
+                const expiryDate = parseLocal(doc.ngay_het_han);
                 // Sử dụng differenceInCalendarDays để tính số ngày theo lịch, bỏ qua giờ giấc (fix lỗi GMT+7)
                 const daysLeft = differenceInCalendarDays(expiryDate, today);
                 
@@ -268,11 +278,12 @@ const AppContent: React.FC = () => {
             }
         }
 
-        // 4. THÔNG BÁO HỒ SƠ SẮP HẾT HẠN (Warning - Fixed Timezone Logic)
+        // 4. THÔNG BÁO HỒ SƠ SẮP HẾT HẠN (Warning - STRICT LOCAL DATE)
         for (const rec of records) {
             if (rec.trang_thai === TrangThaiHoSo.LUU_TRU && rec.ngay_het_han) {
                 // Fix lỗi tính ngày
-                const daysLeft = differenceInCalendarDays(new Date(rec.ngay_het_han), today);
+                const expiryDate = parseLocal(rec.ngay_het_han);
+                const daysLeft = differenceInCalendarDays(expiryDate, today);
                 
                 if (daysLeft <= REC_ALERT_DAYS && daysLeft >= 0) {
                     if (rec.nguoi_tao === currentUser.id || currentUser.roles.includes('QUAN_TRI')) {
@@ -323,7 +334,12 @@ const AppContent: React.FC = () => {
   // Helper time format
   const formatTimeAgo = (dateStr: string) => {
       try {
-          return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: vi });
+          // If it looks like a full timestamp (has 'T'), use distance
+          if (dateStr.includes('T')) {
+             return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: vi });
+          }
+          // If it's YYYY-MM-DD, just return it
+          return dateStr;
       } catch (e) { return dateStr; }
   };
 
