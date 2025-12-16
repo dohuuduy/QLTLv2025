@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
@@ -44,7 +43,7 @@ export const LoginPage: React.FC = () => {
                       setVerifyStatus('success');
                       setVerifyMessage('Xác thực thành công! Đang chuyển hướng...');
                       // App.tsx sẽ tự động switch sang màn hình chính khi session thay đổi
-                  } else if (event === 'rsigned' || event === 'USER_UPDATED') {
+                  } else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
                       // Các event khác nếu cần handle
                   }
               });

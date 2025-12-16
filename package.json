@@ -1,3 +1,4 @@
+
 {
   "name": "iso-docmanager",
   "version": "1.0.0",
@@ -6,8 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
-    "check-expiry": "node scripts/check-expiry.js"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.10",

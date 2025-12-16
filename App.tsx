@@ -18,7 +18,8 @@ import { ToastProvider, useToast } from './components/ui/Toast';
 import { Tooltip } from './components/ui/Tooltip';
 import { useSystemTheme } from './hooks/useTheme';
 import { NotificationCenter } from './components/NotificationCenter';
-import { differenceInDays, formatDistanceToNow, isAfter, format } from 'date-fns';
+// Import differenceInCalendarDays for accurate daily calculations ignoring timezones/hours
+import { differenceInCalendarDays, formatDistanceToNow, isAfter, format } from 'date-fns';
 import vi from 'date-fns/locale/vi';
 
 const AppContent: React.FC = () => {
@@ -150,14 +151,23 @@ const AppContent: React.FC = () => {
     const savedSettings = localStorage.getItem('iso_app_settings');
     const config = savedSettings ? JSON.parse(savedSettings) : { 
         reviewAlertDays: 30, 
-        recordExpiryAlertDays: 60
+        recordExpiryAlertDays: 60,
+        enableAppNoti: true
     };
+
+    // Nếu người dùng tắt thông báo hệ thống
+    if (config.enableAppNoti === false) {
+        setNotifications([]);
+        return;
+    }
+
     const DOC_ALERT_DAYS = config.reviewAlertDays || 30;
     const REC_ALERT_DAYS = config.recordExpiryAlertDays || 60;
 
     const generateNotifications = async () => {
         const newNotifications: AppNotification[] = [];
         const readNotiIds = JSON.parse(localStorage.getItem(`read_notifications_${currentUser.id}`) || '[]');
+        const today = new Date();
 
         // 1. THÔNG BÁO PHÊ DUYỆT (Action Required)
         documents.forEach(doc => {
@@ -217,28 +227,28 @@ const AppContent: React.FC = () => {
             }
         });
 
-        // 3. THÔNG BÁO TÀI LIỆU SẮP HẾT HẠN / QUÁ HẠN (Warning - Dynamic Config)
+        // 3. THÔNG BÁO TÀI LIỆU SẮP HẾT HẠN / QUÁ HẠN (Warning - Fixed Timezone Logic)
         for (const doc of documents) {
             if (doc.ngay_het_han && doc.trang_thai === TrangThaiTaiLieu.DA_BAN_HANH) {
                 const expiryDate = new Date(doc.ngay_het_han);
-                const daysLeft = differenceInDays(expiryDate, new Date());
+                // Sử dụng differenceInCalendarDays để tính số ngày theo lịch, bỏ qua giờ giấc (fix lỗi GMT+7)
+                const daysLeft = differenceInCalendarDays(expiryDate, today);
                 
-                // Sử dụng biến DOC_ALERT_DAYS từ cấu hình
                 if (daysLeft <= DOC_ALERT_DAYS) {
                     const isResponsible = doc.nguoi_soan_thao === currentUser.id;
                     const isAdmin = currentUser.roles.includes('QUAN_TRI');
 
                     if (isResponsible || isAdmin) {
                         const isExpired = daysLeft < 0;
-                        const id = `doc_exp_${doc.id}_${doc.ngay_het_han}`; // Unique ID by date so re-alerts if date changed
+                        const id = `doc_exp_${doc.id}_${doc.ngay_het_han}`;
                         
                         newNotifications.push({
                             id: id,
                             title: isExpired ? 'Tài liệu ĐÃ HẾT HẠN' : 'Tài liệu sắp hết hạn',
-                            message: `${doc.ma_tai_lieu} ${isExpired ? `đã hết hạn ${Math.abs(daysLeft)} ngày` : `còn ${daysLeft} ngày nữa hết hiệu lực`}.`,
-                            time: isExpired ? 'Quá hạn' : `${daysLeft} ngày`,
+                            message: `${doc.ma_tai_lieu} ${isExpired ? `đã quá hạn ${Math.abs(daysLeft)} ngày` : `còn ${daysLeft} ngày nữa hết hiệu lực`}.`,
+                            time: isExpired ? 'Quá hạn' : `${daysLeft} ngày nữa`,
                             read: readNotiIds.includes(id),
-                            type: isExpired ? 'error' : 'warning', // RED if expired, YELLOW if soon
+                            type: isExpired ? 'error' : 'warning',
                             linkTo: 'documents'
                         });
                     }
@@ -246,12 +256,12 @@ const AppContent: React.FC = () => {
             }
         }
 
-        // 4. THÔNG BÁO HỒ SƠ SẮP HẾT HẠN (Warning - Dynamic Config)
+        // 4. THÔNG BÁO HỒ SƠ SẮP HẾT HẠN (Warning - Fixed Timezone Logic)
         for (const rec of records) {
             if (rec.trang_thai === TrangThaiHoSo.LUU_TRU && rec.ngay_het_han) {
-                const daysLeft = differenceInDays(new Date(rec.ngay_het_han), new Date());
+                // Fix lỗi tính ngày
+                const daysLeft = differenceInCalendarDays(new Date(rec.ngay_het_han), today);
                 
-                // Sử dụng biến REC_ALERT_DAYS từ cấu hình
                 if (daysLeft <= REC_ALERT_DAYS && daysLeft >= 0) {
                     if (rec.nguoi_tao === currentUser.id || currentUser.roles.includes('QUAN_TRI')) {
                         const id = `rec_exp_${rec.id}`;
