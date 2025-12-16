@@ -19,7 +19,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          # Đã tắt cache để tránh lỗi thiếu package-lock.json
+          # cache: 'npm'
 
       - name: Install Dependencies
         run: npm install
