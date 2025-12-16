@@ -1,112 +1,84 @@
-name: Keep Supabase Alive
+name: Duy trì Supabase Database
 
 on:
   schedule:
-    # Chạy mỗi 5 ngày vào 1:00 UTC
-    - cron: '0 1 */5 * *'
-  workflow_dispatch:
+    # Chạy mỗi 5 ngày vào lúc 0:00 UTC
+    - cron: '0 0 */5 * *'
+  workflow_dispatch: # Cho phép chạy thủ công
 
 jobs:
-  keep-alive:
+  maintain-database:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install dependencies
-        run: |
-          npm install @supabase/supabase-js
+        run: npm install @supabase/supabase-js
 
-      - name: Write keep-alive script
+      - name: Maintain database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          cat > ping.mjs << 'EOF'
-          import { createClient } from '@supabase/supabase-js';
-
+          node - <<'EOF'
+          const { createClient } = require('@supabase/supabase-js');
+          
           const supabase = createClient(
             process.env.SUPABASE_URL,
-            process.env.SUPABASE_ANON_KEY
+            process.env.SUPABASE_KEY
           );
-
-          async function keepAlive() {
+          
+          async function maintain() {
             try {
-              const timestamp = new Date().toISOString();
-              const pingId = `ping_${Date.now()}`;
-
-              console.log(`🔄 Sending keep-alive ping at ${timestamp}`);
-
-              // Insert keep-alive record
-              const { error: insertError } = await supabase
-                .from('keep_alive')
-                .insert({
-                  id: pingId,
-                  timestamp,
-                  source: 'github_action',
-                  message: 'Keep-alive ping from GitHub Actions'
-                });
-
-              if (insertError) throw insertError;
-
-              console.log('✅ Insert success:', pingId);
-
-              // Verify insert
-              const { data, error: readError } = await supabase
-                .from('keep_alive')
-                .select('*')
-                .eq('id', pingId)
-                .single();
-
-              if (readError) {
-                console.warn('⚠️ Verify failed:', readError.message);
-              } else {
-                console.log('✅ Verified record:', data);
-              }
-
-              // Cleanup: giữ lại 10 record mới nhất
-              const { data: records, error: selectError } = await supabase
-                .from('keep_alive')
-                .select('id')
-                .order('timestamp', { ascending: false });
-
-              if (!selectError && records.length > 10) {
-                const idsToDelete = records.slice(10).map(r => r.id);
-
+              // 1. Đếm số dòng hiện tại
+              const { count, error: countError } = await supabase
+                .from('duy_tri')
+                .select('*', { count: 'exact', head: true });
+              
+              if (countError) throw countError;
+              
+              console.log(`Số dòng hiện tại: ${count}`);
+              
+              // 2. Nếu đủ 100 dòng thì xóa hết
+              if (count >= 100) {
+                console.log('Đã đủ 100 dòng, bắt đầu xóa...');
                 const { error: deleteError } = await supabase
-                  .from('keep_alive')
+                  .from('duy_tri')
                   .delete()
-                  .in('id', idsToDelete);
-
-                if (deleteError) {
-                  console.warn('⚠️ Cleanup failed:', deleteError.message);
-                } else {
-                  console.log(`🧹 Cleaned ${idsToDelete.length} old records`);
-                }
+                  .neq('id', 0); // Xóa tất cả
+                
+                if (deleteError) throw deleteError;
+                console.log('Đã xóa tất cả dữ liệu');
               }
-
-            } catch (err) {
-              console.error('❌ Error:', err.message);
+              
+              // 3. Thêm 1 dòng mới
+              const { data, error: insertError } = await supabase
+                .from('duy_tri')
+                .insert([
+                  { 
+                    timestamp: new Date().toISOString(),
+                    note: 'Auto maintenance'
+                  }
+                ])
+                .select();
+              
+              if (insertError) throw insertError;
+              
+              console.log('Đã thêm dòng mới:', data);
+              console.log('✅ Duy trì database thành công!');
+              
+            } catch (error) {
+              console.error('❌ Lỗi:', error.message);
               process.exit(1);
             }
           }
-
-          keepAlive();
+          
+          maintain();
           EOF
-
-      - name: Run keep-alive ping
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node ping.mjs
-
-      - name: Done
-        if: success()
-        run: echo "🎉 Supabase keep-alive ping completed successfully."
-
-      - name: Show error if failed
-        if: failure()
-        run: echo "❌ Ping failed. Check logs above for more details."
