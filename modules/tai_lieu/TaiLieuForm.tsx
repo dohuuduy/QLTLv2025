@@ -166,9 +166,16 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
 
     setFormData(prev => {
         const newData = { ...prev, [name]: finalValue };
-        if (name === 'ngay_ban_hanh' && !prev.ngay_hieu_luc) {
-            newData.ngay_hieu_luc = value; 
+        
+        // Tự động set ngày hiệu lực = ngày ban hành nếu:
+        // 1. Ngày hiệu lực chưa có
+        // 2. Hoặc ngày hiệu lực đang giống ngày ban hành cũ (tức là user chưa chỉnh sửa lệch đi)
+        if (name === 'ngay_ban_hanh') {
+            if (!prev.ngay_hieu_luc || prev.ngay_hieu_luc === prev.ngay_ban_hanh) {
+                newData.ngay_hieu_luc = value;
+            }
         }
+        
         return newData;
     });
   };
@@ -330,7 +337,6 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                             <input name="ten_tai_lieu" className={`${inputClass} font-semibold text-base h-10`} value={formData.ten_tai_lieu} onChange={handleChange} placeholder="Nhập tên tài liệu chính xác..." autoFocus />
                         </div>
                         
-                        {/* Changed: Removed grid-cols-2 to allow full width for Document Type and Parent Document */}
                         <div>
                             <label className={labelClass}>Loại tài liệu <span className="text-red-500">*</span></label>
                             <SearchableSelect options={loaiTaiLieuOptions} value={formData.id_loai_tai_lieu} onChange={(val) => handleSelectChange('id_loai_tai_lieu', String(val))} placeholder="-- Chọn loại --"/>
@@ -474,16 +480,28 @@ export const TaiLieuForm: React.FC<TaiLieuFormProps> = ({ initialData, onSave, o
                     <div className={cardHeaderClass}>
                         <User size={16} className="text-green-500"/> Trách nhiệm & Bối cảnh
                     </div>
-                    <div className="space-y-3">
-                        <div><label className={labelClass}>Người soạn thảo</label><SearchableSelect options={drafterOptions} value={formData.nguoi_soan_thao} onChange={(val) => handleSelectChange('nguoi_soan_thao', String(val))} placeholder="-- Chọn --" className="h-8 text-xs"/></div>
-                        <div><label className={labelClass}>Người xem xét</label><SearchableSelect options={reviewerOptions} value={formData.nguoi_xem_xet} onChange={(val) => handleSelectChange('nguoi_xem_xet', String(val))} placeholder="-- Chọn --" className="h-8 text-xs"/></div>
-                        <div><label className={labelClass}>Người phê duyệt</label><SearchableSelect options={approverOptions} value={formData.nguoi_phe_duyet} onChange={(val) => handleSelectChange('nguoi_phe_duyet', String(val))} placeholder="-- Chọn --" className="h-8 text-xs"/></div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="col-span-2">
+                            <label className={labelClass}>Người soạn thảo</label>
+                            <SearchableSelect options={drafterOptions} value={formData.nguoi_soan_thao} onChange={(val) => handleSelectChange('nguoi_soan_thao', String(val))} placeholder="-- Chọn --" className="h-8 text-xs"/>
+                        </div>
                         
-                        <div className="pt-3 border-t border-gray-100 dark:border-slate-800 mt-2">
+                        <div className="col-span-1">
+                            <label className={labelClass}>Người xem xét</label>
+                            <SearchableSelect options={reviewerOptions} value={formData.nguoi_xem_xet} onChange={(val) => handleSelectChange('nguoi_xem_xet', String(val))} placeholder="-- Chọn --" className="h-8 text-xs"/>
+                        </div>
+                        <div className="col-span-1">
+                            <label className={labelClass}>Người phê duyệt</label>
+                            <SearchableSelect options={approverOptions} value={formData.nguoi_phe_duyet} onChange={(val) => handleSelectChange('nguoi_phe_duyet', String(val))} placeholder="-- Chọn --" className="h-8 text-xs"/>
+                        </div>
+                        
+                        <div className="col-span-2 pt-2 border-t border-gray-100 dark:border-slate-800 mt-1"></div>
+
+                        <div className="col-span-1">
                             <label className={labelClass}>Lĩnh vực</label>
                             <SearchableSelect options={linhVucOptions} value={formData.id_linh_vuc} onChange={(val) => handleSelectChange('id_linh_vuc', String(val))} placeholder="-- Chọn lĩnh vực --" className="h-8 text-xs"/>
                         </div>
-                        <div>
+                        <div className="col-span-1">
                             <label className={labelClass}>Tiêu chuẩn áp dụng</label>
                             <MultiSelect 
                                 options={tieuChuanOptions}
