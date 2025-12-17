@@ -56,7 +56,6 @@ export interface TaiLieu {
   lan_ban_hanh: number; // VD: 01, 02 (Edition)
   ngay_ban_hanh: string; // Ngày ký ban hành
   ngay_hieu_luc: string; // Ngày bắt đầu áp dụng
-  ngay_het_han?: string; // NEW: Ngày hết hạn (Optional - cho Giấy phép/Kế hoạch)
   
   // Kiểm soát định kỳ (NEW)
   chu_ky_ra_soat?: number; // Số tháng định kỳ rà soát (VD: 12, 24)

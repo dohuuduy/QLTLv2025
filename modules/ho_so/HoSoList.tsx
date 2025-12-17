@@ -29,13 +29,6 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
 
   const getDeptName = (id: string) => masterData.boPhan.find(bp => bp.id === id)?.ten || '---';
 
-  // Helper local date
-  const parseLocal = (dateStr: string) => {
-      if (!dateStr) return new Date();
-      const [y, m, d] = dateStr.split('-').map(Number);
-      return new Date(y, m - 1, d);
-  };
-
   const [filters, setFilters] = useState<{ 
       trang_thai: string[]; 
       id_phong_ban: string[]; 
@@ -59,9 +52,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
         if (filters.trang_thai.length > 0) {
             let currentStatus = item.trang_thai;
             if (item.ngay_het_han && currentStatus === TrangThaiHoSo.LUU_TRU) {
-                const today = new Date();
-                const expiry = parseLocal(item.ngay_het_han);
-                const daysLeft = differenceInDays(expiry, today);
+                const daysLeft = differenceInDays(new Date(item.ngay_het_han), new Date());
                 if (daysLeft < 0) currentStatus = TrangThaiHoSo.CHO_HUY;
                 else if (daysLeft < 30) currentStatus = TrangThaiHoSo.SAP_HET_HAN;
             }
@@ -81,7 +72,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
       thoi_gian_luu_tru: 12,
       trang_thai: TrangThaiHoSo.LUU_TRU,
       dang_luu_tru: 'BAN_CUNG',
-      nguoi_tao: currentUser.id,
+      id_nguoi_tao: currentUser.id,
       id_phong_ban: userDeptId
     });
     setIsModalOpen(true);
@@ -101,7 +92,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
     setIsLoading(true);
     let expiryDate = '';
     if (editingItem.thoi_gian_luu_tru !== undefined && editingItem.thoi_gian_luu_tru > 0) {
-       const start = parseLocal(editingItem.ngay_tao);
+       const start = new Date(editingItem.ngay_tao);
        expiryDate = format(addMonths(start, editingItem.thoi_gian_luu_tru), 'yyyy-MM-dd');
     }
 
@@ -121,8 +112,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
       ...editingItem,
       id: recordId,
       ngay_het_han: expiryDate,
-      // Tính lại trạng thái ban đầu dựa trên ngày hết hạn
-      trang_thai: (expiryDate && new Date(expiryDate) < new Date()) ? TrangThaiHoSo.CHO_HUY : (editingItem.trang_thai || TrangThaiHoSo.LUU_TRU)
+      trang_thai: (expiryDate && isPast(new Date(expiryDate))) ? TrangThaiHoSo.CHO_HUY : (editingItem.trang_thai || TrangThaiHoSo.LUU_TRU)
     } as HoSo;
 
     try {
@@ -159,7 +149,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
      let status = item.trang_thai;
      if (item.ngay_het_han && status === TrangThaiHoSo.LUU_TRU) {
         const today = new Date();
-        const expiry = parseLocal(item.ngay_het_han);
+        const expiry = new Date(item.ngay_het_han);
         const daysLeft = differenceInDays(expiry, today);
         if (daysLeft < 0) status = TrangThaiHoSo.CHO_HUY;
         else if (daysLeft < 30) status = TrangThaiHoSo.SAP_HET_HAN;
@@ -285,7 +275,7 @@ export const HoSoList: React.FC<HoSoListProps> = ({ masterData, currentUser, dat
                             <div className="flex gap-2 mb-2">{[12, 36, 60, 120].map(m => (<button key={m} onClick={() => setEditingItem({...editingItem, thoi_gian_luu_tru: m})} className={`px-2 py-1 text-[10px] rounded border transition-colors ${editingItem.thoi_gian_luu_tru === m ? 'bg-orange-200 border-orange-300 text-orange-800 dark:bg-orange-900/50 dark:border-orange-700 dark:text-orange-200' : 'bg-white border-gray-200 hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-300'}`}>{m/12} Năm</button>))} <button onClick={() => setEditingItem({...editingItem, thoi_gian_luu_tru: 0})} className={`px-2 py-1 text-[10px] rounded border transition-colors ${editingItem.thoi_gian_luu_tru === 0 ? 'bg-orange-200 border-orange-300 text-orange-800' : 'bg-white border-gray-200'}`}>Vĩnh viễn</button></div>
                             <div className="relative"><input type="number" className={inputClass} value={editingItem.thoi_gian_luu_tru} onChange={e => setEditingItem({...editingItem, thoi_gian_luu_tru: parseInt(e.target.value) || 0})}/><span className="absolute right-3 top-2.5 text-xs text-gray-500 font-medium">Tháng</span></div>
                         </div>
-                        <div className="md:col-span-2 pt-2 border-t border-orange-200 dark:border-orange-800/30 flex items-center justify-between text-sm"><span className="text-orange-700 dark:text-orange-400 font-medium">Ngày tiêu hủy dự kiến:</span><span className="font-bold text-gray-800 dark:text-gray-100 bg-white dark:bg-slate-800 px-3 py-1 rounded border border-orange-200 dark:border-orange-800">{(editingItem.ngay_tao && editingItem.thoi_gian_luu_tru && editingItem.thoi_gian_luu_tru > 0) ? format(addMonths(parseLocal(editingItem.ngay_tao), editingItem.thoi_gian_luu_tru), 'dd/MM/yyyy') : (editingItem.thoi_gian_luu_tru === 0 ? 'Lưu trữ vĩnh viễn' : '---')}</span></div>
+                        <div className="md:col-span-2 pt-2 border-t border-orange-200 dark:border-orange-800/30 flex items-center justify-between text-sm"><span className="text-orange-700 dark:text-orange-400 font-medium">Ngày tiêu hủy dự kiến:</span><span className="font-bold text-gray-800 dark:text-gray-100 bg-white dark:bg-slate-800 px-3 py-1 rounded border border-orange-200 dark:border-orange-800">{(editingItem.ngay_tao && editingItem.thoi_gian_luu_tru && editingItem.thoi_gian_luu_tru > 0) ? format(addMonths(new Date(editingItem.ngay_tao), editingItem.thoi_gian_luu_tru), 'dd/MM/yyyy') : (editingItem.thoi_gian_luu_tru === 0 ? 'Lưu trữ vĩnh viễn' : '---')}</span></div>
                     </div>
                 </div>
              </div>

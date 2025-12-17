@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Settings, Bell, Database, ShieldAlert, Save, Upload, Download, CheckCircle, Clock, Building, Palette, History } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { MasterDataState, TaiLieu, HoSo, KeHoachDanhGia, BackupData } from '../../types';
@@ -26,6 +26,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const dialog = useDialog();
   const toast = useToast();
 
+  // --- Mock Local Settings State ---
   const [settings, setSettings] = useState({
     companyName: 'Công Ty Cổ Phần Công Nghệ ISO',
     slogan: 'Chất lượng là danh dự',
@@ -33,28 +34,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     themeColor: '#3b82f6',
     
     // Notifications
-    reviewAlertDays: 30, 
-    recordExpiryAlertDays: 60,
+    reviewAlertDays: 30, // Nhắc rà soát trước 30 ngày
+    recordExpiryAlertDays: 60, // Nhắc hủy hồ sơ trước 60 ngày
+    enableEmailNoti: false,
     enableAppNoti: true,
   });
 
-  // Load from local storage on mount
-  useEffect(() => {
-      const saved = localStorage.getItem('iso_app_settings');
-      if (saved) {
-          try {
-              setSettings(JSON.parse(saved));
-          } catch (e) {
-              console.error("Error parsing settings", e);
-          }
-      }
-  }, []);
-
+  // --- Handlers ---
   const handleSaveSettings = () => {
-    localStorage.setItem('iso_app_settings', JSON.stringify(settings));
+    // In real app, save to Backend/LocalStorage
     toast.success('Đã lưu cấu hình hệ thống thành công!', 'Cấu hình');
-    // Optional: Dispatch event to notify other components
-    window.dispatchEvent(new Event('iso_settings_updated'));
   };
 
   const handleBackup = () => {
@@ -177,14 +166,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const renderNotifications = () => (
     <div className="space-y-6 animate-fade-in">
         <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 border-b pb-2 flex items-center gap-2">
-             <Bell size={20} className="text-orange-500" /> Cấu hình nhắc nhở
+             <Bell size={20} className="text-orange-500" /> Cấu hình cảnh báo ISO
         </h3>
         
         <div className="bg-orange-50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-100 dark:border-orange-800">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5 flex items-center gap-2">
-                    <Clock size={16}/> Nhắc hạn rà soát / Hết hạn tài liệu
+                    <Clock size={16}/> Nhắc hạn rà soát tài liệu trước
                  </label>
                  <div className="flex items-center gap-2">
                     <input 
@@ -195,12 +184,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     />
                     <span className="text-sm text-gray-600 dark:text-gray-400">Ngày</span>
                  </div>
-                 <p className="text-xs text-gray-500 mt-1">Hệ thống tạo nhắc nhở trước X ngày khi tài liệu hết hạn hoặc cần rà soát.</p>
+                 <p className="text-xs text-gray-500 mt-1">Hệ thống sẽ gửi thông báo và highlight màu vàng khi tài liệu sắp đến hạn rà soát định kỳ.</p>
               </div>
 
               <div>
                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5 flex items-center gap-2">
-                    <ShieldAlert size={16}/> Nhắc hạn tiêu hủy hồ sơ
+                    <ShieldAlert size={16}/> Nhắc hạn tiêu hủy hồ sơ trước
                  </label>
                  <div className="flex items-center gap-2">
                     <input 
@@ -217,7 +206,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
 
         <div>
-           <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-3">Kênh hiển thị</h4>
+           <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-3">Kênh thông báo</h4>
            <div className="space-y-3">
               <label className="flex items-center gap-3 cursor-pointer">
                  <input 
@@ -227,6 +216,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                    onChange={() => setSettings({...settings, enableAppNoti: !settings.enableAppNoti})}
                  />
                  <span className="text-sm text-gray-700 dark:text-gray-300">Thông báo trên ứng dụng (Chuông)</span>
+              </label>
+              
+              <label className="flex items-center gap-3 cursor-pointer">
+                 <input 
+                   type="checkbox" 
+                   className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300"
+                   checked={settings.enableEmailNoti}
+                   onChange={() => setSettings({...settings, enableEmailNoti: !settings.enableEmailNoti})}
+                 />
+                 <span className="text-sm text-gray-700 dark:text-gray-300">Gửi Email nhắc nhở</span>
               </label>
            </div>
         </div>

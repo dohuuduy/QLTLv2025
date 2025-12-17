@@ -10,7 +10,7 @@ export interface Option {
   value: string;
   label: string;
   subLabel?: string;
-  icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  icon?: React.ComponentType<{ className?: string }>;
   disabled?: boolean;
   style?: {
     badgeColor?: string; // Custom badge bg color

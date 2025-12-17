@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { MENU_ITEMS, APP_NAME, INITIAL_MASTER_DATA } from './constants'; // Removed MOCK_NOTIFICATIONS
-import { Menu, Search, LogOut, X, Sun, Moon, Monitor, FileText, Archive, CalendarDays, ArrowRight } from 'lucide-react';
+import { MENU_ITEMS, APP_NAME, INITIAL_MASTER_DATA, MOCK_NOTIFICATIONS } from './constants';
+import { Menu, Bell, Search, LogOut, X, User, Database, FileText, Archive, CalendarDays, ArrowRight, Sun, Moon, Monitor } from 'lucide-react';
 import { Dashboard } from './modules/dashboard/Dashboard';
 import { TaiLieuList } from './modules/tai_lieu/TaiLieuList';
 import { MasterDataLayout } from './modules/master_data/MasterDataLayout';
@@ -10,17 +10,13 @@ import { HoSoList } from './modules/ho_so/HoSoList';
 import { AuditSchedulePage } from './modules/audit/AuditSchedulePage'; 
 import { SettingsPage } from './modules/settings/SettingsPage'; 
 import { LoginPage } from './modules/auth/LoginPage';
-import { MasterDataState, NhanSu, AppNotification, TaiLieu, HoSo, KeHoachDanhGia, BackupData, TrangThaiTaiLieu, TrangThaiHoSo } from './types';
+import { MasterDataState, NhanSu, AppNotification, TaiLieu, HoSo, KeHoachDanhGia, BackupData } from './types';
 import { fetchMasterDataFromDB, fetchDocumentsFromDB, fetchRecordsFromDB, fetchAuditPlansFromDB, signOut, getCurrentSession } from './services/supabaseService';
 import { supabase } from './lib/supabaseClient';
 import { DialogProvider } from './contexts/DialogContext';
-import { ToastProvider, useToast } from './components/ui/Toast';
-import { Tooltip } from './components/ui/Tooltip';
+import { ToastProvider, useToast } from './components/ui/Toast'; // Import Toast
+import { Tooltip } from './components/ui/Tooltip'; // Import Tooltip
 import { useSystemTheme } from './hooks/useTheme';
-import { NotificationCenter } from './components/NotificationCenter';
-// Import differenceInCalendarDays for accurate daily calculations ignoring timezones/hours
-import { differenceInCalendarDays, formatDistanceToNow, isAfter, format } from 'date-fns';
-import { vi } from 'date-fns/locale';
 
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<any>(null); // Supabase Session
@@ -38,7 +34,8 @@ const AppContent: React.FC = () => {
   const toast = useToast();
 
   // Notification State
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Search State
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,7 +73,7 @@ const AppContent: React.FC = () => {
       setSession(session);
       if (session && window.location.hash && window.location.hash.includes('access_token')) {
           window.history.replaceState(null, '', window.location.pathname);
-          toast.success("Xác thực tài khoản thành công!", "Chào mừng");
+          toast.success("Xác thực email thành công!", "Chào mừng");
       }
       if (!session) {
          setDocuments([]);
@@ -86,6 +83,8 @@ const AppContent: React.FC = () => {
       } else if (event === 'SIGNED_OUT') {
          toast.info("Đã đăng xuất hệ thống.");
       }
+      // Note: Removed 'SIGNED_IN' toast here to prevent it showing on page reload.
+      // It is now handled explicitly in LoginPage.tsx
     });
 
     return () => subscription.unsubscribe();
@@ -143,219 +142,6 @@ const AppContent: React.FC = () => {
     initData();
   }, [session]);
 
-  // --- REAL-TIME NOTIFICATION GENERATOR ---
-  useEffect(() => {
-    if (!currentUser.id || currentUser.id === 'guest') return;
-
-    // LOAD SETTINGS (Sync)
-    const savedSettings = localStorage.getItem('iso_app_settings');
-    const config = savedSettings ? JSON.parse(savedSettings) : { 
-        reviewAlertDays: 30, 
-        recordExpiryAlertDays: 60,
-        enableAppNoti: true
-    };
-
-    // Nếu người dùng tắt thông báo hệ thống
-    if (config.enableAppNoti === false) {
-        setNotifications([]);
-        return;
-    }
-
-    const DOC_ALERT_DAYS = config.reviewAlertDays || 30;
-    const REC_ALERT_DAYS = config.recordExpiryAlertDays || 60;
-
-    const generateNotifications = async () => {
-        const newNotifications: AppNotification[] = [];
-        const readNotiIds = JSON.parse(localStorage.getItem(`read_notifications_${currentUser.id}`) || '[]');
-        const today = new Date();
-
-        // Helper: Phân tích ngày "YYYY-MM-DD" thành ngày cục bộ (Local Date)
-        // Tránh lỗi new Date("YYYY-MM-DD") bị hiểu là UTC
-        const parseLocal = (dateStr: string) => {
-            if (!dateStr) return new Date();
-            const [y, m, d] = dateStr.split('-').map(Number);
-            return new Date(y, m - 1, d);
-        };
-
-        // 1. THÔNG BÁO PHÊ DUYỆT (Action Required)
-        documents.forEach(doc => {
-            if (doc.trang_thai === TrangThaiTaiLieu.CHO_DUYET) {
-                const isReviewer = doc.nguoi_xem_xet === currentUser.id;
-                const isApprover = doc.nguoi_phe_duyet === currentUser.id;
-                const isAdmin = currentUser.roles.includes('QUAN_TRI');
-
-                if (isReviewer || isApprover || isAdmin) {
-                    const id = `approv_${doc.id}_${doc.ngay_cap_nhat_cuoi}`;
-                    newNotifications.push({
-                        id: id,
-                        title: 'Yêu cầu xử lý tài liệu',
-                        message: `${doc.nguoi_tao ? 'Ai đó' : 'Hệ thống'} đang chờ bạn ${isApprover ? 'phê duyệt' : 'xem xét'} tài liệu: ${doc.ma_tai_lieu}`,
-                        time: formatTimeAgo(doc.ngay_cap_nhat_cuoi),
-                        read: readNotiIds.includes(id),
-                        type: 'warning',
-                        linkTo: 'approvals'
-                    });
-                }
-            }
-            else if (doc.trang_thai === TrangThaiTaiLieu.SOAN_THAO && doc.nguoi_soan_thao === currentUser.id) {
-                const lastAction = doc.lich_su?.[doc.lich_su.length - 1];
-                if (lastAction && lastAction.hanh_dong === 'TU_CHOI') {
-                     const id = `reject_${doc.id}_${lastAction.thoi_gian}`;
-                     newNotifications.push({
-                        id: id,
-                        title: 'Tài liệu bị trả về',
-                        message: `Tài liệu ${doc.ma_tai_lieu} bị từ chối. Lý do: "${lastAction.ghi_chu}"`,
-                        time: formatTimeAgo(lastAction.thoi_gian),
-                        read: readNotiIds.includes(id),
-                        type: 'error',
-                        linkTo: 'documents'
-                    });
-                }
-            }
-        });
-
-        // 2. THÔNG BÁO BAN HÀNH (Information)
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        
-        documents.forEach(doc => {
-            if (doc.trang_thai === TrangThaiTaiLieu.DA_BAN_HANH && doc.ngay_ban_hanh) {
-                const banHanhDate = parseLocal(doc.ngay_ban_hanh);
-                // Với thông báo mới, dùng logic ngày giờ thường cũng ổn, nhưng chuẩn hóa local tốt hơn
-                if (isAfter(new Date(doc.ngay_ban_hanh), sevenDaysAgo)) { // Logic cũ ok cho cái này vì là timestamp check
-                    const id = `publish_${doc.id}`;
-                    newNotifications.push({
-                        id: id,
-                        title: 'Tài liệu mới ban hành',
-                        message: `${doc.ma_tai_lieu} - ${doc.ten_tai_lieu} đã có hiệu lực.`,
-                        time: doc.ngay_ban_hanh, // Display raw date or formatted
-                        read: readNotiIds.includes(id),
-                        type: 'success',
-                        linkTo: 'documents'
-                    });
-                }
-            }
-        });
-
-        // 3. THÔNG BÁO TÀI LIỆU SẮP HẾT HẠN / QUÁ HẠN (Warning - STRICT LOCAL DATE)
-        for (const doc of documents) {
-            if (doc.ngay_het_han && doc.trang_thai === TrangThaiTaiLieu.DA_BAN_HANH) {
-                const expiryDate = parseLocal(doc.ngay_het_han);
-                // Sử dụng differenceInCalendarDays để tính số ngày theo lịch, bỏ qua giờ giấc (fix lỗi GMT+7)
-                const daysLeft = differenceInCalendarDays(expiryDate, today);
-                
-                if (daysLeft <= DOC_ALERT_DAYS) {
-                    const isResponsible = doc.nguoi_soan_thao === currentUser.id;
-                    const isAdmin = currentUser.roles.includes('QUAN_TRI');
-
-                    if (isResponsible || isAdmin) {
-                        const isExpired = daysLeft < 0;
-                        const isToday = daysLeft === 0;
-                        const id = `doc_exp_${doc.id}_${doc.ngay_het_han}`;
-                        
-                        let message = `${doc.ma_tai_lieu} còn ${daysLeft} ngày nữa hết hiệu lực.`;
-                        let timeLabel = `${daysLeft} ngày nữa`;
-
-                        if (isExpired) {
-                            message = `${doc.ma_tai_lieu} đã quá hạn ${Math.abs(daysLeft)} ngày.`;
-                            timeLabel = 'Quá hạn';
-                        } else if (isToday) {
-                            message = `${doc.ma_tai_lieu} hết hạn HÔM NAY.`;
-                            timeLabel = 'Hôm nay';
-                        }
-
-                        newNotifications.push({
-                            id: id,
-                            title: isExpired ? 'Tài liệu ĐÃ HẾT HẠN' : 'Tài liệu sắp hết hạn',
-                            message: message,
-                            time: timeLabel,
-                            read: readNotiIds.includes(id),
-                            type: isExpired ? 'error' : 'warning',
-                            linkTo: 'documents'
-                        });
-                    }
-                }
-            }
-        }
-
-        // 4. THÔNG BÁO HỒ SƠ SẮP HẾT HẠN (Warning - STRICT LOCAL DATE)
-        for (const rec of records) {
-            if (rec.trang_thai === TrangThaiHoSo.LUU_TRU && rec.ngay_het_han) {
-                // Fix lỗi tính ngày
-                const expiryDate = parseLocal(rec.ngay_het_han);
-                const daysLeft = differenceInCalendarDays(expiryDate, today);
-                
-                if (daysLeft <= REC_ALERT_DAYS && daysLeft >= 0) {
-                    if (rec.nguoi_tao === currentUser.id || currentUser.roles.includes('QUAN_TRI')) {
-                        const id = `rec_exp_${rec.id}`;
-                        
-                        newNotifications.push({
-                            id: id,
-                            title: 'Hồ sơ sắp hết hạn',
-                            message: `Hồ sơ "${rec.tieu_de}" sẽ hết hạn lưu trữ trong ${daysLeft} ngày nữa.`,
-                            time: 'Hệ thống nhắc',
-                            read: readNotiIds.includes(id),
-                            type: 'warning',
-                            linkTo: 'records'
-                        });
-                    }
-                }
-            }
-        }
-
-        // 5. LỊCH AUDIT (Info)
-        auditPlans.forEach(plan => {
-            if (plan.auditor_ids?.includes(currentUser.id) && plan.trang_thai !== 'hoan_thanh') {
-                 const id = `audit_${plan.id}`;
-                 newNotifications.push({
-                    id: id,
-                    title: 'Lịch đánh giá sắp tới',
-                    message: `Bạn có tham gia đoàn đánh giá: ${plan.ten_ke_hoach}`,
-                    time: plan.thoi_gian_du_kien_start ? formatTimeAgo(plan.thoi_gian_du_kien_start) : 'Sắp diễn ra',
-                    read: readNotiIds.includes(id),
-                    type: 'info',
-                    linkTo: 'audit-schedule'
-                 });
-            }
-        });
-
-        setNotifications(newNotifications);
-    };
-
-    generateNotifications();
-    
-    // Listen for settings update to regenerate notifications
-    const handleSettingsUpdate = () => generateNotifications();
-    window.addEventListener('iso_settings_updated', handleSettingsUpdate);
-    return () => window.removeEventListener('iso_settings_updated', handleSettingsUpdate);
-
-  }, [documents, records, auditPlans, currentUser]);
-
-  // Helper time format
-  const formatTimeAgo = (dateStr: string) => {
-      try {
-          // If it looks like a full timestamp (has 'T'), use distance
-          if (dateStr.includes('T')) {
-             return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: vi });
-          }
-          // If it's YYYY-MM-DD, just return it
-          return dateStr;
-      } catch (e) { return dateStr; }
-  };
-
-  // Sync read status to local storage whenever notifications change (user clicks read)
-  useEffect(() => {
-      if (!currentUser.id || currentUser.id === 'guest') return;
-      const readIds = notifications.filter(n => n.read).map(n => n.id);
-      if (readIds.length > 0) {
-          // Merge with existing
-          const existing = JSON.parse(localStorage.getItem(`read_notifications_${currentUser.id}`) || '[]');
-          const unique = Array.from(new Set([...existing, ...readIds]));
-          localStorage.setItem(`read_notifications_${currentUser.id}`, JSON.stringify(unique));
-      }
-  }, [notifications, currentUser.id]);
-
-
   const handleLogout = async () => {
       await signOut();
   };
@@ -363,6 +149,7 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
+      if (!target.closest('#notification-container')) setShowNotifications(false);
       if (searchRef.current && !searchRef.current.contains(target)) {
           setIsSearchOpen(false);
           setIsMobileSearchOpen(false);
@@ -388,6 +175,12 @@ const AppContent: React.FC = () => {
       setActiveTab(tab);
       setIsSearchOpen(false);
       setIsMobileSearchOpen(false);
+  };
+
+  const handleNotificationClick = (notification: AppNotification) => {
+    setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
+    if (notification.linkTo) setActiveTab(notification.linkTo);
+    setShowNotifications(false);
   };
 
   const handleDashboardFilter = (filters: { trang_thai?: string; bo_phan?: string }) => {
@@ -560,7 +353,7 @@ const AppContent: React.FC = () => {
                            <div className="max-h-[60vh] overflow-y-auto p-1">
                                {searchResults.docs.length > 0 && (<div className="py-2"><div className="px-3 py-1 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Tài liệu</div>{searchResults.docs.map(doc => (<div key={doc.id} onClick={() => handleSearchResultClick('documents')} className="px-3 py-2 hover:bg-accent rounded-md cursor-pointer flex items-center gap-3 group transition-colors"><div className="bg-primary/10 text-primary p-1.5 rounded-md"><FileText size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground truncate">{doc.ten_tai_lieu}</p><p className="text-xs text-muted-foreground font-mono">{doc.ma_tai_lieu}</p></div><ArrowRight size={14} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity"/></div>))}</div>)}
                                {searchResults.recs.length > 0 && (<div className="py-2 border-t border-border"><div className="px-3 py-1 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Hồ sơ</div>{searchResults.recs.map(rec => (<div key={rec.id} onClick={() => handleSearchResultClick('records')} className="px-3 py-2 hover:bg-accent rounded-md cursor-pointer flex items-center gap-3 group transition-colors"><div className="bg-primary/10 text-primary p-1.5 rounded-md"><Archive size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground truncate">{rec.tieu_de}</p><p className="text-xs text-muted-foreground font-mono">{rec.ma_ho_so}</p></div><ArrowRight size={14} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity"/></div>))}</div>)}
-                               {searchResults.audits.length > 0 && (<div className="py-2 border-t border-border"><div className="px-3 py-1 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Kế hoạch Audit</div>{searchResults.audits.map(plan => (<div key={plan.id} onClick={() => handleSearchResultClick('audit-schedule')} className="px-3 py-2 hover:bg-accent rounded-md cursor-pointer flex items-center gap-3 group transition-colors"><div className="bg-primary/10 text-primary p-1.5 rounded-md"><CalendarDays size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground truncate">{plan.ten_ke_hoach}</p><p className="text-xs text-muted-foreground">{masterData.loaiDanhGia.find(l => l.id === plan.id_loai_danh_gia)?.ten || plan.id_loai_danh_gia}</p></div><ArrowRight size={14} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity"/></div>))}</div>)}
+                               {searchResults.audits.length > 0 && (<div className="py-2 border-t border-border"><div className="px-3 py-1 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Kế hoạch Audit</div>{searchResults.audits.map(plan => (<div key={plan.id} onClick={() => handleSearchResultClick('audit-schedule')} className="px-3 py-2 hover:bg-accent rounded-md cursor-pointer flex items-center gap-3 group transition-colors"><div className="bg-primary/10 text-primary p-1.5 rounded-md"><CalendarDays size={16} /></div><div className="flex-1 overflow-hidden"><p className="text-sm font-medium text-foreground truncate">{plan.ten_ke_hoach}</p><p className="text-xs text-muted-foreground">{plan.loai_danh_gia}</p></div><ArrowRight size={14} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity"/></div>))}</div>)}
                            </div>
                        ) : (<div className="p-4 text-center text-muted-foreground text-xs md:hidden">Nhập từ khóa để tìm kiếm</div>)}
                     </div>
@@ -568,12 +361,26 @@ const AppContent: React.FC = () => {
              </div>
 
              <div className="flex items-center gap-2">
-                {/* Notification Center */}
-                <NotificationCenter 
-                    notifications={notifications} 
-                    setNotifications={setNotifications} 
-                    onNavigate={setActiveTab} 
-                />
+                <div id="notification-container" className="relative">
+                  <button onClick={() => setShowNotifications(!showNotifications)} className={`relative p-2 rounded-full transition-colors ${showNotifications ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}`}>
+                    <Bell size={20} />
+                    {notifications.filter(n => !n.read).length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border border-background animate-pulse"></span>}
+                  </button>
+                  {showNotifications && (
+                    <div className="absolute right-0 top-full mt-3 w-80 sm:w-96 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-[90] animate-in fade-in slide-in-from-top-2 origin-top-right">
+                       <div className="p-3 border-b border-border flex justify-between items-center bg-muted/30"><h3 className="font-semibold text-sm">Thông báo</h3>{notifications.filter(n => !n.read).length > 0 && <button onClick={() => setNotifications(prev => prev.map(n => ({...n, read: true})))} className="text-xs text-primary hover:text-primary/80 font-medium hover:underline">Đánh dấu đã đọc hết</button>}</div>
+                       <div className="max-h-[60vh] overflow-y-auto">
+                          {notifications.length > 0 ? (
+                            notifications.map(n => (
+                              <div key={n.id} onClick={() => handleNotificationClick(n)} className={`p-4 border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer transition-colors flex gap-3 ${!n.read ? 'bg-primary/5' : ''}`}>
+                                 <div className="flex-1"><div className="flex justify-between items-start mb-1"><span className={`text-sm font-medium ${!n.read ? 'text-foreground' : 'text-muted-foreground'}`}>{n.title}</span><span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">{n.time}</span></div><p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p></div>{!n.read && <div className="w-2 h-2 rounded-full bg-primary shrink-0 self-center"></div>}
+                              </div>
+                            ))
+                          ) : (<div className="p-8 text-center text-muted-foreground text-sm">Không có thông báo mới</div>)}
+                       </div>
+                    </div>
+                  )}
+                </div>
                 
                 <div className="h-5 w-px bg-border hidden sm:block"></div>
                 

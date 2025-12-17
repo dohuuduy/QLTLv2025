@@ -100,8 +100,7 @@ export const UserManager: React.FC<UserManagerProps> = ({ users, departments, po
             if (data.user) {
                 userId = data.user.id;
             } else {
-                // Removed specific mention of email verification/checking
-                dialog.alert("Tài khoản đăng nhập đã được khởi tạo. Nhân sự có thể đăng nhập ngay bằng mật khẩu vừa tạo.", { type: 'success' });
+                dialog.alert("Đã gửi yêu cầu tạo tài khoản. Nếu Supabase bật Confirm Email, vui lòng kiểm tra hộp thư.", { type: 'info' });
                 if (!data.user) {
                      setIsLoading(false);
                      return;

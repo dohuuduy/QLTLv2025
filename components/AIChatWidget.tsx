@@ -59,7 +59,7 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ document }) => {
       Mô tả tóm tắt: ${document.mo_ta_tom_tat}
       Phiên bản: ${document.phien_ban}
       Ngày hiệu lực: ${document.ngay_hieu_luc}
-      Người soạn (ID): ${document.nguoi_soan_thao}
+      Người soạn (ID): ${document.id_nguoi_soan_thao}
       Tiêu chuẩn áp dụng (IDs): ${document.id_tieu_chuan?.join(', ')}
     `;
 
