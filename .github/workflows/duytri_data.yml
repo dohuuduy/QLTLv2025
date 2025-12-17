@@ -1,0 +1,84 @@
+name: Duy trì Supabase Database
+
+on:
+  schedule:
+    # Chạy mỗi 5 ngày vào lúc 0:00 UTC
+    - cron: '0 0 */5 * *'
+  workflow_dispatch: # Cho phép chạy thủ công
+
+jobs:
+  maintain-database:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install @supabase/supabase-js
+
+      - name: Maintain database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          node - <<'EOF'
+          const { createClient } = require('@supabase/supabase-js');
+          
+          const supabase = createClient(
+            process.env.SUPABASE_URL,
+            process.env.SUPABASE_KEY
+          );
+          
+          async function maintain() {
+            try {
+              // 1. Đếm số dòng hiện tại
+              const { count, error: countError } = await supabase
+                .from('duy_tri')
+                .select('*', { count: 'exact', head: true });
+              
+              if (countError) throw countError;
+              
+              console.log(`Số dòng hiện tại: ${count}`);
+              
+              // 2. Nếu đủ 100 dòng thì xóa hết
+              if (count >= 100) {
+                console.log('Đã đủ 100 dòng, bắt đầu xóa...');
+                const { error: deleteError } = await supabase
+                  .from('duy_tri')
+                  .delete()
+                  .neq('id', 0); // Xóa tất cả
+                
+                if (deleteError) throw deleteError;
+                console.log('Đã xóa tất cả dữ liệu');
+              }
+              
+              // 3. Thêm 1 dòng mới
+              const { data, error: insertError } = await supabase
+                .from('duy_tri')
+                .insert([
+                  { 
+                    timestamp: new Date().toISOString(),
+                    note: 'Auto maintenance'
+                  }
+                ])
+                .select();
+              
+              if (insertError) throw insertError;
+              
+              console.log('Đã thêm dòng mới:', data);
+              console.log('✅ Duy trì database thành công!');
+              
+            } catch (error) {
+              console.error('❌ Lỗi:', error.message);
+              process.exit(1);
+            }
+          }
+          
+          maintain();
+          EOF
